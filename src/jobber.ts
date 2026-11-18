@@ -112,3 +112,27 @@ export async function describeType(env: Env, account: Account, name: string): Pr
   for (const e of d.__type.enumValues ?? []) out[e.name] = "enum value";
   return out;
 }
+
+/** Pulls client phone numbers (normalised later by the caller). Returns raw numbers and how many are SMS-stopped in Jobber. */
+export async function listClientPhones(env: Env, account: Account, pages: number): Promise<{ numbers: string[]; smsStopped: string[]; total: number; pulled: number }> {
+  const numbers: string[] = [];
+  const smsStopped: string[] = [];
+  let after: string | null = null;
+  let total = 0;
+  let pulled = 0;
+  for (let i = 0; i < pages; i++) {
+    const d: { clients: { totalCount: number; nodes: { isArchived: boolean; phones: { number: string; smsStopped: boolean }[] }[]; pageInfo: { hasNextPage: boolean; endCursor: string | null } } } =
+      await gql(env, account, `query($after: String) { clients(first: 50, after: $after) { totalCount nodes { isArchived phones { number smsStopped } } pageInfo { hasNextPage endCursor } } }`, { after });
+    total = d.clients.totalCount;
+    for (const c of d.clients.nodes) {
+      pulled++;
+      for (const ph of c.phones) {
+        numbers.push(ph.number);
+        if (ph.smsStopped) smsStopped.push(ph.number);
+      }
+    }
+    if (!d.clients.pageInfo.hasNextPage) break;
+    after = d.clients.pageInfo.endCursor;
+  }
+  return { numbers, smsStopped, total, pulled };
+}

@@ -2,9 +2,10 @@ import { APP_HTML } from "./app";
 import { AGENTS, runAgent } from "./agents";
 import { sb } from "./db";
 import { addNote, addTags, credsFor, searchContacts, sendSms, setDnd } from "./ghl";
-import { authorizeUrl, checkState, describeType, exchangeCode, gql, listMutations, makeState } from "./jobber";
+import { authorizeUrl, checkState, describeType, exchangeCode, gql, listClientPhones, listMutations, makeState } from "./jobber";
+import { overlapStats, type Sources } from "./overlap";
 import { createPilot } from "./pilot";
-import { dedupe, inSendWindow, isStopMessage } from "./safety";
+import { dedupe, inSendWindow, isStopMessage, normalizePhone } from "./safety";
 import { ACCOUNTS, type Account, type Env } from "./types";
 
 const json = (data: unknown, status = 200) =>
@@ -95,6 +96,36 @@ export default {
       await sb(env, "POST", "messages", { account, contact_id: p.contactId, direction: "outbound", body: draft, status: auto ? "sending" : "pending_approval" });
       if (auto) await sendSms(creds, p.contactId, draft);
       return json({ ok: true, drafted: true, auto });
+    }
+
+    // Overlap report across GHL (2 accounts) and Jobber (2 accounts). Counts only, no personal data.
+    // Free Workers allow ~50 outbound calls per request: ghlPages (100 contacts each) + jobberPages (50 clients each), per account.
+    if (url.pathname === "/admin/overlap") {
+      if (!isAdmin(req, env)) return json({ error: "unauthorized" }, 401);
+      const ghlPages = Math.min(Number(url.searchParams.get("ghlPages") ?? "5"), 40);
+      const jobberPages = Math.min(Number(url.searchParams.get("jobberPages") ?? "10"), 40);
+      const src: Sources = {};
+      const notes: Record<string, unknown> = {};
+      try {
+        for (const account of ACCOUNTS) {
+          const set = new Set<string>();
+          let pulled = 0;
+          for (let page = 1; page <= ghlPages; page++) {
+            const { contacts } = await searchContacts(credsFor(env, account), { page, pageLimit: 100 });
+            if (!contacts?.length) break;
+            pulled += contacts.length;
+            for (const c of contacts) { const n = normalizePhone(c.phone); if (n) set.add(n); }
+          }
+          src[`ghl_${account}`] = set;
+          notes[`ghl_${account}_contactsPulled`] = pulled;
+        }
+        for (const account of ACCOUNTS) {
+          const r = await listClientPhones(env, account, jobberPages);
+          src[`jobber_${account}`] = new Set(r.numbers.map(normalizePhone).filter((n): n is string => !!n));
+          notes[`jobber_${account}`] = { clientsInAccount: r.total, clientsPulled: r.pulled, phonesSmsStopped: new Set(r.smsStopped.map(normalizePhone).filter(Boolean)).size };
+        }
+      } catch (e) { return json({ error: (e as Error).message }, 502); }
+      return json({ ...overlapStats(src), notes });
     }
 
     // ---- Jobber connection (one per business: ?account=lights or ?account=dunzo) ----
