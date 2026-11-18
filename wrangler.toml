@@ -17,6 +17,8 @@ BATCH_SIZE = "10"
 QUIET_START_HOUR = "20"
 QUIET_END_HOUR = "9"
 CLAUDE_MODEL = "claude-haiku-5-5"
+# Jobber GraphQL version header (must be a version Jobber supports; change here if rejected).
+JOBBER_API_VERSION = "2025-01-20"
 
 # Secrets (set with `wrangler secret put <NAME>`, never commit):
 #   GHL_TOKEN_LIGHTS, GHL_LOCATION_LIGHTS
@@ -25,3 +27,4 @@ CLAUDE_MODEL = "claude-haiku-5-5"
 #   ANTHROPIC_API_KEY
 #   ADMIN_TOKEN        (protects /admin/* routes)
 #   WEBHOOK_SECRET     (GHL webhook must send ?secret=...)
+#   JOBBER_CLIENT_ID, JOBBER_CLIENT_SECRET

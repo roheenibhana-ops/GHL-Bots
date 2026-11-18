@@ -8,6 +8,9 @@ export interface Env {
   ANTHROPIC_API_KEY: string;
   ADMIN_TOKEN: string;
   WEBHOOK_SECRET: string;
+  JOBBER_CLIENT_ID: string;
+  JOBBER_CLIENT_SECRET: string;
+  JOBBER_API_VERSION: string;
   SENDING_ENABLED: string;
   SEND_MODE: string;
   BATCH_SIZE: string;

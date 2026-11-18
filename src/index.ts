@@ -2,6 +2,7 @@ import { APP_HTML } from "./app";
 import { AGENTS, runAgent } from "./agents";
 import { sb } from "./db";
 import { addNote, addTags, credsFor, searchContacts, sendSms, setDnd } from "./ghl";
+import { authorizeUrl, checkState, describeType, exchangeCode, gql, listMutations, makeState } from "./jobber";
 import { createPilot } from "./pilot";
 import { dedupe, inSendWindow, isStopMessage } from "./safety";
 import { ACCOUNTS, type Account, type Env } from "./types";
@@ -94,6 +95,37 @@ export default {
       await sb(env, "POST", "messages", { account, contact_id: p.contactId, direction: "outbound", body: draft, status: auto ? "sending" : "pending_approval" });
       if (auto) await sendSms(creds, p.contactId, draft);
       return json({ ok: true, drafted: true, auto });
+    }
+
+    // ---- Jobber connection ----
+    // Browser navigation can't send headers, so the connect step takes the admin token as ?key=.
+    if (url.pathname === "/admin/jobber/connect") {
+      const key = (url.searchParams.get("key") ?? "").trim();
+      if (!env.ADMIN_TOKEN || key !== env.ADMIN_TOKEN.trim()) return json({ error: "unauthorized" }, 401);
+      if (!env.JOBBER_CLIENT_ID || !env.JOBBER_CLIENT_SECRET) return json({ error: "Missing JOBBER_CLIENT_ID / JOBBER_CLIENT_SECRET secrets" }, 500);
+      return Response.redirect(authorizeUrl(env, url.origin, await makeState(env.ADMIN_TOKEN.trim())), 302);
+    }
+    if (url.pathname === "/admin/jobber/callback") {
+      if (!(await checkState(env.ADMIN_TOKEN.trim(), url.searchParams.get("state")))) return json({ error: "bad or expired state, start again from /admin/jobber/connect" }, 400);
+      const code = url.searchParams.get("code");
+      if (!code) return json({ error: url.searchParams.get("error") ?? "no code" }, 400);
+      await exchangeCode(env, url.origin, code);
+      return new Response("Jobber connected. You can close this tab.", { headers: { "content-type": "text/plain" } });
+    }
+    if (url.pathname === "/admin/jobber/whoami") {
+      if (!isAdmin(req, env)) return json({ error: "unauthorized" }, 401);
+      try { return json(await gql(env, "{ account { id name } }")); } catch (e) { return json({ error: (e as Error).message }, 502); }
+    }
+    // Schema discovery: ?mutations=quote  (list matching mutations)  or  ?type=QuoteCreateAttributes
+    if (url.pathname === "/admin/jobber/schema") {
+      if (!isAdmin(req, env)) return json({ error: "unauthorized" }, 401);
+      try {
+        const m = url.searchParams.get("mutations");
+        if (m !== null) return json({ mutations: await listMutations(env, m) });
+        const t = url.searchParams.get("type");
+        if (t) return json({ type: t, fields: await describeType(env, t) });
+        return json({ error: "use ?mutations=<text> or ?type=<TypeName>" }, 400);
+      } catch (e) { return json({ error: (e as Error).message }, 502); }
     }
 
     // Approval page (static HTML; the admin token is typed into it).
