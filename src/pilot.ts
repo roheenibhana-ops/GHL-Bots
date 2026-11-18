@@ -6,8 +6,16 @@ import type { Account, Env } from "./types";
 
 const BRAND = { lights: "the Santa's Lights team", dunzo: "Dunzo Gutters" } as const;
 
+/** "JOHN" or "john" becomes "John". Mixed-case names (McDonald, DeShawn) are left alone. */
+export function cleanName(raw: string | undefined): string {
+  const n = (raw ?? "").trim().replace(/\s+/g, " ");
+  if (!n) return "";
+  if (n !== n.toUpperCase() && n !== n.toLowerCase()) return n;
+  return n.toLowerCase().replace(/(^|[\s\-'’])([a-z])/g, (_, sep: string, ch: string) => sep + ch.toUpperCase());
+}
+
 export function renderMessage(template: string, firstName: string | undefined, account: "lights" | "dunzo"): string {
-  const name = (firstName ?? "").trim() || "there";
+  const name = cleanName(firstName) || "there";
   let text = template.replaceAll("{firstName}", name).replaceAll("{brand}", BRAND[account]);
   if (!/stop/i.test(text)) text += " Reply STOP to opt out.";
   return text;

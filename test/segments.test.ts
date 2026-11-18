@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { renderMessage } from "../src/pilot";
+import { cleanName, renderMessage } from "../src/pilot";
 import { classify } from "../src/segments";
 
 describe("classify", () => {
@@ -11,6 +11,10 @@ describe("classify", () => {
     expect(classify(["phone-engaged-positive", "lights won"])).toBe("excluded");
   });
   it("ignores quote-nurture-paused", () => expect(classify(["quote-nurture-paused", "lights lost"])).toBe("lost"));
+  it("excludes cold Facebook ad leads", () => {
+    expect(classify(["lights lost", "early bird lights 2026"])).toBe("excluded");
+    expect(classify(["lights won", "facebook funnel leads"])).toBe("excluded");
+  });
   it("other", () => expect(classify(["quote sent"])).toBe("other"));
 });
 
@@ -20,5 +24,16 @@ describe("renderMessage", () => {
   });
   it("keeps an existing STOP line and falls back to 'there'", () => {
     expect(renderMessage("Hi {firstName}. Reply STOP to opt out", undefined, "dunzo")).toBe("Hi there. Reply STOP to opt out");
+  });
+});
+
+describe("cleanName", () => {
+  it("fixes all-caps and all-lower, keeps mixed case", () => {
+    expect(cleanName("JOHN")).toBe("John");
+    expect(cleanName("mary-ann")).toBe("Mary-Ann");
+    expect(cleanName("O'BRIEN")).toBe("O'Brien");
+    expect(cleanName("McDonald")).toBe("McDonald");
+    expect(cleanName("  kecia & stan ")).toBe("Kecia & Stan");
+    expect(cleanName(undefined)).toBe("");
   });
 });
