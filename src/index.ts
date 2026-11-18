@@ -8,7 +8,10 @@ const json = (data: unknown, status = 200) =>
   new Response(JSON.stringify(data, null, 2), { status, headers: { "content-type": "application/json" } });
 
 function isAdmin(req: Request, env: Env): boolean {
-  return !!env.ADMIN_TOKEN && req.headers.get("authorization") === `Bearer ${env.ADMIN_TOKEN}`;
+  // Trim both sides: a stray space or newline pasted into the secret shouldn't lock us out.
+  const expected = (env.ADMIN_TOKEN ?? "").trim();
+  const given = (req.headers.get("authorization") ?? "").replace(/^Bearer\s+/i, "").trim();
+  return expected.length > 0 && given === expected;
 }
 
 export default {
