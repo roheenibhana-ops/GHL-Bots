@@ -29,6 +29,8 @@ export interface PilotOptions {
   size: number;
   template: string;
   pagesPerAccount: number;
+  /** Preview only: pick and render messages but save nothing. */
+  dryRun?: boolean;
 }
 
 /** Builds a pilot campaign: pulls contacts, drops DND/dupes/excluded, samples a mix, queues drafts for approval. Sends nothing. */
@@ -71,18 +73,20 @@ export async function createPilot(env: Env, o: PilotOptions) {
     timezone: c.timezone ?? null,
     phone_e164: c.e164,
   }));
-  if (rows.length) await sb(env, "POST", "messages", rows, "return=minimal");
+  if (rows.length && !o.dryRun) await sb(env, "POST", "messages", rows, "return=minimal");
 
   const count = (seg: string, acct: string) => rows.filter((r) => r.segment === seg && r.account === acct).length;
   return {
     campaign: o.campaign,
-    queued: rows.length,
+    dryRun: !!o.dryRun,
+    queued: o.dryRun ? 0 : rows.length,
+    wouldQueue: rows.length,
     pool: { customer: buckets.customer.length, lost: buckets.lost.length, excluded: buckets.excluded.length, other: buckets.other.length },
     dropped,
     mix: {
       customer: { lights: count("customer", "lights"), dunzo: count("customer", "dunzo") },
       lost: { lights: count("lost", "lights"), dunzo: count("lost", "dunzo") },
     },
-    sample: rows.slice(0, 3).map((r) => ({ account: r.account, segment: r.segment, body: r.body })),
+    sample: rows.slice(0, o.dryRun ? 6 : 3).map((r) => ({ account: r.account, segment: r.segment, body: r.body })),
   };
 }
