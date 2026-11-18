@@ -97,33 +97,45 @@ export default {
       return json({ ok: true, drafted: true, auto });
     }
 
-    // ---- Jobber connection ----
+    // ---- Jobber connection (one per business: ?account=lights or ?account=dunzo) ----
+    const jobberAccount = (): Account | null => {
+      const a = url.searchParams.get("account");
+      return a === "lights" || a === "dunzo" ? a : null;
+    };
     // Browser navigation can't send headers, so the connect step takes the admin token as ?key=.
     if (url.pathname === "/admin/jobber/connect") {
       const key = (url.searchParams.get("key") ?? "").trim();
       if (!env.ADMIN_TOKEN || key !== env.ADMIN_TOKEN.trim()) return json({ error: "unauthorized" }, 401);
-      if (!env.JOBBER_CLIENT_ID || !env.JOBBER_CLIENT_SECRET) return json({ error: "Missing JOBBER_CLIENT_ID / JOBBER_CLIENT_SECRET secrets" }, 500);
-      return Response.redirect(authorizeUrl(env, url.origin, await makeState(env.ADMIN_TOKEN.trim())), 302);
+      const account = jobberAccount();
+      if (!account) return json({ error: "add &account=lights or &account=dunzo" }, 400);
+      try {
+        return Response.redirect(authorizeUrl(env, account, url.origin, await makeState(env.ADMIN_TOKEN.trim(), account)), 302);
+      } catch (e) { return json({ error: (e as Error).message }, 500); }
     }
     if (url.pathname === "/admin/jobber/callback") {
-      if (!(await checkState(env.ADMIN_TOKEN.trim(), url.searchParams.get("state")))) return json({ error: "bad or expired state, start again from /admin/jobber/connect" }, 400);
+      const account = await checkState(env.ADMIN_TOKEN.trim(), url.searchParams.get("state"));
+      if (!account) return json({ error: "bad or expired state, start again from /admin/jobber/connect" }, 400);
       const code = url.searchParams.get("code");
       if (!code) return json({ error: url.searchParams.get("error") ?? "no code" }, 400);
-      await exchangeCode(env, url.origin, code);
-      return new Response("Jobber connected. You can close this tab.", { headers: { "content-type": "text/plain" } });
+      try { await exchangeCode(env, account, url.origin, code); } catch (e) { return json({ error: (e as Error).message }, 502); }
+      return new Response(`Jobber (${account}) connected. You can close this tab.`, { headers: { "content-type": "text/plain" } });
     }
     if (url.pathname === "/admin/jobber/whoami") {
       if (!isAdmin(req, env)) return json({ error: "unauthorized" }, 401);
-      try { return json(await gql(env, "{ account { id name } }")); } catch (e) { return json({ error: (e as Error).message }, 502); }
+      const account = jobberAccount();
+      if (!account) return json({ error: "add ?account=lights or ?account=dunzo" }, 400);
+      try { return json({ account, jobber: await gql(env, account, "{ account { id name } }") }); } catch (e) { return json({ error: (e as Error).message }, 502); }
     }
-    // Schema discovery: ?mutations=quote  (list matching mutations)  or  ?type=QuoteCreateAttributes
+    // Schema discovery: ?account=dunzo&mutations=quote  or  ?account=dunzo&type=QuoteCreateAttributes
     if (url.pathname === "/admin/jobber/schema") {
       if (!isAdmin(req, env)) return json({ error: "unauthorized" }, 401);
+      const account = jobberAccount();
+      if (!account) return json({ error: "add ?account=lights or ?account=dunzo" }, 400);
       try {
         const m = url.searchParams.get("mutations");
-        if (m !== null) return json({ mutations: await listMutations(env, m) });
+        if (m !== null) return json({ mutations: await listMutations(env, account, m) });
         const t = url.searchParams.get("type");
-        if (t) return json({ type: t, fields: await describeType(env, t) });
+        if (t) return json({ type: t, fields: await describeType(env, account, t) });
         return json({ error: "use ?mutations=<text> or ?type=<TypeName>" }, 400);
       } catch (e) { return json({ error: (e as Error).message }, 502); }
     }

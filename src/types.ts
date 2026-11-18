@@ -11,6 +11,11 @@ export interface Env {
   JOBBER_CLIENT_ID: string;
   JOBBER_CLIENT_SECRET: string;
   JOBBER_API_VERSION: string;
+  // Optional per-account app credentials. If unset, the shared JOBBER_CLIENT_ID / SECRET are used.
+  JOBBER_CLIENT_ID_LIGHTS?: string;
+  JOBBER_CLIENT_SECRET_LIGHTS?: string;
+  JOBBER_CLIENT_ID_DUNZO?: string;
+  JOBBER_CLIENT_SECRET_DUNZO?: string;
   SENDING_ENABLED: string;
   SEND_MODE: string;
   BATCH_SIZE: string;
