@@ -1,4 +1,5 @@
 import { sb } from "./db";
+import type { JClient } from "./check";
 import type { Account, Env } from "./types";
 
 const AUTH_URL = "https://api.getjobber.com/api/oauth/authorize";
@@ -156,4 +157,21 @@ export async function describeField(env: Env, account: Account, typeNameStr: str
   const f = d.__type?.fields.find((x) => x.name === field);
   if (!f) return null;
   return Object.fromEntries(f.args.map((a) => [a.name, typeName(a.type)]));
+}
+
+/** Looks up clients by phone, 10 numbers per request (aliased GraphQL). Search is fuzzy: callers must confirm with assess(). */
+export async function findClientsByPhones(env: Env, account: Account, phonesE164: string[]): Promise<Map<string, JClient[]>> {
+  const out = new Map<string, JClient[]>();
+  for (let i = 0; i < phonesE164.length; i += 10) {
+    const batch = phonesE164.slice(i, i + 10);
+    const vars: Record<string, string> = {};
+    const decl = batch.map((_, k) => `$p${k}: String`).join(", ");
+    const body = batch.map((p, k) => {
+      vars[`p${k}`] = p.replace(/^\+1/, "");
+      return `c${k}: clients(searchTerm: $p${k}, searchFields: [PHONES], first: 5) { nodes { id name phones { number normalizedPhoneNumber } quotes(first: 20) { nodes { quoteStatus } } jobs(first: 1) { totalCount } } }`;
+    }).join("\n");
+    const d = await gql<Record<string, { nodes: JClient[] }>>(env, account, `query(${decl}) { ${body} }`, vars);
+    batch.forEach((p, k) => out.set(p, d[`c${k}`]?.nodes ?? []));
+  }
+  return out;
 }

@@ -2,7 +2,8 @@ import { APP_HTML } from "./app";
 import { AGENTS, runAgent } from "./agents";
 import { sb } from "./db";
 import { addNote, addTags, credsFor, searchContacts, sendSms, setDnd, upsertByPhone } from "./ghl";
-import { authorizeUrl, checkState, describeType, exchangeCode, describeField, gql, listClientPhones, listMutations, makeState } from "./jobber";
+import { authorizeUrl, checkState, describeType, exchangeCode, describeField, findClientsByPhones, gql, listClientPhones, listMutations, makeState } from "./jobber";
+import { assess } from "./check";
 import { overlapStats, type Sources } from "./overlap";
 import { createPilot } from "./pilot";
 import { dedupe, inSendWindow, isSmsDnd, isStopMessage, normalizePhone } from "./safety";
@@ -115,6 +116,55 @@ export default {
         const sent = await sendSms(creds, contact.id, message);
         await sb(env, "POST", "messages", { account: b.account, contact_id: contact.id, direction: "outbound", body: message, status: "sent", campaign: "test", phone_e164: phone, sent_at: new Date().toISOString() }, "return=minimal");
         return json({ ok: true, contactId: contact.id, ...sent });
+      } catch (e) { return json({ error: (e as Error).message }, 502); }
+    }
+
+    // Pilot safety check: hold drafts for people who already have an open quote (or jobs) in Jobber.
+    // POST { campaign, apply }. Without apply=true it only reports. Held drafts can't be approved; /admin/pilot/release undoes it.
+    if (url.pathname === "/admin/pilot/check" && req.method === "POST") {
+      if (!isAdmin(req, env)) return json({ error: "unauthorized" }, 401);
+      const b = (await req.json()) as { campaign?: string; apply?: boolean };
+      const campaign = b.campaign ?? "pilot-1";
+      try {
+        const msgs = await sb<{ id: string; contact_name: string | null; phone_e164: string }[]>(
+          env, "GET", `messages?campaign=eq.${encodeURIComponent(campaign)}&status=eq.pending_approval&select=id,contact_name,phone_e164&limit=500`);
+        const phones = msgs.map((m) => m.phone_e164).filter(Boolean);
+        const held: { id: string; name: string | null; jobber: string; quotes: string[]; jobs: number }[] = [];
+        const heldIds = new Set<string>();
+        for (const account of ACCOUNTS) {
+          const found = await findClientsByPhones(env, account, phones);
+          for (const m of msgs) {
+            const a = assess(found.get(m.phone_e164) ?? [], m.phone_e164);
+            // Gutter quotes live in Dunzo: any open quote or past job holds. In Lights Jobber only an open quote holds.
+            const hold = account === "dunzo" ? a.openQuotes > 0 || a.jobs > 0 : a.openQuotes > 0;
+            if (a.found && hold) { held.push({ id: m.id, name: m.contact_name, jobber: account, quotes: a.quoteStatuses, jobs: a.jobs }); heldIds.add(m.id); }
+          }
+        }
+        if (b.apply && heldIds.size) {
+          await sb(env, "PATCH", `messages?id=in.(${[...heldIds].join(",")})&status=eq.pending_approval`, { status: "held" }, "return=minimal");
+        }
+        return json({ campaign, checked: msgs.length, holdCount: heldIds.size, applied: !!b.apply && heldIds.size > 0, held });
+      } catch (e) { return json({ error: (e as Error).message }, 502); }
+    }
+
+    if (url.pathname === "/admin/pilot/release" && req.method === "POST") {
+      if (!isAdmin(req, env)) return json({ error: "unauthorized" }, 401);
+      const { campaign } = (await req.json()) as { campaign?: string };
+      await sb(env, "PATCH", `messages?campaign=eq.${encodeURIComponent(campaign ?? "pilot-1")}&status=eq.held`, { status: "pending_approval" }, "return=minimal");
+      return json({ ok: true });
+    }
+
+    // Self-test of Jobber phone search: takes a real client's number from the account and checks the search finds them. Returns a boolean only.
+    if (url.pathname === "/admin/jobber/search-selftest") {
+      if (!isAdmin(req, env)) return json({ error: "unauthorized" }, 401);
+      const account = jobberAccount();
+      if (!account) return json({ error: "add ?account=lights or ?account=dunzo" }, 400);
+      try {
+        const { numbers } = await listClientPhones(env, account, 1);
+        const sample = numbers.map(normalizePhone).filter((n): n is string => !!n).slice(0, 5);
+        const found = await findClientsByPhones(env, account, sample);
+        const results = sample.map((p) => assess(found.get(p) ?? [], p).found);
+        return json({ account, tried: sample.length, foundByPhoneSearch: results.filter(Boolean).length });
       } catch (e) { return json({ error: (e as Error).message }, 502); }
     }
 
