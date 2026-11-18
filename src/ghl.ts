@@ -42,7 +42,7 @@ export async function searchContacts(
   });
 }
 
-export async function sendSms(c: GhlCreds, contactId: string, message: string): Promise<{ messageId?: string }> {
+export async function sendSms(c: GhlCreds, contactId: string, message: string): Promise<{ messageId?: string; conversationId?: string }> {
   return call(c, "POST", "/conversations/messages", { type: "SMS", contactId, message });
 }
 
@@ -56,4 +56,9 @@ export async function addNote(c: GhlCreds, contactId: string, body: string): Pro
 
 export async function setDnd(c: GhlCreds, contactId: string): Promise<unknown> {
   return call(c, "PUT", `/contacts/${contactId}`, { dnd: true });
+}
+
+/** Find-or-create by phone only (name and tags on an existing contact are not touched). */
+export async function upsertByPhone(c: GhlCreds, phone: string): Promise<{ new?: boolean; contact: GhlContact }> {
+  return call(c, "POST", "/contacts/upsert", { locationId: c.locationId, phone });
 }

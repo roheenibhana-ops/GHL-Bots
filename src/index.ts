@@ -1,11 +1,11 @@
 import { APP_HTML } from "./app";
 import { AGENTS, runAgent } from "./agents";
 import { sb } from "./db";
-import { addNote, addTags, credsFor, searchContacts, sendSms, setDnd } from "./ghl";
+import { addNote, addTags, credsFor, searchContacts, sendSms, setDnd, upsertByPhone } from "./ghl";
 import { authorizeUrl, checkState, describeType, exchangeCode, gql, listClientPhones, listMutations, makeState } from "./jobber";
 import { overlapStats, type Sources } from "./overlap";
 import { createPilot } from "./pilot";
-import { dedupe, inSendWindow, isStopMessage, normalizePhone } from "./safety";
+import { dedupe, inSendWindow, isSmsDnd, isStopMessage, normalizePhone } from "./safety";
 import { ACCOUNTS, type Account, type Env } from "./types";
 
 const json = (data: unknown, status = 200) =>
@@ -96,6 +96,26 @@ export default {
       await sb(env, "POST", "messages", { account, contact_id: p.contactId, direction: "outbound", body: draft, status: auto ? "sending" : "pending_approval" });
       if (auto) await sendSms(creds, p.contactId, draft);
       return json({ ok: true, drafted: true, auto });
+    }
+
+    // Plain test send, no bot and no AI: proves GHL sending works. Admin only. Ignores the campaign switch on purpose.
+    if (url.pathname === "/admin/test-send" && req.method === "POST") {
+      if (!isAdmin(req, env)) return json({ error: "unauthorized" }, 401);
+      const b = (await req.json()) as { account?: string; phone?: string; message?: string };
+      if (b.account !== "lights" && b.account !== "dunzo") return json({ error: 'account must be "lights" or "dunzo"' }, 400);
+      const phone = normalizePhone(b.phone);
+      if (!phone) return json({ error: "phone must be a valid US number" }, 400);
+      const message = (b.message ?? "").trim();
+      if (!message || message.length > 320) return json({ error: "message required, max 320 characters" }, 400);
+      try {
+        const creds = credsFor(env, b.account);
+        const { contact } = await upsertByPhone(creds, phone);
+        if (isSmsDnd(contact)) return json({ error: "That contact is marked do-not-disturb for SMS in GHL. Not sending." }, 409);
+        await addTags(creds, contact.id, ["bot-test"]);
+        const sent = await sendSms(creds, contact.id, message);
+        await sb(env, "POST", "messages", { account: b.account, contact_id: contact.id, direction: "outbound", body: message, status: "sent", campaign: "test", phone_e164: phone, sent_at: new Date().toISOString() }, "return=minimal");
+        return json({ ok: true, contactId: contact.id, ...sent });
+      } catch (e) { return json({ error: (e as Error).message }, 502); }
     }
 
     // Overlap report across GHL (2 accounts) and Jobber (2 accounts). Counts only, no personal data.
