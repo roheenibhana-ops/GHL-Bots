@@ -45,7 +45,11 @@ export default {
         }
       }
       const { keep, dropped } = dedupe(all);
-      return json({ pulled: perAccount, usable: keep.length, dropped, sample: keep.slice(0, 3).map((c) => ({ id: c.id, account: c.account, phone: c.e164 })) });
+      // Field names only (no values), to confirm where GHL reports DND and tags.
+      const raw = all as unknown as Record<string, unknown>[];
+      const fieldNames = [...new Set(raw.flatMap((c) => Object.keys(c)))].sort();
+      const dndShapes = raw.filter((c) => c.dndSettings && Object.keys(c.dndSettings as object).length).length;
+      return json({ fieldNames, contactsWithDndSettings: dndShapes, pulled: perAccount, usable: keep.length, dropped, sample: keep.slice(0, 3).map((c) => ({ id: c.id, account: c.account, phone: c.e164 })) });
     }
 
     // GHL inbound-message webhook. Opt-outs are handled first, always.
