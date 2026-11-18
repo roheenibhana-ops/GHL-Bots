@@ -15,7 +15,15 @@ export default {
   async fetch(req: Request, env: Env): Promise<Response> {
     const url = new URL(req.url);
 
-    if (url.pathname === "/health") return json({ ok: true, sending: env.SENDING_ENABLED === "true", mode: env.SEND_MODE });
+    if (url.pathname === "/health") {
+      // Presence flags only (true/false), never values. Helps debug missing secrets.
+      const secrets = Object.fromEntries(
+        ["GHL_TOKEN_LIGHTS", "GHL_LOCATION_LIGHTS", "GHL_TOKEN_DUNZO", "GHL_LOCATION_DUNZO", "SUPABASE_URL", "SUPABASE_SERVICE_KEY", "ANTHROPIC_API_KEY", "ADMIN_TOKEN", "WEBHOOK_SECRET"].map(
+          (k) => [k, !!(env as unknown as Record<string, string>)[k]],
+        ),
+      );
+      return json({ ok: true, sending: env.SENDING_ENABLED === "true", mode: env.SEND_MODE, secrets });
+    }
 
     // Read-only check: pulls contacts from both sub-accounts, counts and dedupes. Sends nothing.
     if (url.pathname === "/admin/dry-run") {
