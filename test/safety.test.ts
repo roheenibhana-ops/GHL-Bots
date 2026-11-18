@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { dedupe, inSendWindow, isStopMessage, normalizePhone } from "../src/safety";
+import { dedupe, inSendWindow, isSmsDnd, isStopMessage, normalizePhone } from "../src/safety";
 
 describe("isStopMessage", () => {
   it.each(["STOP", "stop", " Stop.", "unsubscribe", "do not text me"])("catches %s", (t) => {
@@ -40,5 +40,16 @@ describe("dedupe", () => {
     ]);
     expect(r.keep.map((c) => c.id)).toEqual(["1"]);
     expect(r.dropped).toEqual({ noPhone: 1, dnd: 1, duplicate: 1 });
+  });
+});
+
+describe("isSmsDnd", () => {
+  it("blocks global DND and active/permanent SMS DND, allows inactive or none", () => {
+    expect(isSmsDnd({ dnd: true })).toBe(true);
+    expect(isSmsDnd({ dndSettings: { SMS: { status: "active" } } })).toBe(true);
+    expect(isSmsDnd({ dndSettings: { SMS: { status: "permanent" } } })).toBe(true);
+    expect(isSmsDnd({ dndSettings: { SMS: { status: "inactive" } } })).toBe(false);
+    expect(isSmsDnd({ dndSettings: { Email: { status: "active" } } })).toBe(false);
+    expect(isSmsDnd({})).toBe(false);
   });
 });

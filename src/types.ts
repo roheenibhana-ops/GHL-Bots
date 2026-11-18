@@ -33,5 +33,6 @@ export interface GhlContact {
   email?: string;
   timezone?: string;
   dnd?: boolean;
+  dndSettings?: Record<string, { status?: string } | undefined>;
   tags?: string[];
 }

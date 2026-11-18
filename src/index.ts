@@ -49,7 +49,15 @@ export default {
       const raw = all as unknown as Record<string, unknown>[];
       const fieldNames = [...new Set(raw.flatMap((c) => Object.keys(c)))].sort();
       const dndShapes = raw.filter((c) => c.dndSettings && Object.keys(c.dndSettings as object).length).length;
-      return json({ fieldNames, contactsWithDndSettings: dndShapes, pulled: perAccount, usable: keep.length, dropped, sample: keep.slice(0, 3).map((c) => ({ id: c.id, account: c.account, phone: c.e164 })) });
+      const smsStatusCounts: Record<string, number> = {};
+      const tagCounts: Record<string, number> = {};
+      for (const c of raw) {
+        const st = ((c.dndSettings as Record<string, { status?: string }> | undefined)?.SMS?.status) ?? "none";
+        smsStatusCounts[st] = (smsStatusCounts[st] ?? 0) + 1;
+        for (const t of (c.tags as string[] | undefined) ?? []) tagCounts[t] = (tagCounts[t] ?? 0) + 1;
+      }
+      const topTags = Object.entries(tagCounts).sort((a, b) => b[1] - a[1]).slice(0, 25);
+      return json({ fieldNames, contactsWithDndSettings: dndShapes, smsStatusCounts, topTags, pulled: perAccount, usable: keep.length, dropped, sample: keep.slice(0, 3).map((c) => ({ id: c.id, account: c.account, phone: c.e164 })) });
     }
 
     // GHL inbound-message webhook. Opt-outs are handled first, always.

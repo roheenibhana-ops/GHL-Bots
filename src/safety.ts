@@ -30,6 +30,13 @@ export function inSendWindow(now: Date, tz: string | undefined, startHour: numbe
   return hour >= endHour && hour < startHour;
 }
 
+/** True if the contact must not be texted: global DND, or SMS DND active/permanent in per-channel settings. */
+export function isSmsDnd(c: Pick<GhlContact, "dnd" | "dndSettings">): boolean {
+  if (c.dnd) return true;
+  const status = c.dndSettings?.SMS?.status?.toLowerCase();
+  return status === "active" || status === "permanent";
+}
+
 export interface DedupeResult {
   keep: (GhlContact & { e164: string; account: string })[];
   dropped: { noPhone: number; dnd: number; duplicate: number };
@@ -43,7 +50,7 @@ export function dedupe(contacts: (GhlContact & { account: string })[]): DedupeRe
   for (const c of contacts) {
     const e164 = normalizePhone(c.phone);
     if (!e164) { dropped.noPhone++; continue; }
-    if (c.dnd) { dropped.dnd++; continue; }
+    if (isSmsDnd(c)) { dropped.dnd++; continue; }
     if (seen.has(e164)) { dropped.duplicate++; continue; }
     seen.add(e164);
     keep.push({ ...c, e164 });
