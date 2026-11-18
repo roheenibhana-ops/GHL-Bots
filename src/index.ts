@@ -69,6 +69,21 @@ export default {
       return json({ fieldNames, contactsWithDndSettings: dndShapes, smsStatusCounts, topTags, pulled: perAccount, usable: keep.length, dropped, sample: keep.slice(0, 3).map((c) => ({ id: c.id, account: c.account, phone: c.e164 })) });
     }
 
+    // Capture mode: saves the raw body GHL sends, so we can build the real handler from a real payload.
+    // Point the GHL workflow webhook at /webhooks/capture?secret=... Nothing else happens (no bot, no replies).
+    if (url.pathname === "/webhooks/capture" && req.method === "POST") {
+      if (url.searchParams.get("secret") !== env.WEBHOOK_SECRET) return json({ error: "unauthorized" }, 401);
+      const text = await req.text();
+      let payload: unknown;
+      try { payload = JSON.parse(text); } catch { payload = { raw: text.slice(0, 5000) }; }
+      await sb(env, "POST", "webhook_log", { payload }, "return=minimal");
+      return json({ ok: true });
+    }
+    if (url.pathname === "/admin/webhook-log") {
+      if (!isAdmin(req, env)) return json({ error: "unauthorized" }, 401);
+      return json({ entries: await sb(env, "GET", "webhook_log?order=received_at.desc&limit=5") });
+    }
+
     // GHL inbound-message webhook. Opt-outs are handled first, always.
     if (url.pathname === "/webhooks/ghl" && req.method === "POST") {
       if (url.searchParams.get("secret") !== env.WEBHOOK_SECRET) return json({ error: "unauthorized" }, 401);
