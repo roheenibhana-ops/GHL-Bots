@@ -22,6 +22,10 @@ function isAdmin(req: Request, env: Env): boolean {
 export default {
   async fetch(req: Request, env: Env): Promise<Response> {
     const url = new URL(req.url);
+    const jobberAccount = (): Account | null => {
+      const a = url.searchParams.get("account");
+      return a === "lights" || a === "dunzo" ? a : null;
+    };
 
     if (url.pathname === "/health") {
       // Presence flags only (true/false), never values. Helps debug missing secrets.
@@ -199,10 +203,6 @@ export default {
     }
 
     // ---- Jobber connection (one per business: ?account=lights or ?account=dunzo) ----
-    const jobberAccount = (): Account | null => {
-      const a = url.searchParams.get("account");
-      return a === "lights" || a === "dunzo" ? a : null;
-    };
     // Browser navigation can't send headers, so the connect step takes the admin token as ?key=.
     if (url.pathname === "/admin/jobber/connect") {
       const key = (url.searchParams.get("key") ?? "").trim();
