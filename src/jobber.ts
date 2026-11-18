@@ -60,17 +60,29 @@ export async function exchangeCode(env: Env, account: Account, origin: string, c
 }
 
 /** Current access token; refreshes (and stores the rotated refresh token) when within 5 minutes of expiry. */
+const tokenCache = new Map<Account, { token: string; expires: number }>();
+
 export async function accessToken(env: Env, account: Account): Promise<string> {
+  // In-memory cache: saves a Supabase call per Jobber request (Workers limit outbound calls per invocation).
+  const hit = tokenCache.get(account);
+  if (hit && hit.expires - Date.now() > 5 * 60_000) return hit.token;
+  const fresh = await loadToken(env, account);
+  tokenCache.set(account, fresh);
+  return fresh.token;
+}
+
+async function loadToken(env: Env, account: Account): Promise<{ token: string; expires: number }> {
   type Row = { provider: string; access_token: string; refresh_token: string; expires_at: string };
   let [row] = await sb<Row[]>(env, "GET", `integrations?provider=eq.${encodeURIComponent(`jobber:${account}`)}&limit=1`);
   // The first connection was saved before accounts existed, under plain "jobber" (the gutters account).
   if (!row && account === "dunzo") [row] = await sb<Row[]>(env, "GET", "integrations?provider=eq.jobber&limit=1");
   if (!row) throw new Error(`Jobber (${account}) is not connected yet. Open /admin/jobber/connect?account=${account} first.`);
-  if (new Date(row.expires_at).getTime() - Date.now() > 5 * 60_000) return row.access_token;
+  const expires = new Date(row.expires_at).getTime();
+  if (expires - Date.now() > 5 * 60_000) return { token: row.access_token, expires };
   const { id, secret } = appCreds(env, account);
   const t = await tokenRequest({ grant_type: "refresh_token", refresh_token: row.refresh_token, client_id: id, client_secret: secret });
   await saveTokens(env, account, { ...t, refresh_token: t.refresh_token ?? row.refresh_token });
-  return t.access_token;
+  return { token: t.access_token, expires: Date.now() + (t.expires_in ?? 55 * 60) * 1000 };
 }
 
 export async function gql<T>(env: Env, account: Account, query: string, variables?: Record<string, unknown>): Promise<T> {
