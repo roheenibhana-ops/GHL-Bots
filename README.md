@@ -27,11 +27,13 @@ Opt-outs are always processed, even with sending off.
 - `GET /health`
 - `GET /admin/dry-run?pages=3` (Bearer `ADMIN_TOKEN`): pulls contacts from both sub-accounts, dedupes, reports counts. **Sends nothing.**
 - `POST /webhooks/ghl?secret=...`: inbound SMS from GHL.
-- `POST /admin/approve` (Bearer `ADMIN_TOKEN`) `{ "id": "<message id>" }`: sends a pending message.
+- `POST /admin/pilot/create` (Bearer `ADMIN_TOKEN`) `{ campaign, size, template, pages }`: builds a pilot (half customers, half lost leads, DND/dupes/excluded dropped) and queues drafts for approval. Sends nothing. Template uses `{firstName}` and `{brand}`.
+- `GET /app`: approval page (type the admin token in). Lists pending drafts with Approve / Skip.
+- `GET /admin/pending`, `POST /admin/approve`, `POST /admin/reject`: what the page calls. Approve only sends if `SENDING_ENABLED` is true and the contact is inside the 9am to 8pm window.
 
 ## Setup
 
-1. Create a Cloudflare account and a Supabase project. Run `supabase/schema.sql` in the Supabase SQL editor.
+1. Create a Cloudflare account and a Supabase project. Run `supabase/schema.sql`, then `supabase/002_pilot.sql`, in the Supabase SQL editor.
 2. In each GHL sub-account create a Private Integration (scopes: contacts, conversations, conversation messages, locations/tags/custom fields, opportunities). Note each Location ID.
 3. `npm install`
 4. Set secrets (never commit them):

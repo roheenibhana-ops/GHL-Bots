@@ -1,6 +1,8 @@
+import { APP_HTML } from "./app";
 import { AGENTS, runAgent } from "./agents";
 import { sb } from "./db";
 import { addNote, addTags, credsFor, searchContacts, sendSms, setDnd } from "./ghl";
+import { createPilot } from "./pilot";
 import { dedupe, inSendWindow, isStopMessage } from "./safety";
 import { ACCOUNTS, type Account, type Env } from "./types";
 
@@ -94,15 +96,61 @@ export default {
       return json({ ok: true, drafted: true, auto });
     }
 
-    // Approve a pending message from the app: POST /admin/approve {id}
+    // Approval page (static HTML; the admin token is typed into it).
+    if (url.pathname === "/app") return new Response(APP_HTML, { headers: { "content-type": "text/html; charset=utf-8" } });
+
+    // Create a pilot campaign: queues drafts for approval, sends nothing.
+    if (url.pathname === "/admin/pilot/create" && req.method === "POST") {
+      if (!isAdmin(req, env)) return json({ error: "unauthorized" }, 401);
+      const b = (await req.json()) as { campaign?: string; size?: number; template?: string; pages?: number };
+      try {
+        return json(await createPilot(env, {
+          campaign: b.campaign ?? "pilot-1",
+          size: Math.min(Math.max(b.size ?? 100, 2), 500),
+          template: b.template ?? "",
+          pagesPerAccount: Math.min(b.pages ?? 8, 20),
+        }));
+      } catch (e) {
+        return json({ error: (e as Error).message }, 400);
+      }
+    }
+
+    if (url.pathname === "/admin/pending") {
+      if (!isAdmin(req, env)) return json({ error: "unauthorized" }, 401);
+      const campaign = url.searchParams.get("campaign") ?? "pilot-1";
+      const messages = await sb<unknown[]>(
+        env, "GET",
+        `messages?status=eq.pending_approval&campaign=eq.${encodeURIComponent(campaign)}&order=created_at.asc&limit=100&select=id,account,segment,contact_name,phone_e164,body`,
+      );
+      return json({ messages });
+    }
+
+    if (url.pathname === "/admin/reject" && req.method === "POST") {
+      if (!isAdmin(req, env)) return json({ error: "unauthorized" }, 401);
+      const { id } = (await req.json()) as { id: string };
+      await sb(env, "PATCH", `messages?id=eq.${id}&status=eq.pending_approval`, { status: "skipped" });
+      return json({ ok: true });
+    }
+
+    // Approve one pending message: only inside the contact's send window, only when sending is enabled.
     if (url.pathname === "/admin/approve" && req.method === "POST") {
       if (!isAdmin(req, env)) return json({ error: "unauthorized" }, 401);
-      if (env.SENDING_ENABLED !== "true") return json({ error: "sending disabled" }, 403);
+      if (env.SENDING_ENABLED !== "true") return json({ error: "Sending is disabled (SENDING_ENABLED is not true)" }, 403);
       const { id } = (await req.json()) as { id: string };
-      const [m] = await sb<{ id: string; account: Account; contact_id: string; body: string; status: string }[]>(env, "GET", `messages?id=eq.${id}&limit=1`);
+      const [m] = await sb<{ id: string; account: Account; contact_id: string; body: string; status: string; timezone: string | null }[]>(env, "GET", `messages?id=eq.${id}&limit=1`);
       if (!m || m.status !== "pending_approval") return json({ error: "not pending" }, 409);
-      await sendSms(credsFor(env, m.account), m.contact_id, m.body);
-      await sb(env, "PATCH", `messages?id=eq.${id}`, { status: "sent", sent_at: new Date().toISOString() });
+      if (!inSendWindow(new Date(), m.timezone ?? undefined, Number(env.QUIET_START_HOUR), Number(env.QUIET_END_HOUR))) {
+        return json({ error: "Outside the 9am to 8pm send window for this contact. Try again later." }, 409);
+      }
+      // Claim it first so a double click can't send twice.
+      await sb(env, "PATCH", `messages?id=eq.${id}&status=eq.pending_approval`, { status: "sending" });
+      try {
+        await sendSms(credsFor(env, m.account), m.contact_id, m.body);
+        await sb(env, "PATCH", `messages?id=eq.${id}`, { status: "sent", sent_at: new Date().toISOString() });
+      } catch (e) {
+        await sb(env, "PATCH", `messages?id=eq.${id}`, { status: "failed" });
+        return json({ error: (e as Error).message }, 502);
+      }
       return json({ ok: true });
     }
 
