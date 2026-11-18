@@ -1,0 +1,27 @@
+name = "ghl-bots"
+main = "src/index.ts"
+compatibility_date = "2025-01-01"
+
+# Cron: pulls the next outreach batch. Does nothing unless SENDING_ENABLED = "true".
+[triggers]
+crons = ["*/10 * * * *"]
+
+[vars]
+# Safety switches. Keep sending OFF until the pilot is approved.
+SENDING_ENABLED = "false"
+# "approve" = every outbound message waits for a human tap in the app. "auto" = send directly.
+SEND_MODE = "approve"
+# Max messages released per cron run.
+BATCH_SIZE = "10"
+# Local send window (contact timezone), 24h clock.
+QUIET_START_HOUR = "20"
+QUIET_END_HOUR = "9"
+CLAUDE_MODEL = "claude-haiku-5-5"
+
+# Secrets (set with `wrangler secret put <NAME>`, never commit):
+#   GHL_TOKEN_LIGHTS, GHL_LOCATION_LIGHTS
+#   GHL_TOKEN_DUNZO,  GHL_LOCATION_DUNZO
+#   SUPABASE_URL, SUPABASE_SERVICE_KEY
+#   ANTHROPIC_API_KEY
+#   ADMIN_TOKEN        (protects /admin/* routes)
+#   WEBHOOK_SECRET     (GHL webhook must send ?secret=...)
