@@ -148,3 +148,12 @@ export async function listClientPhones(env: Env, account: Account, pages: number
   }
   return { numbers, smsStopped, total, pulled };
 }
+
+/** Shows the arguments of one field, e.g. Query.clients, so we use real argument names. */
+export async function describeField(env: Env, account: Account, typeNameStr: string, field: string): Promise<Record<string, string> | null> {
+  const d = await gql<{ __type: { fields: { name: string; args: { name: string; type: TypeRef }[] }[] } | null }>(
+    env, account, `query($n: String!) { __type(name: $n) { fields { name args { name type { ${TYPE_REF} } } } } }`, { n: typeNameStr });
+  const f = d.__type?.fields.find((x) => x.name === field);
+  if (!f) return null;
+  return Object.fromEntries(f.args.map((a) => [a.name, typeName(a.type)]));
+}

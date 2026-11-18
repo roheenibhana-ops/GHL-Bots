@@ -2,7 +2,7 @@ import { APP_HTML } from "./app";
 import { AGENTS, runAgent } from "./agents";
 import { sb } from "./db";
 import { addNote, addTags, credsFor, searchContacts, sendSms, setDnd, upsertByPhone } from "./ghl";
-import { authorizeUrl, checkState, describeType, exchangeCode, gql, listClientPhones, listMutations, makeState } from "./jobber";
+import { authorizeUrl, checkState, describeType, exchangeCode, describeField, gql, listClientPhones, listMutations, makeState } from "./jobber";
 import { overlapStats, type Sources } from "./overlap";
 import { createPilot } from "./pilot";
 import { dedupe, inSendWindow, isSmsDnd, isStopMessage, normalizePhone } from "./safety";
@@ -185,6 +185,8 @@ export default {
       try {
         const m = url.searchParams.get("mutations");
         if (m !== null) return json({ mutations: await listMutations(env, account, m) });
+        const f = url.searchParams.get("field"); // e.g. Query.clients
+        if (f) { const [tn, fn] = f.split("."); return json({ field: f, args: await describeField(env, account, tn, fn) }); }
         const t = url.searchParams.get("type");
         if (t) return json({ type: t, fields: await describeType(env, account, t) });
         return json({ error: "use ?mutations=<text> or ?type=<TypeName>" }, 400);
