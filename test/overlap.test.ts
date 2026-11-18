@@ -11,7 +11,7 @@ describe("overlapStats", () => {
     expect(r.sizes).toEqual({ a: 3, b: 3, c: 2 });
     expect(r.pairs).toEqual({ "a & b": 2, "a & c": 1, "b & c": 1 });
     expect(r.uniquePeople).toBe(5);
-    expect(r.inMoreThanOneSystem).toBe(3);
+    expect(r.inMoreThanOneSystem).toBe(2);
     expect(r.inAllSystems).toBe(1);
   });
 });
