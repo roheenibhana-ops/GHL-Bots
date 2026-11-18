@@ -27,7 +27,7 @@ Opt-outs are always processed, even with sending off.
 - `GET /health`
 - `GET /admin/dry-run?pages=3` (Bearer `ADMIN_TOKEN`): pulls contacts from both sub-accounts, dedupes, reports counts. **Sends nothing.**
 - `POST /webhooks/ghl?secret=...`: inbound SMS from GHL.
-- `POST /admin/pilot/create` (Bearer `ADMIN_TOKEN`) `{ campaign, size, template, pages }`: builds a pilot (half customers, half lost leads, DND/dupes/excluded dropped) and queues drafts for approval. Sends nothing. Template uses `{firstName}` and `{brand}`.
+- `POST /admin/pilot/create` (Bearer `ADMIN_TOKEN`) `{ account, campaign, size, template, pages }`: builds a pilot from one GHL account (`lights` or `dunzo`) (half customers, half lost leads, DND/dupes/excluded dropped) and queues drafts for approval. Sends nothing. Template uses `{firstName}` and `{brand}`.
 - `GET /app`: approval page (type the admin token in). Lists pending drafts with Approve / Skip.
 - `GET /admin/pending`, `POST /admin/approve`, `POST /admin/reject`: what the page calls. Approve only sends if `SENDING_ENABLED` is true and the contact is inside the 9am to 8pm window.
 

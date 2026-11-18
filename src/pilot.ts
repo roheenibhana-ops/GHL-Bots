@@ -2,7 +2,7 @@ import { sb } from "./db";
 import { credsFor, searchContacts } from "./ghl";
 import { dedupe } from "./safety";
 import { classify, type Segment } from "./segments";
-import { ACCOUNTS, type Env } from "./types";
+import type { Account, Env } from "./types";
 
 const BRAND = { lights: "the Santa's Lights team", dunzo: "Dunzo Gutters" } as const;
 
@@ -23,6 +23,8 @@ function shuffle<T>(a: T[]): T[] {
 }
 
 export interface PilotOptions {
+  /** The GHL account this campaign runs from. One account per campaign. */
+  account: Account;
   campaign: string;
   size: number;
   template: string;
@@ -35,13 +37,11 @@ export async function createPilot(env: Env, o: PilotOptions) {
   if (!o.template.includes("{firstName}")) throw new Error("Template should include {firstName}.");
 
   const all: Parameters<typeof dedupe>[0] = [];
-  for (const account of ACCOUNTS) {
-    const creds = credsFor(env, account);
-    for (let page = 1; page <= o.pagesPerAccount; page++) {
-      const { contacts } = await searchContacts(creds, { page, pageLimit: 100 });
-      if (!contacts?.length) break;
-      all.push(...contacts.map((c) => ({ ...c, account })));
-    }
+  const creds = credsFor(env, o.account);
+  for (let page = 1; page <= o.pagesPerAccount; page++) {
+    const { contacts } = await searchContacts(creds, { page, pageLimit: 100 });
+    if (!contacts?.length) break;
+    all.push(...contacts.map((c) => ({ ...c, account: o.account })));
   }
   const { keep, dropped } = dedupe(all);
 

@@ -177,9 +177,11 @@ export default {
     // Create a pilot campaign: queues drafts for approval, sends nothing.
     if (url.pathname === "/admin/pilot/create" && req.method === "POST") {
       if (!isAdmin(req, env)) return json({ error: "unauthorized" }, 401);
-      const b = (await req.json()) as { campaign?: string; size?: number; template?: string; pages?: number };
+      const b = (await req.json()) as { account?: string; campaign?: string; size?: number; template?: string; pages?: number };
+      if (b.account !== "lights" && b.account !== "dunzo") return json({ error: "account must be \"lights\" or \"dunzo\": a campaign runs from one GHL account" }, 400);
       try {
         return json(await createPilot(env, {
+          account: b.account,
           campaign: b.campaign ?? "pilot-1",
           size: Math.min(Math.max(b.size ?? 100, 2), 500),
           template: b.template ?? "",
