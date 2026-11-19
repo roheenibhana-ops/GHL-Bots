@@ -67,9 +67,12 @@ export async function createPilot(env: Env, o: PilotOptions) {
   const half = Math.floor(o.size / 2);
   const customers = shuffle(buckets.customer).slice(0, half);
   const lost = shuffle(buckets.lost).slice(0, o.size - customers.length);
+  // Top up from everyone else who passed the filters, if customers and lost leads don't reach the target size.
+  const others = shuffle(buckets.other).slice(0, Math.max(0, o.size - customers.length - lost.length));
   const picked = [
     ...customers.map((c) => ({ c, segment: "customer" as const })),
     ...lost.map((c) => ({ c, segment: "lost" as const })),
+    ...others.map((c) => ({ c, segment: "other" as const })),
   ];
 
   const rows = picked.map(({ c, segment }) => ({
@@ -97,6 +100,7 @@ export async function createPilot(env: Env, o: PilotOptions) {
     mix: {
       customer: { lights: count("customer", "lights"), dunzo: count("customer", "dunzo") },
       lost: { lights: count("lost", "lights"), dunzo: count("lost", "dunzo") },
+      other: { lights: count("other", "lights"), dunzo: count("other", "dunzo") },
     },
     sample: rows.slice(0, o.dryRun ? 6 : 3).map((r) => ({ account: r.account, segment: r.segment, body: r.body })),
   };

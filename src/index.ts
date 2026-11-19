@@ -149,16 +149,16 @@ export default {
         const msgs = await sb<{ id: string; account: string; contact_name: string | null; phone_e164: string }[]>(
           env, "GET", `messages?campaign=eq.${encodeURIComponent(campaign)}&status=eq.pending_approval&select=id,account,contact_name,phone_e164&limit=500`);
         const phones = msgs.map((m) => m.phone_e164).filter(Boolean);
-        const held: { id: string; name: string | null; jobber: string; quotes: string[]; jobs: number }[] = [];
+        const held: { id: string; name: string | null; jobber: string; quotes: string[]; jobs: number; recentJobs: number }[] = [];
         const heldIds = new Set<string>();
         for (const account of ACCOUNTS) {
           const found = await findClientsByPhones(env, account, phones);
           for (const m of msgs) {
             const a = assess(found.get(m.phone_e164) ?? [], m.phone_e164);
-            // Open quotes always hold. A past job also holds when a Santa's Lights contact turns out to be an existing Dunzo
-            // customer (they are not a new gutter lead). In a Dunzo-sourced campaign, past jobs are exactly who we want to reach.
-            const hold = account === "dunzo" && m.account === "lights" ? a.openQuotes > 0 || a.jobs > 0 : a.openQuotes > 0;
-            if (a.found && hold) { held.push({ id: m.id, name: m.contact_name, jobber: account, quotes: a.quoteStatuses, jobs: a.jobs }); heldIds.add(m.id); }
+            // Open quotes always hold. Dunzo-sourced campaigns also hold unfinished jobs and jobs completed in the last 90 days;
+            // past (older) jobs are exactly who we want to reach. A Santa's Lights contact who is already a Dunzo customer is held on any job.
+            const hold = account === "dunzo" && m.account === "lights" ? a.openQuotes > 0 || a.jobs > 0 : account === "dunzo" ? a.openQuotes > 0 || a.recentJobs > 0 : a.openQuotes > 0;
+            if (a.found && hold) { held.push({ id: m.id, name: m.contact_name, jobber: account, quotes: a.quoteStatuses, jobs: a.jobs, recentJobs: a.recentJobs }); heldIds.add(m.id); }
           }
         }
         if (b.apply && heldIds.size) {
