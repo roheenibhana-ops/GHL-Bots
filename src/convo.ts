@@ -5,7 +5,7 @@ import { createGutterQuote, linkMessage } from "./quote";
 import { inSendWindow, isStopMessage, normalizePhone } from "./safety";
 import type { Account, Env } from "./types";
 
-export interface InboundPayload { contactId?: string; locationId?: string; body?: string; direction?: string; firstName?: string; phone?: string }
+export interface InboundPayload { contactId?: string; locationId?: string; body?: string; direction?: string; firstName?: string; phone?: string; attachments?: unknown }
 type Row = { direction: "inbound" | "outbound"; body: string };
 
 /**
@@ -29,6 +29,20 @@ export function buildHistory(rows: Row[]): { opening?: string; history: { role: 
 }
 
 const lc = (tags?: string[]) => (tags ?? []).map((t) => t.toLowerCase());
+
+export const MEDIA_TEXT = "[sent a photo or attachment]";
+
+/**
+ * The customer's message as text. A picture-only message arrives with an empty body, so it becomes MEDIA_TEXT.
+ * Returns null for the literal word null, which is what GHL's Test workflow button sends (no real message).
+ */
+export function inboundText(body?: string, attachments?: unknown): string | null {
+  const b = (body ?? "").trim();
+  if (b && b.toLowerCase() !== "null") return b;
+  const hasAttach = Array.isArray(attachments) ? attachments.length > 0 : typeof attachments === "string" && !["", "null", "[]", "undefined"].includes(attachments.trim().toLowerCase());
+  if (hasAttach) return MEDIA_TEXT;
+  return b === "" ? MEDIA_TEXT : null;
+}
 
 /** Alerts the team by text (if ALERT_PHONE is set). Never throws: an alert failure must not break the customer's reply. */
 export async function alertTeam(env: Env, text: string): Promise<void> {
@@ -57,8 +71,8 @@ async function sendReply(env: Env, account: Account, contactId: string, text: st
 export async function handleInbound(env: Env, p: InboundPayload, dryRun = false) {
   const log: Record<string, unknown> = {};
   if (env.BOT_MODE === "off") return { skipped: "bot is off" };
-  const body = (p.body ?? "").trim();
-  if (!p.contactId || !body || body.toLowerCase() === "null" || p.direction === "outbound") return { skipped: "no customer message" };
+  const body = inboundText(p.body, p.attachments);
+  if (!p.contactId || !body || p.direction === "outbound") return { skipped: "no customer message" };
   const account: Account = p.locationId === env.GHL_LOCATION_DUNZO ? "dunzo" : "lights";
   const creds = credsFor(env, account);
 
@@ -78,8 +92,12 @@ export async function handleInbound(env: Env, p: InboundPayload, dryRun = false)
   const contact = await getContact(creds, p.contactId);
   const tags = lc(contact.tags);
   if (env.BOT_MODE === "test" && !tags.includes("bot-test")) return { skipped: "test mode: contact is not tagged bot-test" };
+  const who = [contact.firstName, contact.lastName].filter(Boolean).join(" ") || "A customer";
   if (tags.includes("bot-paused") || tags.includes("bot-needs-human")) {
-    if (!dryRun) await sb(env, "POST", "messages", { account, contact_id: p.contactId, direction: "inbound", body, status: "received", campaign: "bot" }, "return=minimal");
+    if (!dryRun) {
+      await sb(env, "POST", "messages", { account, contact_id: p.contactId, direction: "inbound", body, status: "received", campaign: "bot" }, "return=minimal");
+      await alertTeam(env, `${who} replied while the team has the conversation: ${body.slice(0, 120)}`);
+    }
     return { skipped: "a human has this conversation (bot-paused or bot-needs-human)" };
   }
 
@@ -91,7 +109,10 @@ export async function handleInbound(env: Env, p: InboundPayload, dryRun = false)
 
   // 3. What we know so far.
   const [conv] = await sb<{ facts: BotFacts; status: string }[]>(env, "GET", `conversations?contact_id=eq.${encodeURIComponent(p.contactId)}&select=facts,status&limit=1`);
-  if (conv?.status === "closed" || conv?.status === "handed_off") return { skipped: `conversation is ${conv.status}` };
+  if (conv?.status === "closed" || conv?.status === "handed_off") {
+    if (conv.status === "handed_off" && !dryRun) await alertTeam(env, `${who} replied while the team has the conversation: ${body.slice(0, 120)}`);
+    return { skipped: `conversation is ${conv.status}` };
+  }
   const rows = await sb<Row[]>(env, "GET", `messages?contact_id=eq.${encodeURIComponent(p.contactId)}&status=in.(sent,received)&order=created_at.asc&select=direction,body&limit=40`);
   const built = buildHistory(rows.concat(dryRun ? [{ direction: "inbound" as const, body }] : []));
   if (!built.history.length) return { skipped: "nothing new to answer" };

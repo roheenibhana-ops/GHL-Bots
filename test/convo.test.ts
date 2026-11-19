@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { buildHistory } from "../src/convo";
+import { buildHistory, inboundText, MEDIA_TEXT } from "../src/convo";
 
 const o = (body: string) => ({ direction: "outbound" as const, body });
 const i = (body: string) => ({ direction: "inbound" as const, body });
@@ -21,5 +21,21 @@ describe("buildHistory", () => {
     const r = buildHistory([i("hello")]);
     expect(r.opening).toBeUndefined();
     expect(r.history).toEqual([{ role: "user", content: "hello" }]);
+  });
+});
+
+describe("inboundText", () => {
+  it("passes real text through", () => expect(inboundText(" 2 ")).toBe("2"));
+  it("treats an empty body as a picture message", () => {
+    expect(inboundText("")).toBe(MEDIA_TEXT);
+    expect(inboundText(undefined)).toBe(MEDIA_TEXT);
+    expect(inboundText("", [{ url: "x" }])).toBe(MEDIA_TEXT);
+  });
+  it("ignores the literal null that the GHL test button sends", () => {
+    expect(inboundText("null")).toBeNull();
+    expect(inboundText("NULL", "[]")).toBeNull();
+  });
+  it("a photo with the word null in the body still counts when attachments exist", () => {
+    expect(inboundText("null", [{ url: "x" }])).toBe(MEDIA_TEXT);
   });
 });
