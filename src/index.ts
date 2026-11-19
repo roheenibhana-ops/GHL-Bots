@@ -4,6 +4,7 @@ import { sb } from "./db";
 import { addNote, addTags, credsFor, searchContacts, sendSms, setDnd, upsertByPhone } from "./ghl";
 import { authorizeUrl, checkState, describeType, exchangeCode, describeField, findClientsByPhones, gql, listClientPhones, listMutations, listQuoteTemplates, makeState } from "./jobber";
 import { assess } from "./check";
+import { createGutterQuote } from "./quote";
 import { overlapStats, type Sources } from "./overlap";
 import { createPilot } from "./pilot";
 import { dedupe, inSendWindow, isSmsDnd, isStopMessage, normalizePhone } from "./safety";
@@ -250,6 +251,25 @@ export default {
       if (!account) return json({ error: "add ?account=lights or ?account=dunzo" }, 400);
       try { return json({ account, templates: await listQuoteTemplates(env, account) }); } catch (e) { return json({ error: (e as Error).message }, 502); }
     }
+    // Quote test: plans a Jobber client + property + quote for a phone and address. Creates nothing unless "create": true.
+    // Sends no text or email. Needs real records, so use your own test details and archive them afterwards.
+    if (url.pathname === "/admin/jobber/test-quote" && req.method === "POST") {
+      if (!isAdmin(req, env)) return json({ error: "unauthorized" }, 401);
+      const b = (await req.json()) as { phone?: string; firstName?: string; lastName?: string; street1?: string; city?: string; province?: string; postalCode?: string; stories?: number; create?: boolean };
+      const phone = normalizePhone(b.phone);
+      if (!phone) return json({ error: "phone must be a valid US number" }, 400);
+      if (!b.firstName || !b.street1 || !b.city || !b.province || !b.postalCode || (b.stories !== 1 && b.stories !== 2)) {
+        return json({ error: "need firstName, street1, city, province, postalCode and stories (1 or 2)" }, 400);
+      }
+      try {
+        return json(await createGutterQuote(env, {
+          phone, firstName: b.firstName, lastName: b.lastName,
+          address: { street1: b.street1, city: b.city, province: b.province, postalCode: b.postalCode },
+          stories: b.stories,
+        }, b.create === true));
+      } catch (e) { return json({ error: (e as Error).message }, 502); }
+    }
+
     // Schema discovery: ?account=dunzo&mutations=quote  or  ?account=dunzo&type=QuoteCreateAttributes
     if (url.pathname === "/admin/jobber/schema") {
       if (!isAdmin(req, env)) return json({ error: "unauthorized" }, 401);
