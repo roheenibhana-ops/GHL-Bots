@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { applyOutput, HANDOFF_REPLY, parseBotOutput, systemPrompt } from "../src/bot";
+import { applyOutput, HANDOFF_REPLY, nextStep, parseBotOutput, systemPrompt, tryParseBotOutput } from "../src/bot";
 
 describe("parseBotOutput", () => {
   it("reads a good reply and its facts", () => {
@@ -37,5 +37,25 @@ describe("applyOutput and systemPrompt", () => {
     expect(p).toContain("$319");
     expect(p).toContain("Never promise or suggest dates");
     expect(p).toContain("Home size: 1 story");
+  });
+});
+
+describe("nextStep and prompt guidance", () => {
+  it("walks size, address, email, quote", () => {
+    expect(nextStep({})).toBe("stories");
+    expect(nextStep({ stories: 2 })).toBe("address");
+    expect(nextStep({ stories: 2, addressConfirmed: true })).toBe("email");
+    expect(nextStep({ stories: 2, addressConfirmed: true, email: "a@b.co" })).toBe("quote");
+  });
+  it("tells the model the one thing it needs next", () => {
+    const addr = { street1: "2752 Argolis Way", city: "Sacramento", province: "CA", postalCode: "95826" };
+    expect(systemPrompt({ stories: 1, address: addr })).toContain("confirm the work is at 2752 Argolis Way");
+    expect(systemPrompt({ stories: 1 })).toContain("Ask for the street address");
+    expect(systemPrompt({})).toContain("THE NEXT THING YOU NEED RIGHT NOW");
+  });
+  it("tryParse returns null for unreadable output so a retry can happen", () => {
+    expect(tryParseBotOutput("sure thing!")).toBeNull();
+    expect(tryParseBotOutput('{"reply":"hi","intent":"nonsense","data":{}}')).toBeNull();
+    expect(tryParseBotOutput('{"reply":"hi","intent":"reply_only","data":{}}')?.reply).toBe("hi");
   });
 });

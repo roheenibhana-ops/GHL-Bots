@@ -27,6 +27,25 @@ const INTENTS: BotIntent[] = ["reply_only", "stories", "address_confirmed", "add
 
 export const HANDOFF_REPLY = "Thanks, let me get someone from the team to help with that. We'll be in touch shortly.";
 
+export type NextStep = "stories" | "address" | "email" | "quote";
+
+/** The code, not the model, decides what is still missing. */
+export function nextStep(f: BotFacts): NextStep {
+  if (!f.stories) return "stories";
+  if (!f.addressConfirmed) return "address";
+  if (!f.email) return "email";
+  return "quote";
+}
+
+const STEP_TEXT: Record<NextStep, (f: BotFacts) => string> = {
+  stories: () => "Find out whether the home is single story (1) or two story (2). Quote the prices if helpful.",
+  address: (f) => f.address ? `Ask them to confirm the work is at ${f.address.street1}, ${f.address.city}, ${f.address.province} ${f.address.postalCode}.` : "Ask for the street address, city and zip of the home.",
+  email: () => "Ask for the best email address to send their quote to.",
+  quote: () => "Everything is collected. Say you are sending the quote now.",
+};
+
+export const QUOTE_READY_REPLY = "Perfect, thank you. I'm sending your quote over now.";
+
 export function systemPrompt(f: BotFacts): string {
   const known = [
     f.firstName ? `Customer first name: ${f.firstName}` : "Customer first name: unknown",
@@ -40,11 +59,12 @@ export function systemPrompt(f: BotFacts): string {
     "",
     "THE OFFER: one-time gutter cleaning, $219 for a single-story home or $319 for a two-story home. When the customer approves the quote they pay a 50% deposit online.",
     "",
-    "YOUR JOB, in order:",
-    "1. If they want the cleaning, find out single story (1) or two story (2). A reply of just \"1\" or \"2\" means that.",
-    "2. Confirm the address we have on file (if any) is where the work is. If none, ask for the street address, city and zip.",
-    "3. Ask for the best email address for their quote. It is needed for them to open the quote.",
-    "4. When you know the home size, the confirmed address and an email, use intent ready_for_quote. Say you're sending the quote now. Do NOT include any link yourself.",
+    "YOUR JOB is to collect, in this order: home size, confirmed address, then email (the email is needed for them to open the quote). Never include a link yourself.",
+    "A reply of just \"1\" or \"2\" ANSWERS the home size question (1 = single story, 2 = two story): acknowledge it with the price, do not ask it again.",
+    "A reply like \"yes\" or \"that's right\" to an address question CONFIRMS the address: use intent address_confirmed.",
+    "",
+    `THE NEXT THING YOU NEED RIGHT NOW: ${STEP_TEXT[nextStep(f)](f)}`,
+    "After handling what the customer just said, move to that next thing. Do not ask for anything already known.",
     "",
     "KNOWN SO FAR:",
     known,
@@ -54,7 +74,7 @@ export function systemPrompt(f: BotFacts): string {
     "- Only quote the two prices above. Do not invent prices, discounts or services. Anything else (roofs, gutter guards, repairs pricing, other services) goes to the team: use intent handoff.",
     "- If they say they do not need a cleaning but need a REPAIR, ask them to send a few photos of the problem, say the team will review them and come back with a price. Use intent repair.",
     "- If they are unsure or ask questions you can answer from the offer (what is included, how payment works), answer briefly, then steer back to the next step.",
-    "- If they are upset, confused, ask for a person, or ask anything you are not sure about: use intent handoff.",
+    "- If they are upset, confused, ask for a person, or ask anything you are not sure about: use intent handoff. A person takes over after a handoff, so do NOT ask any further questions in that reply.",
     "- If they say they are not interested, thank them politely in one short line and use intent declined. Do not push.",
     "- Never mention that you are an AI unless asked directly; if asked, say you're the Dunzo Gutters text assistant and the team can step in anytime.",
     "",
@@ -68,14 +88,21 @@ export function systemPrompt(f: BotFacts): string {
 
 const isStories = (v: unknown): v is 1 | 2 => v === 1 || v === 2;
 
+const FALLBACK: BotOutput = { reply: HANDOFF_REPLY, intent: "handoff", data: { reason: "bot output could not be read" } };
+
 /** Parses the model's JSON. Anything malformed becomes a safe handoff: we never send junk to a customer. */
 export function parseBotOutput(text: string): BotOutput {
-  const fallback: BotOutput = { reply: HANDOFF_REPLY, intent: "handoff", data: { reason: "bot output could not be read" } };
+  return tryParseBotOutput(text) ?? FALLBACK;
+}
+
+/** null when the text cannot be read as a valid bot output (so the caller can retry once). */
+export function tryParseBotOutput(text: string): BotOutput | null {
+  const fallback = FALLBACK;
   const m = text.match(/\{[\s\S]*\}/);
-  if (!m) return fallback;
+  if (!m) return null;
   try {
     const j = JSON.parse(m[0]) as Partial<BotOutput>;
-    if (typeof j.reply !== "string" || !j.reply.trim() || !INTENTS.includes(j.intent as BotIntent)) return fallback;
+    if (typeof j.reply !== "string" || !j.reply.trim() || !INTENTS.includes(j.intent as BotIntent)) return null;
     const d = (j.data ?? {}) as BotOutput["data"];
     const data: BotOutput["data"] = {};
     if (isStories(d.stories)) data.stories = d.stories;
@@ -89,7 +116,7 @@ export function parseBotOutput(text: string): BotOutput {
     if (/https?:\/\//i.test(reply)) return { ...fallback, data: { reason: "bot tried to send a link" } }; // links are added by the system only
     return { reply, intent: j.intent as BotIntent, data };
   } catch {
-    return fallback;
+    return null;
   }
 }
 
@@ -104,9 +131,25 @@ export function applyOutput(f: BotFacts, o: BotOutput): BotFacts {
 }
 
 /** One bot turn. No side effects: the caller decides what to do with the intent. */
-export async function botTurn(env: Env, facts: BotFacts, history: { role: "user" | "assistant"; content: string }[]): Promise<{ output: BotOutput; facts: BotFacts }> {
+export async function botTurn(env: Env, facts: BotFacts, history: { role: "user" | "assistant"; content: string }[]): Promise<{ output: BotOutput; facts: BotFacts; debug?: { rawFirst?: string; rawRetry?: string } }> {
   if (!history.length || history[history.length - 1].role !== "user") throw new Error("history must end with a customer message");
-  const text = await runAgent(env, { name: "conversation", system: systemPrompt(facts), maxTokens: 500 }, history);
-  const output = parseBotOutput(text);
-  return { output, facts: applyOutput(facts, output) };
+  const agent = { name: "conversation", system: systemPrompt(facts), maxTokens: 500 };
+  const first = await runAgent(env, agent, history);
+  let output = tryParseBotOutput(first);
+  let retry: string | undefined;
+  if (!output) {
+    // One retry with a firm reminder before falling back to a human.
+    retry = await runAgent(env, { ...agent, system: agent.system + "\n\nYour previous output was not valid. Reply with ONLY the JSON object and nothing else." }, history);
+    output = tryParseBotOutput(retry);
+  }
+  const debug = output ? undefined : { rawFirst: first.slice(0, 600), rawRetry: retry?.slice(0, 600) };
+  const parsed = output ?? FALLBACK;
+  let next = applyOutput(facts, parsed);
+  let final = parsed;
+  // When everything needed is known, the system says so: no chance of the model asking again.
+  const stops: BotIntent[] = ["handoff", "declined", "repair"];
+  if (!stops.includes(parsed.intent) && nextStep(next) === "quote") {
+    final = { reply: QUOTE_READY_REPLY, intent: "ready_for_quote", data: parsed.data };
+  }
+  return { output: final, facts: next, debug };
 }

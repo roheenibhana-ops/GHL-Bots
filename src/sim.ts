@@ -33,7 +33,7 @@ function send(){var box=document.getElementById('msg'),t=box.value.trim();if(!t)
  bubble(t,'me');history.push({role:'user',content:t});err.textContent='';
  fetch('/admin/sim',{method:'POST',headers:{'Authorization':'Bearer '+tok.value,'Content-Type':'application/json'},body:JSON.stringify({facts:facts,history:history})})
  .then(function(r){return r.json().then(function(j){if(!r.ok)throw new Error(j.error||r.status);return j})})
- .then(function(j){history.push({role:'assistant',content:j.output.reply});facts=j.facts;bubble(j.output.reply,'bot','intent: '+j.output.intent+(Object.keys(j.output.data).length?' '+JSON.stringify(j.output.data):''));show()})
+ .then(function(j){if(j.debug){err.textContent='Could not read the model output. First: '+(j.debug.rawFirst||'')}history.push({role:'assistant',content:j.output.reply});facts=j.facts;bubble(j.output.reply,'bot','intent: '+j.output.intent+(Object.keys(j.output.data).length?' '+JSON.stringify(j.output.data):''));show()})
  .catch(function(e){err.textContent=e.message})}
 document.getElementById('send').onclick=send;document.getElementById('msg').onkeydown=function(e){if(e.key==='Enter')send()};
 start();
