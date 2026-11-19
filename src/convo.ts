@@ -2,7 +2,7 @@ import { botTurn, type BotFacts } from "./bot";
 import { sb } from "./db";
 import { addNote, addTags, credsFor, getContact, getPipelines, listOpportunities, moveOpportunity, opportunityStageId, sendSms, setDnd, setEmail, upsertByPhone } from "./ghl";
 import { photoThanks, planPhotoMove } from "./photo";
-import { formatProfile, ghlNotes, ghlOpportunities, jobberHistory } from "./profile";
+import { blockingNote, formatProfile, ghlNotes, ghlOpportunities, jobberHistory, OUR_NOTE_PREFIX } from "./profile";
 import { createGutterQuote, linkMessage } from "./quote";
 import { inSendWindow, isStopMessage, normalizePhone } from "./safety";
 import type { Account, Env } from "./types";
@@ -137,7 +137,13 @@ export async function handleInbound(env: Env, p: InboundPayload, dryRun = false)
     const fullName = [contact.firstName, contact.lastName].filter(Boolean).join(" ");
     const [notes, opportunities, jb] = await Promise.all([ghlNotes(creds, p.contactId), ghlOpportunities(creds, p.contactId), phone10 ? jobberHistory(env, phone10, fullName) : Promise.resolve({ jobberMatched: false, quotes: [], jobs: [] })]);
     facts.profile = formatProfile({ tags, notes, opportunities, ...jb });
+    facts.blocked = blockingNote([...notes, ...opportunities.flatMap((o) => o.notes)]) ?? undefined;
     facts.profileAt = Date.now();
+  }
+  // A note (from a person or another agent) says not to contact this customer automatically: stay silent and tell the team.
+  if (facts.blocked) {
+    if (!dryRun) await alertTeam(env, `${who} replied but a note says not to contact them automatically ("${facts.blocked.slice(0, 80)}"). Not replying, please check.`);
+    return { skipped: "a note says do not contact automatically", blockedBy: facts.blocked };
   }
 
   // 4. Ask the bot.
@@ -153,11 +159,11 @@ export async function handleInbound(env: Env, p: InboundPayload, dryRun = false)
   const summary = `${name}${next.stories ? `, ${next.stories} story` : ""}${next.address ? `, ${next.address.street1}` : ""}${next.email ? `, ${next.email}` : ""}`;
   if (output.intent === "handoff") {
     await addTags(creds, p.contactId, ["bot-needs-human"]);
-    await addNote(creds, p.contactId, `Lead bot handed this over. Reason: ${output.data.reason ?? "unclear"}. Their last message: "${body.slice(0, 200)}"`);
+    await addNote(creds, p.contactId, `${OUR_NOTE_PREFIX}Handed this over. Reason: ${output.data.reason ?? "unclear"}. Their last message: "${body.slice(0, 200)}"`);
     await alertTeam(env, `Bot needs a human: ${name}. "${body.slice(0, 120)}"`);
   } else if (output.intent === "repair") {
     await addTags(creds, p.contactId, ["bot-needs-human", "needs-repair-quote"]);
-    await addNote(creds, p.contactId, `Repair request. Asked for photos. Their message: "${body.slice(0, 200)}"`);
+    await addNote(creds, p.contactId, `${OUR_NOTE_PREFIX}Repair request. Asked for photos. Their message: "${body.slice(0, 200)}"`);
     await alertTeam(env, `Repair enquiry: ${name}. Bot asked for photos. "${body.slice(0, 100)}"`);
   } else if (output.intent === "declined") {
     await addTags(creds, p.contactId, ["bot-declined"]);
@@ -188,7 +194,7 @@ export async function handleInbound(env: Env, p: InboundPayload, dryRun = false)
         else link = ` (Jobber needs a human: ${q.plan.problems.join("; ") || "could not create"})`;
       } catch (e) { link = ` (Jobber quote failed: ${(e as Error).message.slice(0, 100)})`; }
     }
-    await addNote(creds, p.contactId, `Quote ready to send: ${summary}.${link}`);
+    await addNote(creds, p.contactId, `${OUR_NOTE_PREFIX}Quote ready: ${summary}.${link}`);
     await alertTeam(env, `Quote ready to send: ${summary}.${link}`);
   }
 
@@ -250,6 +256,6 @@ export async function handlePhoto(env: Env, p: InboundPayload, account: Account,
   }
   const phone = normalizePhone(contact.phone ?? p.phone) ?? undefined;
   const delivery = await sendReply(env, account, contactId, photoThanks(account, contact.firstName), contact.timezone, phone, who, "photo");
-  await addNote(creds, contactId, `Customer sent photos by text. Moved from ${plan.fromStage} to ${plan.toStageName} and thanked them.`).catch(() => undefined);
+  await addNote(creds, contactId, `${OUR_NOTE_PREFIX}Customer sent photos by text. Moved from ${plan.fromStage} to ${plan.toStageName} and thanked them.`).catch(() => undefined);
   return { moved: { from: plan.fromStage, to: plan.toStageName }, delivery };
 }

@@ -161,3 +161,21 @@ export async function ghlOpportunities(creds: GhlCreds, contactId: string): Prom
     return [];
   }
 }
+
+/** Every note our own code writes for Clark starts with this, so it is never mistaken for a customer or staff note. */
+export const OUR_NOTE_PREFIX = "INTERNAL (lead bot): ";
+
+const BLOCK = /(quarantin|do not (contact|text|message|send|follow up|reach out)|don'?t (contact|text|message)|no further (automated )?(customer )?outreach|before any further outreach|stop(ped)? (all )?automat|hold (all )?outreach|automated outreach stopped)/i;
+
+/**
+ * A note, from a person or from another agent, that says this customer must not be contacted automatically.
+ * Returns a short excerpt of it, or null. Notes written by this bot are ignored so it can never block itself.
+ */
+export function blockingNote(notes: { body?: string }[]): string | null {
+  for (const n of notes) {
+    const words = plainNote(n.body ?? "").replace(/^[^A-Za-z0-9]+/, "");
+    if (!words || /^internal \(lead bot\)/i.test(words)) continue;
+    if (BLOCK.test(words)) return clip(words, 160);
+  }
+  return null;
+}

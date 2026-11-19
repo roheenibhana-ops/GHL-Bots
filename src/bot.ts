@@ -16,6 +16,8 @@ export interface BotFacts {
   /** What we know about them from Jobber and GHL (see profile.ts). Cached per customer for a day. */
   profile?: string;
   profileAt?: number;
+  /** An excerpt of a note that says do not contact this customer automatically. */
+  blocked?: string;
 }
 
 export type BotIntent =

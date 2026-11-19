@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { ageText, formatProfile, noteText, parseOpportunities, plainNote } from "../src/profile";
+import { ageText, blockingNote, formatProfile, noteText, OUR_NOTE_PREFIX, parseOpportunities, plainNote } from "../src/profile";
 
 const base = { tags: [], notes: [], jobberMatched: false, quotes: [], jobs: [] };
 
@@ -107,5 +107,17 @@ describe("html and emoji notes", () => {
     expect(t).not.toContain("INTERNAL FLAG");
     expect(t).toContain("yes proceed contact with the lead");
     expect(t).not.toContain("<p");
+  });
+});
+
+describe("blockingNote", () => {
+  it("finds warnings written for Clark, even behind an emoji or html", () => {
+    expect(blockingNote([{ body: "⚠️ INTERNAL: Clark, please review Paul before any further outreach" }])).toContain("before any further outreach");
+    expect(blockingNote([{ body: "<p>Do not contact this lead, spouse asked us to stop</p>" }])).toContain("Do not contact");
+    expect(blockingNote([{ body: "Quarantined from automated customer outreach until Clark reviews." }])).toContain("Quarantined");
+  });
+  it("ignores ordinary notes and the bot's own notes", () => {
+    expect(blockingNote([{ body: "Wants permanent lights, has two oaks" }, { body: "Called back, no answer" }])).toBeNull();
+    expect(blockingNote([{ body: `${OUR_NOTE_PREFIX}Handed this over. Reason: customer said do not contact me again` }])).toBeNull();
   });
 });
