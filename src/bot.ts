@@ -176,6 +176,24 @@ export function stripQuestions(text: string): string {
   return kept.join(" ").trim() || HANDOFF_REPLY;
 }
 
+/**
+ * House style: no em dashes, en dashes or hyphens in customer texts. Dashes become commas, and hyphens inside words
+ * become spaces ("single-story" becomes "single story"). Phone numbers and email addresses are left alone.
+ */
+export function plainPunctuation(text: string): string {
+  return text
+    .split(/(\s+)/)
+    .map((tok) => {
+      if (/^\s+$/.test(tok) || tok.includes("@") || /\d-\d/.test(tok)) return tok;
+      return tok.replace(/[\u2013\u2014]/g, ",").replace(/(?<=[A-Za-z0-9])-(?=[A-Za-z])|(?<=[A-Za-z])-(?=[0-9])/g, " ");
+    })
+    .join("")
+    .replace(/\s+,/g, ",")
+    .replace(/,{2,}/g, ",")
+    .replace(/ {2,}/g, " ")
+    .trim();
+}
+
 /** Applies what a turn taught us to the known facts. */
 export function applyOutput(f: BotFacts, o: BotOutput): BotFacts {
   const next = { ...f };
@@ -202,7 +220,8 @@ export async function botTurn(env: Env, facts: BotFacts, history: { role: "user"
     problems = output ? replyProblems(output.reply) : ["the output was not valid JSON"];
   }
   const checked: BotOutput | null = output && !problems.length ? output : null;
-  const good: BotOutput | null = checked && checked.intent === "handoff" ? { ...checked, reply: stripQuestions(checked.reply) } : checked;
+  const stripped: BotOutput | null = checked && checked.intent === "handoff" ? { ...checked, reply: stripQuestions(checked.reply) } : checked;
+  const good: BotOutput | null = stripped ? { ...stripped, reply: plainPunctuation(stripped.reply) } : null;
   const parsed: BotOutput = good ?? { ...FALLBACK, data: { reason: `guardrail: ${problems.join("; ")}`.slice(0, 200) } };
   const debug = good ? undefined : { problems, raw: raw.slice(0, 500), retryRaw: retryRaw?.slice(0, 500) };
   const next = applyOutput(facts, parsed);

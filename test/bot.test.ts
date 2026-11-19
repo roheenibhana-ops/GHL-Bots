@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { applyOutput, disallowedPrices, HANDOFF_REPLY, nextStep, parseBotOutput, promisesDate, replyProblems, stripQuestions, systemPrompt, tryParseBotOutput } from "../src/bot";
+import { applyOutput, disallowedPrices, HANDOFF_REPLY, nextStep, parseBotOutput, plainPunctuation, promisesDate, replyProblems, stripQuestions, systemPrompt, tryParseBotOutput } from "../src/bot";
 
 describe("parseBotOutput", () => {
   it("reads a good reply and its facts", () => {
@@ -88,5 +88,17 @@ describe("lenient parsing", () => {
   });
   it("still returns null when there is no reply to recover", () => {
     expect(tryParseBotOutput('{"intent": "reply_only"}')).toBeNull();
+  });
+});
+
+describe("plainPunctuation", () => {
+  it("swaps dashes for commas and hyphens inside words for spaces", () => {
+    expect(plainPunctuation("Thanks Sam — we're on it.")).toBe("Thanks Sam, we're on it.");
+    expect(plainPunctuation("A single-story home with a 30-day no-clog guarantee")).toBe("A single story home with a 30 day no clog guarantee");
+    expect(plainPunctuation("Rain is here – let's get it done")).toBe("Rain is here, let's get it done");
+  });
+  it("leaves phone numbers and email addresses alone", () => {
+    expect(plainPunctuation("Call (916) 571-6644 any time")).toBe("Call (916) 571-6644 any time");
+    expect(plainPunctuation("Send it to sam-lee@example.com")).toBe("Send it to sam-lee@example.com");
   });
 });
