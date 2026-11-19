@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { ageText, formatProfile, noteText, parseOpportunities } from "../src/profile";
+import { ageText, formatProfile, noteText, parseOpportunities, plainNote } from "../src/profile";
 
 const base = { tags: [], notes: [], jobberMatched: false, quotes: [], jobs: [] };
 
@@ -89,5 +89,23 @@ describe("ageText and job freshness", () => {
   it("puts the age next to past jobs and quotes", () => {
     const t = formatProfile({ ...base, jobberMatched: true, quotes: [], jobs: [{ title: "Gutter Cleaning", jobStatus: "requires_invoicing", completedAt: "2025-12-15T00:00:00Z" }] }, now);
     expect(t).toContain("completed Dec 2025, about 11 months ago");
+  });
+});
+
+describe("html and emoji notes", () => {
+  it("strips html from notes", () => {
+    expect(plainNote('<p style="margin:0">its a real lead &amp; not a test</p>')).toBe("its a real lead & not a test");
+  });
+  it("hides machine notes that start with an emoji, keeps the staff note without its html", () => {
+    const t = formatProfile({
+      ...base,
+      notes: [
+        { body: "⚠️ INTERNAL FLAG: duplicate contact" },
+        { body: '<p style="margin:0px">yes proceed contact with the lead</p>', dateAdded: "2026-10-01T00:00:00Z" },
+      ],
+    });
+    expect(t).not.toContain("INTERNAL FLAG");
+    expect(t).toContain("yes proceed contact with the lead");
+    expect(t).not.toContain("<p");
   });
 });

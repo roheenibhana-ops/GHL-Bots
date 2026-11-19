@@ -95,7 +95,7 @@ export async function handleInbound(env: Env, p: InboundPayload, dryRun = false)
     log.photo = r.skipped;
   }
   // The bot speaks as Dunzo Gutters, so it only handles the Dunzo account for now.
-  if (account !== "dunzo") return { skipped: "lights account is not handled by the bot yet" };
+  if (account !== "dunzo") return { ...log, skipped: "lights account is not handled by the sales bot yet" };
 
   const contact = await getContact(creds, p.contactId);
   const tags = lc(contact.tags);

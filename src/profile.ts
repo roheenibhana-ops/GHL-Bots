@@ -37,6 +37,11 @@ export function ageText(iso?: string | null, now = Date.now()): string {
   return `about ${months} month${months === 1 ? "" : "s"} ago`;
 }
 
+/** Notes often arrive as HTML from forms and integrations. Keep only the words. */
+export function plainNote(body: string): string {
+  return body.replace(/<[^>]+>/g, " ").replace(/&nbsp;/gi, " ").replace(/&amp;/gi, "&").replace(/\s+/g, " ").trim();
+}
+
 const clip = (s: string, n: number) => (s.replace(/\s+/g, " ").trim().length > n ? s.replace(/\s+/g, " ").trim().slice(0, n - 1) + "…" : s.replace(/\s+/g, " ").trim());
 
 /**
@@ -63,7 +68,9 @@ export function formatProfile(i: ProfileInputs, now = Date.now()): string {
   // Notes from the contact and from every opportunity, newest first, without duplicates or our own bot notes.
   const seen = new Set<string>();
   const all = [...i.notes, ...(i.opportunities ?? []).flatMap((o) => o.notes)]
-    .filter((n) => n.body && !OUR_NOTE.test(n.body.trim()))
+    .map((n) => ({ ...n, body: plainNote(n.body ?? "") }))
+    // test the words only, so a leading emoji such as "⚠️ INTERNAL FLAG" cannot hide a machine note
+    .filter((n) => n.body && !OUR_NOTE.test(n.body.replace(/^[^A-Za-z0-9]+/, "")))
     .filter((n) => { const k = n.body.replace(/\s+/g, " ").trim().toLowerCase(); if (seen.has(k)) return false; seen.add(k); return true; })
     .sort((a, b) => (Date.parse(b.dateAdded ?? "") || 0) - (Date.parse(a.dateAdded ?? "") || 0))
     .slice(0, 8);
