@@ -7,6 +7,7 @@ import { addNote, addTags, credsFor, searchContacts, sendSms, setDnd, upsertByPh
 import { authorizeUrl, checkState, describeType, exchangeCode, describeField, findClientsByPhones, gql, listClientPhones, listMutations, listQuoteTemplates, makeState } from "./jobber";
 import { assess } from "./check";
 import { handleInbound, sendQueuedReplies, type InboundPayload } from "./convo";
+import { approveBatch, runDailyBatch, unapproveAll } from "./batch";
 import { resetTestContact } from "./reset";
 import { buildStats, STATS_HTML } from "./stats";
 import { createGutterQuote } from "./quote";
@@ -233,6 +234,18 @@ export default {
       } catch (e) { return json({ error: (e as Error).message }, 502); }
     }
 
+    if (url.pathname === "/admin/pilot/approve-batch" && req.method === "POST") {
+      if (!isAdmin(req, env)) return json({ error: "unauthorized" }, 401);
+      const b = (await req.json().catch(() => ({}))) as { campaign?: string; count?: number };
+      return json({ approved: await approveBatch(env, b.campaign ?? "pilot-2", Number(b.count ?? 0)) });
+    }
+    if (url.pathname === "/admin/pilot/unapprove" && req.method === "POST") {
+      if (!isAdmin(req, env)) return json({ error: "unauthorized" }, 401);
+      const b = (await req.json().catch(() => ({}))) as { campaign?: string };
+      await unapproveAll(env, b.campaign ?? "pilot-2");
+      return json({ ok: true });
+    }
+
     if (url.pathname === "/admin/pilot/release" && req.method === "POST") {
       if (!isAdmin(req, env)) return json({ error: "unauthorized" }, 401);
       const { campaign } = (await req.json()) as { campaign?: string };
@@ -428,10 +441,6 @@ export default {
   // Outreach batches. Inert unless SENDING_ENABLED = "true". Pilot logic comes in the next step.
   async scheduled(_event: ScheduledEvent, env: Env): Promise<void> {
     await sendQueuedReplies(env).catch(() => undefined); // bot replies held overnight
-    if (env.SENDING_ENABLED !== "true") return;
-    const start = Number(env.QUIET_START_HOUR);
-    const end = Number(env.QUIET_END_HOUR);
-    if (!inSendWindow(new Date(), "America/Los_Angeles", start, end)) return;
-    // TODO(pilot): select next BATCH_SIZE queued contacts from the campaign, draft the first message, send or queue for approval.
+    await runDailyBatch(env).catch(() => undefined);
   },
 };

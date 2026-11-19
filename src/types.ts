@@ -21,6 +21,9 @@ export interface Env {
   BATCH_SIZE: string;
   QUIET_START_HOUR: string;
   QUIET_END_HOUR: string;
+  DAILY_CAP?: string;
+  BATCH_CAMPAIGN?: string;
+  BATCH_MAX_PER_RUN?: string;
   CLAUDE_MODEL: string;
   /** off = capture only | test = reply only to contacts tagged bot-test | live = reply to everyone */
   BOT_MODE: string;
