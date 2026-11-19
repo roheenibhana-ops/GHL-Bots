@@ -45,6 +45,8 @@ export interface QuotePlan {
   template: { id: string; name: string; unitPrice: number } | null;
   client: "will create" | "existing" | "ambiguous";
   clientId?: string;
+  /** Every Jobber client that matched the phone, so duplicates are easy to find and tidy. */
+  matches: { id: string; name: string }[];
   property: "will create" | "existing" | "n/a";
   problems: string[];
 }
@@ -63,7 +65,8 @@ export async function createGutterQuote(env: Env, r: QuoteRequest, create: boole
   const plan: QuotePlan = {
     template: tpl && line ? { id: tpl.id, name: tpl.name, unitPrice: line.unitPrice } : null,
     client: hits.length === 0 ? "will create" : hits.length === 1 ? "existing" : "ambiguous",
-    clientId: hits[0]?.id,
+    clientId: hits.length === 1 ? hits[0].id : undefined,
+    matches: hits.map((h) => ({ id: h.id, name: h.name })),
     property: "n/a",
     problems,
   };
