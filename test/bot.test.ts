@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { applyOutput, composeReply, HANDOFF_REPLY, nextStep, parseBotOutput, QUOTE_READY_REPLY, systemPrompt, tryParseBotOutput } from "../src/bot";
+import { applyOutput, composeReply, HANDOFF_REPLY, nextStep, parseBotOutput, QUOTE_READY_REPLY, stripQuestions, systemPrompt, tryParseBotOutput } from "../src/bot";
 
 describe("parseBotOutput", () => {
   it("reads a good reply and its facts", () => {
@@ -64,5 +64,17 @@ describe("composeReply", () => {
   });
   it("when everything is known the reply is fixed and ready is true", () => {
     expect(composeReply("whatever", { stories: 1, address: addr, addressConfirmed: true, email: "a@b.co" })).toEqual({ reply: QUOTE_READY_REPLY, ready: true });
+  });
+});
+
+describe("stripQuestions", () => {
+  it("removes questions so none is asked twice", () => {
+    expect(stripQuestions("The deposit is 50%, paid online. What's the best email to send your quote to?")).toBe("The deposit is 50%, paid online.");
+    expect(stripQuestions("Is that the right address?")).toBe("Thanks.");
+    expect(stripQuestions("Got it, two story at $319.")).toBe("Got it, two story at $319.");
+  });
+  it("composeReply asks exactly one question", () => {
+    const r = composeReply("The team will be in touch with dates. Is 12 Oak St right?", { stories: 1, address: { street1: "12 Oak St", city: "Folsom", province: "CA", postalCode: "95630" } }).reply;
+    expect((r.match(/\?/g) ?? []).length).toBe(1);
   });
 });

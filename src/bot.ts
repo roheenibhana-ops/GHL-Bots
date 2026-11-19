@@ -43,11 +43,17 @@ const QUESTION: Record<Exclude<NextStep, "quote">, (f: BotFacts) => string> = {
   email: () => "What's the best email to send your quote to?",
 };
 
+/** Drops any question the model tried to ask: the code asks the one question, so it can never be asked twice. */
+export function stripQuestions(text: string): string {
+  const kept = text.trim().split(/(?<=[.!?])\s+/).filter((sentence) => !sentence.trim().endsWith("?"));
+  return kept.join(" ").trim() || "Thanks.";
+}
+
 /** The acknowledgement comes from the model; the next question always comes from the code. */
 export function composeReply(ack: string, facts: BotFacts): { reply: string; ready: boolean } {
   const step = nextStep(facts);
   if (step === "quote") return { reply: QUOTE_READY_REPLY, ready: true };
-  return { reply: `${ack.trim()} ${QUESTION[step](facts)}`.trim(), ready: false };
+  return { reply: `${stripQuestions(ack)} ${QUESTION[step](facts)}`.trim(), ready: false };
 }
 
 export const QUOTE_READY_REPLY = "Perfect, thank you. I'm sending your quote over now.";
