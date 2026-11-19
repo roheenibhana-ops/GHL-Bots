@@ -22,7 +22,9 @@ BOT_MODE = "test"
 # Photo handler: "off" | "test" (only contacts tagged bot-test) | "live".
 PHOTO_MODE = "test"
 # The bots only ever touch opportunities in these pipelines (comma separated names).
-BOT_PIPELINES = "Bot Pilot"
+BOT_PIPELINES = "Lead Nurture Pipeline 2027, Christmas Lighting Nurture"
+# The campaign tag, added to each contact when their promo text is approved and sent.
+BOT_TAG = "winter promo"
 # Model for the sales conversation.
 BOT_MODEL = "claude-sonnet-5-5"
 # "alert" = tell the team a quote is ready | "draft" = also create a draft quote in Dunzo Jobber | "link" = create the quote, mark it sent and text the customer the link (they enter their email to sign in).

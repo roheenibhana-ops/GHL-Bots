@@ -57,3 +57,14 @@ export function dedupe(contacts: (GhlContact & { account: string })[]): DedupeRe
   }
   return { keep, dropped };
 }
+
+/**
+ * Which contacts the bots may act on. Test people (tag bot-test) always, in any mode except off.
+ * Campaign contacts (the campaign tag, e.g. "winter promo") only when the mode is live. Everyone else is never touched.
+ */
+export function botAllowed(mode: string, campaignTag: string | undefined, contactTags: string[]): boolean {
+  if (mode === "off") return false;
+  const tags = contactTags.map((t) => t.toLowerCase().trim());
+  if (tags.includes("bot-test")) return true;
+  return mode === "live" && !!campaignTag && tags.includes(campaignTag.toLowerCase().trim());
+}

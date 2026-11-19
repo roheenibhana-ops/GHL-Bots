@@ -32,6 +32,8 @@ export interface Env {
   PHOTO_MODE: string;
   /** Comma separated pipeline names the bots may touch. Anything else is left completely alone. */
   BOT_PIPELINES?: string;
+  /** The campaign tag. Bots act on contacts carrying it only when the mode is live. Added when a campaign text is approved and sent. */
+  BOT_TAG?: string;
   BOT_START_HOUR: string;
   BOT_END_HOUR: string;
   /** Optional secret: mobile number (E.164 or 10 digits) that gets handoff and quote alerts by text. */

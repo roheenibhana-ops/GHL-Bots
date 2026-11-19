@@ -4,7 +4,7 @@ import { addNote, addTags, credsFor, getContact, getPipelines, listOpportunities
 import { photoThanks, planPhotoMove } from "./photo";
 import { blockingNote, formatProfile, ghlNotes, ghlOpportunities, jobberHistory, OUR_NOTE_PREFIX } from "./profile";
 import { createGutterQuote, linkMessage } from "./quote";
-import { inSendWindow, isStopMessage, normalizePhone } from "./safety";
+import { botAllowed, inSendWindow, isStopMessage, normalizePhone } from "./safety";
 import type { Account, Env } from "./types";
 
 export interface InboundPayload { contactId?: string; locationId?: string; body?: string; direction?: string; firstName?: string; phone?: string; attachments?: unknown }
@@ -100,7 +100,7 @@ export async function handleInbound(env: Env, p: InboundPayload, dryRun = false)
 
   const contact = await getContact(creds, p.contactId);
   const tags = lc(contact.tags);
-  if (env.BOT_MODE === "test" && !tags.includes("bot-test")) return { skipped: "test mode: contact is not tagged bot-test" };
+  if (!botAllowed(env.BOT_MODE, env.BOT_TAG, tags)) return { skipped: "the bot only acts on contacts tagged bot-test (or the campaign tag when live)" };
   const who = [contact.firstName, contact.lastName].filter(Boolean).join(" ") || "A customer";
   if (tags.includes("bot-paused") || tags.includes("bot-needs-human")) {
     if (!dryRun) {
@@ -235,7 +235,7 @@ export async function handlePhoto(env: Env, p: InboundPayload, account: Account,
   const creds = credsFor(env, account);
   const contactId = p.contactId as string;
   const contact = await getContact(creds, contactId);
-  if (env.PHOTO_MODE === "test" && !lc(contact.tags).includes("bot-test")) return { fallThrough: true, skipped: "photo test mode: contact is not tagged bot-test" };
+  if (!botAllowed(env.PHOTO_MODE, env.BOT_TAG, lc(contact.tags))) return { fallThrough: true, skipped: "the photo handler only acts on contacts tagged bot-test (or the campaign tag when live)" };
 
   const [opps, pipelines] = await Promise.all([listOpportunities(creds, contactId), getPipelines(creds)]);
   const plan = planPhotoMove(opps, pipelines, (env.BOT_PIPELINES ?? "").split(",").map((x) => x.trim()).filter(Boolean));

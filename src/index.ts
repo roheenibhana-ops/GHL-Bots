@@ -405,6 +405,8 @@ export default {
       try {
         await sendSms(credsFor(env, m.account), m.contact_id, m.body);
         await sb(env, "PATCH", `messages?id=eq.${id}`, { status: "sent", sent_at: new Date().toISOString() });
+        // Mark them as part of the campaign, so the older GHL agents (told to skip this tag) and our bots can recognise them.
+        if (env.BOT_TAG) await addTags(credsFor(env, m.account), m.contact_id, [env.BOT_TAG]).catch(() => undefined);
       } catch (e) {
         await sb(env, "PATCH", `messages?id=eq.${id}`, { status: "failed" });
         return json({ error: (e as Error).message }, 502);

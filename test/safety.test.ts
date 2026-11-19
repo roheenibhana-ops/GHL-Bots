@@ -53,3 +53,21 @@ describe("isSmsDnd", () => {
     expect(isSmsDnd({})).toBe(false);
   });
 });
+
+import { botAllowed } from "../src/safety";
+
+describe("botAllowed", () => {
+  it("test people are allowed in test and live, never when off", () => {
+    expect(botAllowed("test", "winter promo", ["bot-test"])).toBe(true);
+    expect(botAllowed("live", "winter promo", ["Bot-Test"])).toBe(true);
+    expect(botAllowed("off", "winter promo", ["bot-test"])).toBe(false);
+  });
+  it("campaign contacts are only allowed when live", () => {
+    expect(botAllowed("test", "winter promo", ["Winter Promo"])).toBe(false);
+    expect(botAllowed("live", "winter promo", ["Winter Promo"])).toBe(true);
+  });
+  it("everyone else is never touched, even when live", () => {
+    expect(botAllowed("live", "winter promo", ["dunzo won"])).toBe(false);
+    expect(botAllowed("live", undefined, ["winter promo"])).toBe(false);
+  });
+});
