@@ -1,7 +1,7 @@
 import { sb } from "./db";
 import { credsFor, searchContacts } from "./ghl";
 import { dedupe } from "./safety";
-import { classify, type Segment } from "./segments";
+import { classify, looksLikeTestRecord, type Segment } from "./segments";
 import type { Account, Env } from "./types";
 
 const BRAND = { lights: "the Santa's Lights team", dunzo: "Dunzo Gutters" } as const;
@@ -59,7 +59,10 @@ export async function createPilot(env: Env, o: PilotOptions) {
   const taken = new Set(already.map((r) => r.contact_id));
 
   const buckets: Record<Segment, typeof keep> = { customer: [], lost: [], excluded: [], other: [] };
-  for (const c of keep) if (!taken.has(c.id)) buckets[classify(c.tags)].push(c);
+  for (const c of keep) {
+    if (taken.has(c.id) || looksLikeTestRecord(c)) continue;
+    buckets[classify(c.tags)].push(c);
+  }
 
   const half = Math.floor(o.size / 2);
   const customers = shuffle(buckets.customer).slice(0, half);

@@ -17,3 +17,9 @@ export function classify(rawTags: string[] | undefined): Segment {
   if (["lights lost", "dunzo lost"].some((t) => has(tags, t))) return "lost";
   return "other";
 }
+
+/** Internal or dummy records ("Vic Testing 1234", "Demo Customer") must never receive a campaign. */
+export function looksLikeTestRecord(c: { firstName?: string; lastName?: string; email?: string }): boolean {
+  const name = `${c.firstName ?? ""} ${c.lastName ?? ""}`;
+  return /\b(test|testing|tester|demo|dummy|fake|sample)\b/i.test(name) || /(^|[._+-])(test|demo|dummy|fake)([._+@-]|$)/i.test(c.email ?? "");
+}

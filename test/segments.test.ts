@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { cleanName, renderMessage } from "../src/pilot";
-import { classify } from "../src/segments";
+import { classify, looksLikeTestRecord } from "../src/segments";
 
 describe("classify", () => {
   it("customers", () => expect(classify(["Lights Won", "website lead"])).toBe("customer"));
@@ -35,5 +35,15 @@ describe("cleanName", () => {
     expect(cleanName("McDonald")).toBe("McDonald");
     expect(cleanName("  kecia & stan ")).toBe("Kecia & Stan");
     expect(cleanName(undefined)).toBe("");
+  });
+});
+
+describe("looksLikeTestRecord", () => {
+  it("flags dummy records, not real names", () => {
+    expect(looksLikeTestRecord({ firstName: "Vic", lastName: "Testing 1234" })).toBe(true);
+    expect(looksLikeTestRecord({ firstName: "Demo", lastName: "Customer" })).toBe(true);
+    expect(looksLikeTestRecord({ firstName: "Sam", email: "test@example.com" })).toBe(true);
+    expect(looksLikeTestRecord({ firstName: "Tess", lastName: "Contesta", email: "tess@gmail.com" })).toBe(false);
+    expect(looksLikeTestRecord({ firstName: "Sam", lastName: "Lee" })).toBe(false);
   });
 });
