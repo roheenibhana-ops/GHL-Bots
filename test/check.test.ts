@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { assess, recentOrActiveJobs, type JClient } from "../src/check";
+import { assess, isActiveQuote, recentOrActiveJobs, type JClient } from "../src/check";
 
 const client = (phone: string, statuses: string[], jobs = 0): JClient => ({
   id: "c1", name: "Sam Lee",
@@ -36,4 +36,24 @@ describe("recentOrActiveJobs", () => {
     expect(recentOrActiveJobs(c([{ jobStatus: "active", completedAt: "2026-03-01T00:00:00Z" }]), now)).toBe(0);
   });
   it("no job details means nothing to hold", () => expect(recentOrActiveJobs(client("9165550123", []), now)).toBe(0));
+});
+
+describe("isActiveQuote", () => {
+  const now = Date.parse("2026-11-19T00:00:00Z");
+  it("awaiting response counts only if sent within 30 days", () => {
+    expect(isActiveQuote({ quoteStatus: "awaiting_response", sentAt: "2026-11-01T00:00:00Z" }, now)).toBe(true);
+    expect(isActiveQuote({ quoteStatus: "awaiting_response", sentAt: "2026-08-01T00:00:00Z" }, now)).toBe(false);
+  });
+  it("draft, changes requested and approved are always live", () => {
+    for (const s of ["draft", "changes_requested", "approved"]) expect(isActiveQuote({ quoteStatus: s, sentAt: "2025-01-01T00:00:00Z" }, now)).toBe(true);
+  });
+  it("archived and converted are never active; unknown age stays safe", () => {
+    expect(isActiveQuote({ quoteStatus: "archived" }, now)).toBe(false);
+    expect(isActiveQuote({ quoteStatus: "converted" }, now)).toBe(false);
+    expect(isActiveQuote({ quoteStatus: "awaiting_response" }, now)).toBe(true);
+  });
+  it("assess reports stale quotes separately from active ones", () => {
+    const c = { id: "c", name: "A", phones: [{ number: "9165550123" }], quotes: { nodes: [{ quoteStatus: "awaiting_response", sentAt: "2026-01-01T00:00:00Z" }] }, jobs: { totalCount: 0 } };
+    expect(assess([c as never], "+19165550123", now)).toMatchObject({ openQuotes: 0, staleQuotes: 1 });
+  });
 });
