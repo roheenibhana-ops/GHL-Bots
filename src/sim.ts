@@ -9,7 +9,7 @@ label{display:block;margin:6px 0;font-size:13px;color:#555} input,textarea{font:
 .bubble{max-width:80%;padding:8px 12px;border-radius:14px;margin:6px 0;white-space:pre-wrap}
 .me{background:#dbeafe;margin-left:auto} .bot{background:#f1f1f1}
 .meta{font-size:11px;color:#777;margin:-2px 0 6px} .row{display:flex;gap:8px} button{font:inherit;padding:6px 14px;border-radius:8px;border:1px solid #999;background:#fff;cursor:pointer}
-button.go{background:#1a7f37;color:#fff;border-color:#1a7f37} #err{color:#b00;margin:6px 0} #facts{font-size:12px;color:#444}
+button.go{background:#1a7f37;color:#fff;border-color:#1a7f37} #err{color:#b00;margin:8px 0;font-weight:600} #facts{font-size:12px;color:#444}
 </style></head><body>
 <h2>Bot simulator</h2>
 <p style="color:#666">Nothing here sends a text or touches Jobber. You are playing the customer.</p>
@@ -31,10 +31,11 @@ function start(){chat.textContent='';history=[];err.textContent='';facts={firstN
 document.getElementById('reset').onclick=start;
 function send(){var box=document.getElementById('msg'),t=box.value.trim();if(!t)return;box.value='';try{sessionStorage.setItem('t',tok.value)}catch(e){}
  bubble(t,'me');history.push({role:'user',content:t});err.textContent='';
+ var wait=document.createElement('div');wait.className='bubble bot';wait.textContent='Thinking...';chat.appendChild(wait);
  fetch('/admin/sim',{method:'POST',headers:{'Authorization':'Bearer '+tok.value,'Content-Type':'application/json'},body:JSON.stringify({facts:facts,history:history})})
  .then(function(r){return r.json().then(function(j){if(!r.ok)throw new Error(j.error||r.status);return j})})
- .then(function(j){if(j.debug){err.textContent='Could not read the model output. First: '+(j.debug.rawFirst||'')}history.push({role:'assistant',content:j.output.reply});facts=j.facts;bubble(j.output.reply,'bot','intent: '+j.output.intent+(Object.keys(j.output.data).length?' '+JSON.stringify(j.output.data):''));show()})
- .catch(function(e){err.textContent=e.message})}
+ .then(function(j){wait.remove();if(j.debug){err.textContent='Could not read the model output. First: '+(j.debug.rawFirst||'')}history.push({role:'assistant',content:j.output.reply});facts=j.facts;bubble(j.output.reply,'bot','intent: '+j.output.intent+(Object.keys(j.output.data).length?' '+JSON.stringify(j.output.data):''));show()})
+ .catch(function(e){wait.remove();err.textContent=(e.message==='unauthorized'?'Wrong admin token. Paste the current ADMIN_TOKEN (a long string of letters and numbers) into the box at the top, then send again.':'Something went wrong: '+e.message)})}
 document.getElementById('send').onclick=send;document.getElementById('msg').onkeydown=function(e){if(e.key==='Enter')send()};
 start();
 </script></body></html>`;
