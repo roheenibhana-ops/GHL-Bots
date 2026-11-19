@@ -8,6 +8,7 @@ import { authorizeUrl, checkState, describeType, exchangeCode, describeField, fi
 import { assess } from "./check";
 import { handleInbound, sendQueuedReplies, type InboundPayload } from "./convo";
 import { resetTestContact } from "./reset";
+import { buildStats, STATS_HTML } from "./stats";
 import { createGutterQuote } from "./quote";
 import { overlapStats, type Sources } from "./overlap";
 import { createPilot } from "./pilot";
@@ -116,6 +117,13 @@ export default {
         return json({ ok: true, sentTo: `***${phone.slice(-4)}` });
       } catch (e) { return json({ error: (e as Error).message }, 502); }
     }
+    // Results page and numbers for a campaign (read only).
+    if (url.pathname === "/stats") return new Response(STATS_HTML, { headers: { "content-type": "text/html; charset=utf-8" } });
+    if (url.pathname === "/admin/stats") {
+      if (!isTester(req, env)) return json({ error: "unauthorized" }, 401);
+      try { return json(await buildStats(env, url.searchParams.get("campaign") ?? "pilot-2")); } catch (e) { return json({ error: (e as Error).message }, 502); }
+    }
+
     // Puts a TEST contact (tagged bot-test) back to a clean slate for the next scenario. Admin only.
     if (url.pathname === "/admin/test/reset" && req.method === "POST") {
       if (!isAdmin(req, env)) return json({ error: "unauthorized" }, 401);

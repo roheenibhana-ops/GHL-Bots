@@ -178,6 +178,9 @@ export async function handleInbound(env: Env, p: InboundPayload, dryRun = false)
         if (!phone) throw new Error("no valid phone");
         const q = await createGutterQuote(env, { phone, firstName: contact.firstName ?? "", lastName: contact.lastName, email: next.email, address: next.address, stories: next.stories }, true, true);
         if ("quote" in q && q.quote?.clientHubUri) {
+          next.quoteId = q.quote.id;
+          next.quoteNumber = q.quote.quoteNumber;
+          await sb(env, "PATCH", `conversations?contact_id=eq.${encodeURIComponent(p.contactId)}`, { facts: next }, "return=minimal").catch(() => undefined);
           followUp = linkMessage(next.email, next.stories, q.quote.clientHubUri);
           link = ` Quote #${q.quote.quoteNumber} created and the link was texted to the customer: ${q.quote.jobberWebUri}`;
           await addTags(creds, p.contactId, ["bot-quote-sent"]);

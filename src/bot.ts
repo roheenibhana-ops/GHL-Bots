@@ -18,6 +18,9 @@ export interface BotFacts {
   profileAt?: number;
   /** An excerpt of a note that says do not contact this customer automatically. */
   blocked?: string;
+  /** The Jobber quote the bot created for them, so approvals can be counted later. */
+  quoteId?: string;
+  quoteNumber?: string;
 }
 
 export type BotIntent =
