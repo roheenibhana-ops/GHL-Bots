@@ -22,6 +22,14 @@ export interface Env {
   QUIET_START_HOUR: string;
   QUIET_END_HOUR: string;
   CLAUDE_MODEL: string;
+  /** off = capture only | test = reply only to contacts tagged bot-test | live = reply to everyone */
+  BOT_MODE: string;
+  /** alert = tell the team | draft = create a draft quote in Jobber and tell the team */
+  QUOTE_MODE: string;
+  BOT_START_HOUR: string;
+  BOT_END_HOUR: string;
+  /** Optional secret: mobile number (E.164 or 10 digits) that gets handoff and quote alerts by text. */
+  ALERT_PHONE?: string;
 }
 
 export type Account = "lights" | "dunzo";

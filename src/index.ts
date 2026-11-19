@@ -6,6 +6,7 @@ import { sb } from "./db";
 import { addNote, addTags, credsFor, searchContacts, sendSms, setDnd, upsertByPhone } from "./ghl";
 import { authorizeUrl, checkState, describeType, exchangeCode, describeField, findClientsByPhones, gql, listClientPhones, listMutations, listQuoteTemplates, makeState } from "./jobber";
 import { assess } from "./check";
+import { handleInbound, sendQueuedReplies, type InboundPayload } from "./convo";
 import { createGutterQuote } from "./quote";
 import { overlapStats, type Sources } from "./overlap";
 import { createPilot } from "./pilot";
@@ -23,7 +24,7 @@ function isAdmin(req: Request, env: Env): boolean {
 }
 
 export default {
-  async fetch(req: Request, env: Env): Promise<Response> {
+  async fetch(req: Request, env: Env, ctx: ExecutionContext): Promise<Response> {
     const url = new URL(req.url);
     const jobberAccount = (): Account | null => {
       const a = url.searchParams.get("account");
@@ -81,7 +82,17 @@ export default {
       let payload: unknown;
       try { payload = JSON.parse(text); } catch { payload = { raw: text.slice(0, 5000) }; }
       await sb(env, "POST", "webhook_log", { payload }, "return=minimal");
+      // The bot runs after we answer GHL, so a slow reply never makes GHL retry. Failures are logged for debugging.
+      if (env.BOT_MODE !== "off") {
+        ctx.waitUntil(handleInbound(env, payload as InboundPayload).catch((e) => sb(env, "POST", "webhook_log", { payload: { botError: (e as Error).message.slice(0, 400) } }, "return=minimal").catch(() => undefined)));
+      }
       return json({ ok: true });
+    }
+    // Runs a fake inbound reply through the whole bot pipeline WITHOUT sending, tagging or creating anything.
+    if (url.pathname === "/admin/bot/dry-inbound" && req.method === "POST") {
+      if (!isAdmin(req, env)) return json({ error: "unauthorized" }, 401);
+      const b = (await req.json()) as InboundPayload;
+      try { return json(await handleInbound(env, { ...b, locationId: b.locationId ?? env.GHL_LOCATION_DUNZO, direction: "inbound" }, true)); } catch (e) { return json({ error: (e as Error).message }, 502); }
     }
     if (url.pathname === "/admin/webhook-log") {
       if (!isAdmin(req, env)) return json({ error: "unauthorized" }, 401);
@@ -363,6 +374,7 @@ export default {
 
   // Outreach batches. Inert unless SENDING_ENABLED = "true". Pilot logic comes in the next step.
   async scheduled(_event: ScheduledEvent, env: Env): Promise<void> {
+    await sendQueuedReplies(env).catch(() => undefined); // bot replies held overnight
     if (env.SENDING_ENABLED !== "true") return;
     const start = Number(env.QUIET_START_HOUR);
     const end = Number(env.QUIET_END_HOUR);

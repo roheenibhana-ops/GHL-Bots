@@ -62,3 +62,16 @@ export async function setDnd(c: GhlCreds, contactId: string): Promise<unknown> {
 export async function upsertByPhone(c: GhlCreds, phone: string): Promise<{ new?: boolean; contact: GhlContact }> {
   return call(c, "POST", "/contacts/upsert", { locationId: c.locationId, phone });
 }
+
+export interface GhlContactFull extends GhlContact {
+  address1?: string; city?: string; state?: string; postalCode?: string;
+}
+
+export async function getContact(c: GhlCreds, contactId: string): Promise<GhlContactFull> {
+  const r = await call<{ contact: GhlContactFull }>(c, "GET", `/contacts/${contactId}`);
+  return r.contact;
+}
+
+export async function setEmail(c: GhlCreds, contactId: string, email: string): Promise<unknown> {
+  return call(c, "PUT", `/contacts/${contactId}`, { email });
+}

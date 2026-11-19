@@ -17,6 +17,13 @@ BATCH_SIZE = "10"
 QUIET_START_HOUR = "20"
 QUIET_END_HOUR = "9"
 CLAUDE_MODEL = "claude-haiku-5-5"
+# Bot: "off" = only capture replies | "test" = reply only to contacts tagged bot-test | "live" = reply to everyone.
+BOT_MODE = "test"
+# "alert" = tell the team a quote is ready | "draft" = also create a draft quote in Dunzo Jobber.
+QUOTE_MODE = "alert"
+# Local hours the bot may text (contact timezone).
+BOT_START_HOUR = "8"
+BOT_END_HOUR = "21"
 # Jobber GraphQL version header (must be a version Jobber supports; change here if rejected).
 JOBBER_API_VERSION = "2025-01-20"
 
@@ -28,3 +35,4 @@ JOBBER_API_VERSION = "2025-01-20"
 #   ADMIN_TOKEN        (protects /admin/* routes)
 #   WEBHOOK_SECRET     (GHL webhook must send ?secret=...)
 #   JOBBER_CLIENT_ID, JOBBER_CLIENT_SECRET
+#   ALERT_PHONE        (optional: who gets handoff and quote alerts by text)
