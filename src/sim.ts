@@ -17,6 +17,7 @@ button.go{background:#1a7f37;color:#fff;border-color:#1a7f37} #err{color:#b00;ma
 <label>Admin token <input id="tok" type="password"></label>
 <div class="row"><label style="flex:1">First name <input id="fn" value="Sam"></label><label style="flex:2">Address on file (street, city, zip, or blank) <input id="addr" value="2752 Argolis Way, Sacramento, 95826"></label></div>
 <label>First message we sent them <textarea id="open" rows="2">Hi Sam, it's Dunzo Gutters. Before the rains: gutter cleaning is $219 for a single-story home or $319 for two stories. Reply 1 or 2 and we'll text you a quote to approve and pay online. Reply STOP to opt out.</textarea></label>
+<label>What we know about them (optional, try pasting a pretend history) <textarea id="prof" rows="3" placeholder="Past quotes from us: Gutter Guards (awaiting response, Sep 2026). Tags: dunzo lost, website lead."></textarea></label>
 <button id="reset">Start over</button></fieldset>
 <div id="chat"></div><div id="err"></div>
 <div class="row"><input id="msg" placeholder="Type as the customer, press Enter"><button class="go" id="send">Send</button></div>
@@ -27,7 +28,7 @@ try{tok.value=sessionStorage.getItem('t')||''}catch(e){}
 function parseAddr(s){var p=s.split(',').map(function(x){return x.trim()}).filter(Boolean);if(p.length<3)return undefined;var z=(p[p.length-1].match(/\\d{5}/)||[''])[0];return {street1:p[0],city:p[1],province:'CA',postalCode:z}}
 function bubble(t,c,meta){var d=document.createElement('div');d.className='bubble '+c;d.textContent=t;chat.appendChild(d);if(meta){var m=document.createElement('div');m.className='meta';m.textContent=meta;chat.appendChild(m)}}
 function show(){document.getElementById('facts').textContent='Known: '+JSON.stringify(facts)}
-function start(){chat.textContent='';history=[];err.textContent='';facts={firstName:document.getElementById('fn').value,address:parseAddr(document.getElementById('addr').value),opening:document.getElementById('open').value};bubble(facts.opening,'bot','what we texted them');show()}
+function start(){chat.textContent='';history=[];err.textContent='';facts={firstName:document.getElementById('fn').value,address:parseAddr(document.getElementById('addr').value),opening:document.getElementById('open').value,profile:document.getElementById('prof').value||undefined};bubble(facts.opening,'bot','what we texted them');show()}
 document.getElementById('reset').onclick=start;
 function send(){var box=document.getElementById('msg'),t=box.value.trim();if(!t)return;box.value='';try{sessionStorage.setItem('t',tok.value)}catch(e){}
  bubble(t,'me');history.push({role:'user',content:t});err.textContent='';

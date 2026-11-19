@@ -1,6 +1,7 @@
 import { botTurn, type BotFacts } from "./bot";
 import { sb } from "./db";
 import { addNote, addTags, credsFor, getContact, sendSms, setDnd, setEmail, upsertByPhone } from "./ghl";
+import { formatProfile, ghlNotes, ghlOpportunities, jobberHistory } from "./profile";
 import { createGutterQuote, linkMessage } from "./quote";
 import { inSendWindow, isStopMessage, normalizePhone } from "./safety";
 import type { Account, Env } from "./types";
@@ -123,9 +124,18 @@ export async function handleInbound(env: Env, p: InboundPayload, dryRun = false)
     address: conv?.facts?.address ?? (contact.address1 && contact.postalCode ? { street1: contact.address1, city: contact.city ?? "", province: contact.state ?? "CA", postalCode: contact.postalCode } : undefined),
   };
 
+  // 3b. What we know about this person (Jobber history and GHL notes). Built once, then reused for a day.
+  if (!facts.profile || !facts.profileAt || Date.now() - facts.profileAt > 86_400_000) {
+    const phone10 = normalizePhone(contact.phone ?? p.phone);
+    const fullName = [contact.firstName, contact.lastName].filter(Boolean).join(" ");
+    const [notes, opportunities, jb] = await Promise.all([ghlNotes(creds, p.contactId), ghlOpportunities(creds, p.contactId), phone10 ? jobberHistory(env, phone10, fullName) : Promise.resolve({ jobberMatched: false, quotes: [], jobs: [] })]);
+    facts.profile = formatProfile({ tags, notes, opportunities, ...jb });
+    facts.profileAt = Date.now();
+  }
+
   // 4. Ask the bot.
   const { output, facts: next } = await botTurn(env, facts, built.history);
-  Object.assign(log, { intent: output.intent, reply: output.reply, facts: { stories: next.stories, addressConfirmed: next.addressConfirmed, email: next.email } });
+  Object.assign(log, { intent: output.intent, reply: output.reply, facts: { stories: next.stories, addressConfirmed: next.addressConfirmed, email: next.email }, profile: facts.profile });
   if (dryRun) return log;
 
   const status = ["handoff", "repair"].includes(output.intent) ? "handed_off" : output.intent === "declined" ? "closed" : "active";
