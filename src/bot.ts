@@ -37,12 +37,18 @@ export function nextStep(f: BotFacts): NextStep {
   return "quote";
 }
 
-const STEP_TEXT: Record<NextStep, (f: BotFacts) => string> = {
-  stories: () => "Find out whether the home is single story (1) or two story (2). Quote the prices if helpful.",
-  address: (f) => f.address ? `Ask them to confirm the work is at ${f.address.street1}, ${f.address.city}, ${f.address.province} ${f.address.postalCode}.` : "Ask for the street address, city and zip of the home.",
-  email: () => "Ask for the best email address to send their quote to.",
-  quote: () => "Everything is collected. Say you are sending the quote now.",
+const QUESTION: Record<Exclude<NextStep, "quote">, (f: BotFacts) => string> = {
+  stories: () => "Is your home single story (1) or two story (2)?",
+  address: (f) => f.address ? `Can you confirm the work is at ${f.address.street1}, ${f.address.city}, ${f.address.province} ${f.address.postalCode}?` : "What's the street address, city and zip for the work?",
+  email: () => "What's the best email to send your quote to?",
 };
+
+/** The acknowledgement comes from the model; the next question always comes from the code. */
+export function composeReply(ack: string, facts: BotFacts): { reply: string; ready: boolean } {
+  const step = nextStep(facts);
+  if (step === "quote") return { reply: QUOTE_READY_REPLY, ready: true };
+  return { reply: `${ack.trim()} ${QUESTION[step](facts)}`.trim(), ready: false };
+}
 
 export const QUOTE_READY_REPLY = "Perfect, thank you. I'm sending your quote over now.";
 
@@ -63,8 +69,8 @@ export function systemPrompt(f: BotFacts): string {
     "A reply of just \"1\" or \"2\" ANSWERS the home size question (1 = single story, 2 = two story): acknowledge it with the price, do not ask it again.",
     "A reply like \"yes\" or \"that's right\" to an address question CONFIRMS the address: use intent address_confirmed.",
     "",
-    `THE NEXT THING YOU NEED RIGHT NOW: ${STEP_TEXT[nextStep(f)](f)}`,
-    "After handling what the customer just said, move to that next thing. Do not ask for anything already known.",
+    "IMPORTANT: your reply is ONLY the acknowledgement of, or answer to, what the customer just said. Do NOT ask for home size, address or email, and do not say you are sending the quote: the system adds the next question itself.",
+    "The one exception is intents handoff, repair and declined: there your reply is the complete message to the customer.",
     "",
     "KNOWN SO FAR:",
     known,
@@ -78,7 +84,7 @@ export function systemPrompt(f: BotFacts): string {
     "- If they say they are not interested, thank them politely in one short line and use intent declined. Do not push.",
     "- Never mention that you are an AI unless asked directly; if asked, say you're the Dunzo Gutters text assistant and the team can step in anytime.",
     "",
-    "STYLE: warm, plain-spoken, short (one to three sentences, under 300 characters). No emojis. No corporate language. Ask one question at a time.",
+    "STYLE: warm, plain-spoken, short (one or two sentences, under 200 characters for the acknowledgement). No emojis. No corporate language.",
     "",
     'OUTPUT: reply with ONLY a JSON object, no other text: {"reply": "<text to send>", "intent": "<one of ' + INTENTS.join(" | ") + '>", "data": {}}',
     'Put facts you learned in data: {"stories": 1 or 2}, {"address": {"street1","city","province","postalCode"}}, {"email": "..."}, {"reason": "..."} for handoff.',
@@ -144,12 +150,13 @@ export async function botTurn(env: Env, facts: BotFacts, history: { role: "user"
   }
   const debug = output ? undefined : { rawFirst: first.slice(0, 600), rawRetry: retry?.slice(0, 600) };
   const parsed = output ?? FALLBACK;
-  let next = applyOutput(facts, parsed);
+  const next = applyOutput(facts, parsed);
   let final = parsed;
-  // When everything needed is known, the system says so: no chance of the model asking again.
+  // The model never chooses the next question, and never decides the quote is ready: the code does both.
   const stops: BotIntent[] = ["handoff", "declined", "repair"];
-  if (!stops.includes(parsed.intent) && nextStep(next) === "quote") {
-    final = { reply: QUOTE_READY_REPLY, intent: "ready_for_quote", data: parsed.data };
+  if (!stops.includes(parsed.intent)) {
+    const c = composeReply(parsed.reply, next);
+    final = { reply: c.reply, intent: c.ready ? "ready_for_quote" : parsed.intent, data: parsed.data };
   }
   return { output: final, facts: next, debug };
 }

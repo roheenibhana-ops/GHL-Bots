@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { applyOutput, HANDOFF_REPLY, nextStep, parseBotOutput, systemPrompt, tryParseBotOutput } from "../src/bot";
+import { applyOutput, composeReply, HANDOFF_REPLY, nextStep, parseBotOutput, QUOTE_READY_REPLY, systemPrompt, tryParseBotOutput } from "../src/bot";
 
 describe("parseBotOutput", () => {
   it("reads a good reply and its facts", () => {
@@ -47,15 +47,22 @@ describe("nextStep and prompt guidance", () => {
     expect(nextStep({ stories: 2, addressConfirmed: true })).toBe("email");
     expect(nextStep({ stories: 2, addressConfirmed: true, email: "a@b.co" })).toBe("quote");
   });
-  it("tells the model the one thing it needs next", () => {
-    const addr = { street1: "2752 Argolis Way", city: "Sacramento", province: "CA", postalCode: "95826" };
-    expect(systemPrompt({ stories: 1, address: addr })).toContain("confirm the work is at 2752 Argolis Way");
-    expect(systemPrompt({ stories: 1 })).toContain("Ask for the street address");
-    expect(systemPrompt({})).toContain("THE NEXT THING YOU NEED RIGHT NOW");
-  });
   it("tryParse returns null for unreadable output so a retry can happen", () => {
     expect(tryParseBotOutput("sure thing!")).toBeNull();
     expect(tryParseBotOutput('{"reply":"hi","intent":"nonsense","data":{}}')).toBeNull();
     expect(tryParseBotOutput('{"reply":"hi","intent":"reply_only","data":{}}')?.reply).toBe("hi");
+  });
+});
+
+describe("composeReply", () => {
+  const addr = { street1: "2752 Argolis Way", city: "Sacramento", province: "CA", postalCode: "95826" };
+  it("the code adds the next question in a fixed order", () => {
+    expect(composeReply("Got it, two story at $319.", { stories: 2, address: addr }).reply).toBe("Got it, two story at $319. Can you confirm the work is at 2752 Argolis Way, Sacramento, CA 95826?");
+    expect(composeReply("Thanks.", { stories: 2 }).reply).toContain("street address");
+    expect(composeReply("Confirmed.", { stories: 2, address: addr, addressConfirmed: true }).reply).toContain("best email");
+    expect(composeReply("Sure.", {}).reply).toContain("single story (1) or two story (2)");
+  });
+  it("when everything is known the reply is fixed and ready is true", () => {
+    expect(composeReply("whatever", { stories: 1, address: addr, addressConfirmed: true, email: "a@b.co" })).toEqual({ reply: QUOTE_READY_REPLY, ready: true });
   });
 });
