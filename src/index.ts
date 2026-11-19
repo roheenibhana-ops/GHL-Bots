@@ -277,7 +277,7 @@ export default {
       if (!account) return json({ error: "add ?account=lights or ?account=dunzo" }, 400);
       try {
         const m = url.searchParams.get("mutations");
-        if (m !== null) return json({ mutations: await listMutations(env, account, m) });
+        if (m !== null) return json({ mutations: await listMutations(env, account, m, url.searchParams.get("version") ?? undefined) });
         const f = url.searchParams.get("field"); // e.g. Query.clients
         if (f) { const [tn, fn] = f.split("."); return json({ field: f, args: await describeField(env, account, tn, fn) }); }
         const t = url.searchParams.get("type");

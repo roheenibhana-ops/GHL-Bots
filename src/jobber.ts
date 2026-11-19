@@ -86,13 +86,13 @@ async function loadToken(env: Env, account: Account): Promise<{ token: string; e
   return { token: t.access_token, expires: Date.now() + (t.expires_in ?? 55 * 60) * 1000 };
 }
 
-export async function gql<T>(env: Env, account: Account, query: string, variables?: Record<string, unknown>): Promise<T> {
+export async function gql<T>(env: Env, account: Account, query: string, variables?: Record<string, unknown>, version?: string): Promise<T> {
   const res = await fetch(GRAPHQL_URL, {
     method: "POST",
     headers: {
       Authorization: `Bearer ${await accessToken(env, account)}`,
       "Content-Type": "application/json",
-      "X-JOBBER-GRAPHQL-VERSION": env.JOBBER_API_VERSION,
+      "X-JOBBER-GRAPHQL-VERSION": version ?? env.JOBBER_API_VERSION,
     },
     body: JSON.stringify({ query, variables }),
   });
@@ -108,9 +108,9 @@ export const typeName = (t: TypeRef | null | undefined): string =>
 
 const TYPE_REF = "kind name ofType { kind name ofType { kind name ofType { kind name } } }";
 
-export async function listMutations(env: Env, account: Account, filter?: string): Promise<string[]> {
+export async function listMutations(env: Env, account: Account, filter?: string, version?: string): Promise<string[]> {
   const d = await gql<{ __schema: { mutationType: { fields: { name: string; args: { name: string; type: TypeRef }[] }[] } } }>(
-    env, account, `{ __schema { mutationType { fields { name args { name type { ${TYPE_REF} } } } } } }`);
+    env, account, `{ __schema { mutationType { fields { name args { name type { ${TYPE_REF} } } } } } }`, undefined, version);
   return d.__schema.mutationType.fields
     .filter((f) => !filter || f.name.toLowerCase().includes(filter.toLowerCase()))
     .map((f) => `${f.name}(${f.args.map((a) => `${a.name}: ${typeName(a.type)}`).join(", ")})`);
