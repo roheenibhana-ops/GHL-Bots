@@ -47,3 +47,17 @@ describe("looksLikeTestRecord", () => {
     expect(looksLikeTestRecord({ firstName: "Sam", lastName: "Lee" })).toBe(false);
   });
 });
+
+describe("classify for the Dunzo database", () => {
+  it("won are customers, lost are lost, service tags do not exclude", () => {
+    expect(classify(["dunzo won", "gutter cleaning", "dunzo-gutters"], "dunzo")).toBe("customer");
+    expect(classify(["dunzo lost", "ride-the-wave", "quote-nurture-paused"], "dunzo")).toBe("lost");
+  });
+  it("excludes booked, active, engaged, negative and unsubscribed", () => {
+    for (const t of ["job scheduled", "quote approved", "new lead 2026", "new lead 2027", "phone-engaged-positive", "quote-nurture-negative", "newsletter - unsubscribed"]) {
+      expect(classify(["dunzo won", t], "dunzo")).toBe("excluded");
+    }
+  });
+  it("quote sent only is not in the pilot", () => expect(classify(["quote sent"], "dunzo")).toBe("other"));
+  it("Lights rules are unchanged by default", () => expect(classify(["lights won", "gutter cleaning"])).toBe("excluded"));
+});

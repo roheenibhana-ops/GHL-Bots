@@ -61,7 +61,7 @@ export async function createPilot(env: Env, o: PilotOptions) {
   const buckets: Record<Segment, typeof keep> = { customer: [], lost: [], excluded: [], other: [] };
   for (const c of keep) {
     if (taken.has(c.id) || looksLikeTestRecord(c)) continue;
-    buckets[classify(c.tags)].push(c);
+    buckets[classify(c.tags, o.account)].push(c);
   }
 
   const half = Math.floor(o.size / 2);
