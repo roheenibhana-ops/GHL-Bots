@@ -41,9 +41,10 @@ export default {
     if (url.pathname === "/admin/dry-run") {
       if (!isAdmin(req, env)) return json({ error: "unauthorized" }, 401);
       const maxPages = Number(url.searchParams.get("pages") ?? "3");
+      const only = url.searchParams.get("account"); // optional: lights or dunzo, to report on one account
       const all: Parameters<typeof dedupe>[0] = [];
       const perAccount: Record<string, number> = {};
-      for (const account of ACCOUNTS) {
+      for (const account of ACCOUNTS.filter((a) => !only || a === only)) {
         const creds = credsFor(env, account);
         perAccount[account] = 0;
         for (let page = 1; page <= maxPages; page++) {
