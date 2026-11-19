@@ -1,3 +1,4 @@
+import type { Opp, PipelineInfo } from "./photo";
 import type { Account, Env, GhlContact, GhlCreds } from "./types";
 
 const BASE = "https://services.leadconnectorhq.com";
@@ -74,4 +75,35 @@ export async function getContact(c: GhlCreds, contactId: string): Promise<GhlCon
 
 export async function setEmail(c: GhlCreds, contactId: string, email: string): Promise<unknown> {
   return call(c, "PUT", `/contacts/${contactId}`, { email });
+}
+
+// ---- Opportunities (API version 2021-07-28) ----
+async function oppCall<T>(c: GhlCreds, method: string, path: string, body?: unknown): Promise<T> {
+  const res = await fetch(BASE + path, {
+    method,
+    headers: { Authorization: `Bearer ${c.token}`, Version: "2021-07-28", Accept: "application/json", "Content-Type": "application/json" },
+    body: body === undefined ? undefined : JSON.stringify(body),
+  });
+  if (!res.ok) throw new Error(`GHL ${method} ${path} -> ${res.status}: ${(await res.text()).slice(0, 300)}`);
+  return (await res.json()) as T;
+}
+
+export async function listOpportunities(c: GhlCreds, contactId: string): Promise<Opp[]> {
+  const r = await oppCall<{ opportunities?: Opp[] }>(c, "GET", `/opportunities/search?location_id=${c.locationId}&contact_id=${contactId}&limit=20`);
+  return (r.opportunities ?? []).map((o) => ({ id: o.id, name: o.name, pipelineId: o.pipelineId, pipelineStageId: o.pipelineStageId, status: o.status }));
+}
+
+export async function getPipelines(c: GhlCreds): Promise<PipelineInfo[]> {
+  const r = await oppCall<{ pipelines?: PipelineInfo[] }>(c, "GET", `/opportunities/pipelines?locationId=${c.locationId}`);
+  return (r.pipelines ?? []).map((p) => ({ id: p.id, name: p.name, stages: (p.stages ?? []).map((st) => ({ id: st.id, name: st.name })) }));
+}
+
+export async function moveOpportunity(c: GhlCreds, oppId: string, stageId: string): Promise<unknown> {
+  return oppCall(c, "PUT", `/opportunities/${oppId}`, { pipelineStageId: stageId });
+}
+
+/** The opportunity's current stage id, so a move can be verified instead of assumed. */
+export async function opportunityStageId(c: GhlCreds, oppId: string): Promise<string | undefined> {
+  const r = await oppCall<{ opportunity?: { pipelineStageId?: string }; pipelineStageId?: string }>(c, "GET", `/opportunities/${oppId}`);
+  return r.opportunity?.pipelineStageId ?? r.pipelineStageId;
 }

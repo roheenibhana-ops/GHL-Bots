@@ -99,7 +99,9 @@ export default {
     if (url.pathname === "/admin/bot/dry-inbound" && req.method === "POST") {
       if (!isTester(req, env)) return json({ error: "unauthorized" }, 401);
       const b = (await req.json()) as InboundPayload;
-      try { return json(await handleInbound(env, { ...b, locationId: b.locationId ?? env.GHL_LOCATION_DUNZO, direction: "inbound" }, true)); } catch (e) { return json({ error: (e as Error).message }, 502); }
+      const acct = (b as { account?: string }).account;
+      const loc = acct === "lights" ? env.GHL_LOCATION_LIGHTS : b.locationId ?? env.GHL_LOCATION_DUNZO;
+      try { return json(await handleInbound(env, { ...b, locationId: loc, direction: "inbound" }, true)); } catch (e) { return json({ error: (e as Error).message }, 502); }
     }
     // Sends ONE labelled test text to ALERT_PHONE so you can see alerts really arrive.
     if (url.pathname === "/admin/alert-test" && req.method === "POST") {

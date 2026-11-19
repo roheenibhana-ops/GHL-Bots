@@ -28,6 +28,8 @@ export interface Env {
   QUOTE_MODE: string;
   /** The sales conversation uses a stronger model than the cheap helpers. */
   BOT_MODEL?: string;
+  /** off = ignore photos | test = only contacts tagged bot-test | live = every contact. Moves New Lead to Photos Received and thanks them. */
+  PHOTO_MODE: string;
   BOT_START_HOUR: string;
   BOT_END_HOUR: string;
   /** Optional secret: mobile number (E.164 or 10 digits) that gets handoff and quote alerts by text. */

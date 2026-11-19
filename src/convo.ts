@@ -1,6 +1,7 @@
 import { botTurn, type BotFacts } from "./bot";
 import { sb } from "./db";
-import { addNote, addTags, credsFor, getContact, sendSms, setDnd, setEmail, upsertByPhone } from "./ghl";
+import { addNote, addTags, credsFor, getContact, getPipelines, listOpportunities, moveOpportunity, opportunityStageId, sendSms, setDnd, setEmail, upsertByPhone } from "./ghl";
+import { photoThanks, planPhotoMove } from "./photo";
 import { formatProfile, ghlNotes, ghlOpportunities, jobberHistory } from "./profile";
 import { createGutterQuote, linkMessage } from "./quote";
 import { inSendWindow, isStopMessage, normalizePhone } from "./safety";
@@ -56,9 +57,9 @@ export async function alertTeam(env: Env, text: string): Promise<void> {
   } catch { /* logged by the caller's note; alerts are best effort */ }
 }
 
-async function sendReply(env: Env, account: Account, contactId: string, text: string, tz: string | undefined, phone: string | undefined, name: string | undefined): Promise<"sent" | "queued"> {
+async function sendReply(env: Env, account: Account, contactId: string, text: string, tz: string | undefined, phone: string | undefined, name: string | undefined, campaign = "bot"): Promise<"sent" | "queued"> {
   const inWindow = inSendWindow(new Date(), tz, Number(env.BOT_END_HOUR), Number(env.BOT_START_HOUR));
-  const base = { account, contact_id: contactId, direction: "outbound", body: text, campaign: "bot", timezone: tz ?? null, phone_e164: phone ?? null, contact_name: name ?? null };
+  const base = { account, contact_id: contactId, direction: "outbound", body: text, campaign, timezone: tz ?? null, phone_e164: phone ?? null, contact_name: name ?? null };
   if (!inWindow) {
     await sb(env, "POST", "messages", { ...base, status: "queued_hours" }, "return=minimal");
     return "queued";
@@ -86,6 +87,12 @@ export async function handleInbound(env: Env, p: InboundPayload, dryRun = false)
       await sb(env, "POST", "conversations?on_conflict=contact_id", { contact_id: p.contactId, account, status: "closed", updated_at: new Date().toISOString() }, "resolution=merge-duplicates,return=minimal");
     }
     return { optedOut: true };
+  }
+  // 1b. Photos: move New Lead to Photos Received and thank them, for both businesses. Falls through to the bot when there is nothing to move.
+  if (body === MEDIA_TEXT && env.PHOTO_MODE !== "off") {
+    const r = await handlePhoto(env, p, account, dryRun);
+    if (!r.fallThrough) return r;
+    log.photo = r.skipped;
   }
   // The bot speaks as Dunzo Gutters, so it only handles the Dunzo account for now.
   if (account !== "dunzo") return { skipped: "lights account is not handled by the bot yet" };
@@ -209,4 +216,40 @@ export async function sendQueuedReplies(env: Env): Promise<number> {
     }
   }
   return sent;
+}
+
+/**
+ * A customer sent photos. If their open opportunity is in New Lead: move it to Photos Received (and check that the move
+ * really happened), tag the contact `photos received`, and thank them once. Nothing is assumed: a failed or unverified
+ * move alerts the team and sends no thank-you.
+ */
+export async function handlePhoto(env: Env, p: InboundPayload, account: Account, dryRun: boolean): Promise<Record<string, unknown> & { fallThrough?: boolean }> {
+  const creds = credsFor(env, account);
+  const contactId = p.contactId as string;
+  const contact = await getContact(creds, contactId);
+  if (env.PHOTO_MODE === "test" && !lc(contact.tags).includes("bot-test")) return { fallThrough: true, skipped: "photo test mode: contact is not tagged bot-test" };
+
+  const [opps, pipelines] = await Promise.all([listOpportunities(creds, contactId), getPipelines(creds)]);
+  const plan = planPhotoMove(opps, pipelines);
+  if (plan.action === "skip") return { fallThrough: true, skipped: plan.reason };
+  if (dryRun) return { photo: plan, wouldSend: photoThanks(account, contact.firstName) };
+
+  const since = new Date(Date.now() - 20 * 3_600_000).toISOString();
+  const already = await sb<{ id: string }[]>(env, "GET", `messages?contact_id=eq.${encodeURIComponent(contactId)}&campaign=eq.photo&created_at=gte.${since}&select=id&limit=1`);
+  if (already.length) return { skipped: "already thanked for photos in the last 20 hours" };
+
+  const who = [contact.firstName, contact.lastName].filter(Boolean).join(" ") || "A customer";
+  try {
+    await moveOpportunity(creds, plan.oppId, plan.toStageId);
+    const now = await opportunityStageId(creds, plan.oppId);
+    if (now !== plan.toStageId) throw new Error("the stage move could not be verified");
+    await addTags(creds, contactId, ["photos received"]);
+  } catch (e) {
+    await alertTeam(env, `Photos arrived from ${who} but I could not move them to Photos Received (${(e as Error).message.slice(0, 80)}). Please check.`);
+    return { error: "stage move failed or unverified, no thank-you sent" };
+  }
+  const phone = normalizePhone(contact.phone ?? p.phone) ?? undefined;
+  const delivery = await sendReply(env, account, contactId, photoThanks(account, contact.firstName), contact.timezone, phone, who, "photo");
+  await addNote(creds, contactId, `Customer sent photos by text. Moved from ${plan.fromStage} to ${plan.toStageName} and thanked them.`).catch(() => undefined);
+  return { moved: { from: plan.fromStage, to: plan.toStageName }, delivery };
 }
