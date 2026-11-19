@@ -57,8 +57,9 @@ export async function alertTeam(env: Env, text: string): Promise<void> {
   } catch { /* logged by the caller's note; alerts are best effort */ }
 }
 
-async function sendReply(env: Env, account: Account, contactId: string, text: string, tz: string | undefined, phone: string | undefined, name: string | undefined, campaign = "bot"): Promise<"sent" | "queued"> {
-  const inWindow = inSendWindow(new Date(), tz, Number(env.BOT_END_HOUR), Number(env.BOT_START_HOUR));
+async function sendReply(env: Env, account: Account, contactId: string, text: string, tz: string | undefined, phone: string | undefined, name: string | undefined, campaign = "bot", bypassWindow = false): Promise<"sent" | "queued"> {
+  // Contacts tagged bot-test (our own test people) can be texted at any hour so a test conversation never stalls overnight. Real customers never bypass it.
+  const inWindow = bypassWindow || inSendWindow(new Date(), tz, Number(env.BOT_END_HOUR), Number(env.BOT_START_HOUR));
   const base = { account, contact_id: contactId, direction: "outbound", body: text, campaign, timezone: tz ?? null, phone_e164: phone ?? null, contact_name: name ?? null };
   if (!inWindow) {
     await sb(env, "POST", "messages", { ...base, status: "queued_hours" }, "return=minimal");
@@ -199,8 +200,9 @@ export async function handleInbound(env: Env, p: InboundPayload, dryRun = false)
   }
 
   const phone = normalizePhone(contact.phone ?? p.phone) ?? undefined;
-  log.delivery = await sendReply(env, account, p.contactId, output.reply, contact.timezone, phone, name);
-  if (followUp) log.linkDelivery = await sendReply(env, account, p.contactId, followUp, contact.timezone, phone, name);
+  const testPerson = tags.includes("bot-test");
+  log.delivery = await sendReply(env, account, p.contactId, output.reply, contact.timezone, phone, name, "bot", testPerson);
+  if (followUp) log.linkDelivery = await sendReply(env, account, p.contactId, followUp, contact.timezone, phone, name, "bot", testPerson);
   return log;
 }
 
@@ -255,7 +257,7 @@ export async function handlePhoto(env: Env, p: InboundPayload, account: Account,
     return { error: "stage move failed or unverified, no thank-you sent" };
   }
   const phone = normalizePhone(contact.phone ?? p.phone) ?? undefined;
-  const delivery = await sendReply(env, account, contactId, photoThanks(account, contact.firstName), contact.timezone, phone, who, "photo");
+  const delivery = await sendReply(env, account, contactId, photoThanks(account, contact.firstName), contact.timezone, phone, who, "photo", lc(contact.tags).includes("bot-test"));
   await addNote(creds, contactId, `${OUR_NOTE_PREFIX}Customer sent photos by text. Moved from ${plan.fromStage} to ${plan.toStageName} and thanked them.`).catch(() => undefined);
   return { moved: { from: plan.fromStage, to: plan.toStageName }, delivery };
 }
