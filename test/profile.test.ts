@@ -59,3 +59,21 @@ describe("opportunities and their notes", () => {
     expect(t.indexOf("Said price too high")).toBeLessThan(t.indexOf("wants a price on guards"));
   });
 });
+
+describe("machine notes are left out", () => {
+  it("drops internal logs, auto-replies and quote copies but keeps real notes", () => {
+    const t = formatProfile({
+      ...base,
+      notes: [
+        { body: "INTERNAL - Scheduled Photo Scan | 2026-10-12" },
+        { body: "Quote Number1020 | Item: Gutter Cleaning" },
+        { body: "Hi! You reached Dunzo Gutters. We missed your call and someone will be back" },
+        { body: "Spoke to Sam, has two big oaks, wants guards", dateAdded: "2026-10-01T00:00:00Z" },
+      ],
+    });
+    expect(t).toContain("two big oaks");
+    expect(t).not.toContain("INTERNAL");
+    expect(t).not.toContain("Quote Number1020");
+    expect(t).not.toContain("missed your call");
+  });
+});

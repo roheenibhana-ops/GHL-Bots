@@ -17,7 +17,8 @@ export interface ProfileInputs {
 export interface OppInfo { name: string; status: string; stage?: string; source?: string; lastStageChangeAt?: string; notes: { body: string; dateAdded?: string }[] }
 
 const NOISE_TAG = /^(bot-|contact details updated|newsletter|website-forms|ride-the-wave|quote-nurture)/i;
-const OUR_NOTE = /^(lead bot|quote ready to send|repair request|bot-)/i;
+// Notes that are machine logs or copies of other data, not information about the customer.
+const OUR_NOTE = /^(lead bot|quote ready to send|repair request|bot-|internal\b|quote number|new quote number)|missed your call|scheduled (photo scan|check)/i;
 
 function monthYear(iso?: string | null): string {
   if (!iso) return "date unknown";
