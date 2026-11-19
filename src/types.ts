@@ -32,6 +32,8 @@ export interface Env {
   BOT_END_HOUR: string;
   /** Optional secret: mobile number (E.164 or 10 digits) that gets handoff and quote alerts by text. */
   ALERT_PHONE?: string;
+  /** Optional secret: a limited token for testing tools only (simulator, dry runs, read-only views). */
+  AGENT_TOKEN?: string;
 }
 
 export type Account = "lights" | "dunzo";

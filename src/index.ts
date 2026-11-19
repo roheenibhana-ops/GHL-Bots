@@ -16,6 +16,13 @@ import { ACCOUNTS, type Account, type Env } from "./types";
 const json = (data: unknown, status = 200) =>
   new Response(JSON.stringify(data, null, 2), { status, headers: { "content-type": "application/json" } });
 
+/** A second, limited token (AGENT_TOKEN) for testing tools only: simulator, dry runs and read-only views. It can never send, create or change anything. */
+function isTester(req: Request, env: Env): boolean {
+  const given = (req.headers.get("authorization") ?? "").replace(/^Bearer\s+/i, "").trim();
+  const tester = (env.AGENT_TOKEN ?? "").trim();
+  return (tester.length >= 20 && given === tester) || isAdmin(req, env);
+}
+
 function isAdmin(req: Request, env: Env): boolean {
   // Trim both sides: a stray space or newline pasted into the secret shouldn't lock us out.
   const expected = (env.ADMIN_TOKEN ?? "").trim();
@@ -90,7 +97,7 @@ export default {
     }
     // Runs a fake inbound reply through the whole bot pipeline WITHOUT sending, tagging or creating anything.
     if (url.pathname === "/admin/bot/dry-inbound" && req.method === "POST") {
-      if (!isAdmin(req, env)) return json({ error: "unauthorized" }, 401);
+      if (!isTester(req, env)) return json({ error: "unauthorized" }, 401);
       const b = (await req.json()) as InboundPayload;
       try { return json(await handleInbound(env, { ...b, locationId: b.locationId ?? env.GHL_LOCATION_DUNZO, direction: "inbound" }, true)); } catch (e) { return json({ error: (e as Error).message }, 502); }
     }
@@ -107,7 +114,7 @@ export default {
       } catch (e) { return json({ error: (e as Error).message }, 502); }
     }
     if (url.pathname === "/admin/webhook-log") {
-      if (!isAdmin(req, env)) return json({ error: "unauthorized" }, 401);
+      if (!isTester(req, env)) return json({ error: "unauthorized" }, 401);
       return json({ entries: await sb(env, "GET", "webhook_log?order=received_at.desc&limit=5") });
     }
 
@@ -314,7 +321,7 @@ export default {
     // Simulator: page plus a stateless endpoint. No text is sent and nothing is created anywhere.
     if (url.pathname === "/sim") return new Response(SIM_HTML, { headers: { "content-type": "text/html; charset=utf-8" } });
     if (url.pathname === "/admin/sim" && req.method === "POST") {
-      if (!isAdmin(req, env)) return json({ error: "unauthorized" }, 401);
+      if (!isTester(req, env)) return json({ error: "unauthorized" }, 401);
       const b = (await req.json()) as { facts?: BotFacts; history?: { role: "user" | "assistant"; content: string }[] };
       const history = (b.history ?? []).slice(-30).map((m) => ({ role: m.role === "assistant" ? ("assistant" as const) : ("user" as const), content: String(m.content ?? "").slice(0, 1000) }));
       try { return json(await botTurn(env, b.facts ?? {}, history)); } catch (e) { return json({ error: (e as Error).message }, 502); }
@@ -343,7 +350,7 @@ export default {
     }
 
     if (url.pathname === "/admin/pending") {
-      if (!isAdmin(req, env)) return json({ error: "unauthorized" }, 401);
+      if (!isTester(req, env)) return json({ error: "unauthorized" }, 401);
       const campaign = url.searchParams.get("campaign") ?? "pilot-1";
       const messages = await sb<unknown[]>(
         env, "GET",
