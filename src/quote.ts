@@ -72,8 +72,8 @@ export interface QuotePlan {
   problems: string[];
 }
 
-/** Plans (and with create=true, performs) client + property + quote creation in Dunzo's Jobber. Sends no text and no email. */
-export async function createGutterQuote(env: Env, r: QuoteRequest, create: boolean) {
+/** Plans (and with create=true, performs) client + property + quote creation in Dunzo's Jobber. Creates a draft; sends no text and no email. */
+export async function createGutterQuote(env: Env, r: QuoteRequest, create: boolean, markSent = false) {
   const problems: string[] = [];
   const templates = await listQuoteTemplates(env, "dunzo");
   const tpl = pickTemplate(templates, r.stories);
@@ -143,7 +143,9 @@ export async function createGutterQuote(env: Env, r: QuoteRequest, create: boole
         deposit: { rate: DEPOSIT_PERCENT, type: "Percent" },
         allowClientHubCreditCardPayments: true,
         allowClientHubAchPayments: true,
-        transitionQuoteTo: "AWAITING_RESPONSE",
+        // Default is a DRAFT: nothing downstream (GHL stage, tags, alerts) fires until a person presses Send in Jobber.
+        // markSent=true sets "awaiting response" without delivering anything to the customer, which misleads the pipeline.
+        ...(markSent ? { transitionQuoteTo: "AWAITING_RESPONSE" } : {}),
       } });
   if (!q.quoteCreate.quote) throw new Error(`quoteCreate failed: ${errs(q.quoteCreate.userErrors)}`);
   return { created: true, plan, clientId, quote: q.quoteCreate.quote };
