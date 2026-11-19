@@ -18,6 +18,11 @@ describe("parseBotOutput", () => {
     expect(parseBotOutput('{"reply":"ok","intent":"email_given","data":{"email":"nope","stories":3}}').data).toEqual({});
     expect(parseBotOutput('{"reply":"ok","intent":"email_given","data":{"email":" Sam@Example.com "}}').data.email).toBe("sam@example.com");
   });
+  it("tolerates real line breaks inside the reply text", () => {
+    const o = tryParseBotOutput('{"reply": "Fair question.\nWe are a real company.\n\nWant a quote?", "intent": "reply_only", "data": {}}');
+    expect(o?.intent).toBe("reply_only");
+    expect(o?.reply).toContain("Fair question.");
+  });
   it("tryParse returns null for unreadable output so a retry can happen", () => {
     expect(tryParseBotOutput("sure thing!")).toBeNull();
     expect(tryParseBotOutput('{"reply":"hi","intent":"nonsense","data":{}}')).toBeNull();

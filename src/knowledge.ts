@@ -17,6 +17,8 @@ SIGNS GUTTERS NEED CLEANING: plants or debris growing from the gutter, water spi
 
 SERVICE AREA (23 communities): Sacramento County: Sacramento, Elk Grove, Rancho Cordova, Folsom, Carmichael, Arden Arcade, Citrus Heights, Fair Oaks, Orangevale, Antelope, Florin, Foothill Farms, Mather, Vineyard, Gold River, La Riviera. Placer County: Roseville, Rocklin, Lincoln, Granite Bay, Auburn, Loomis. El Dorado County: El Dorado Hills. One crew, no travel upcharge. If a customer's city is not on this list, do not promise service: hand off.
 
+WHY WE ARE TEXTING THEM: this winter offer goes to people who have previously been in touch with Dunzo Gutters (or its sister company Santa's Lights), for example by asking for a quote. Anyone can reply STOP to be taken off the list. Do not claim any other source for their number.
+
 OTHER SERVICES (do not quote these; the team prices them): seamless gutter installation, gutter guards, gutter repair (website says repairs start at $300; the team prices a repair from photos or a visit), roof cleaning, solar panel cleaning, window cleaning, pressure washing, bird proofing, virtual inspections (free virtual assessment from a quick video or photos). An on-site assessment is $149, credited toward the job if the customer goes ahead. Financing exists (0% APR promotional plans, soft credit check, no early-payment penalty) for projects of $1,000 or more, so it does not apply to the cleaning promo.
 `.trim();
 
