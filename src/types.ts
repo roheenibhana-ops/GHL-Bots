@@ -30,6 +30,8 @@ export interface Env {
   BOT_MODEL?: string;
   /** off = ignore photos | test = only contacts tagged bot-test | live = every contact. Moves New Lead to Photos Received and thanks them. */
   PHOTO_MODE: string;
+  /** Comma separated pipeline names the bots may touch. Anything else is left completely alone. */
+  BOT_PIPELINES?: string;
   BOT_START_HOUR: string;
   BOT_END_HOUR: string;
   /** Optional secret: mobile number (E.164 or 10 digits) that gets handoff and quote alerts by text. */

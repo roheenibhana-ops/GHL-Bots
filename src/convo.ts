@@ -236,7 +236,7 @@ export async function handlePhoto(env: Env, p: InboundPayload, account: Account,
   if (env.PHOTO_MODE === "test" && !lc(contact.tags).includes("bot-test")) return { fallThrough: true, skipped: "photo test mode: contact is not tagged bot-test" };
 
   const [opps, pipelines] = await Promise.all([listOpportunities(creds, contactId), getPipelines(creds)]);
-  const plan = planPhotoMove(opps, pipelines);
+  const plan = planPhotoMove(opps, pipelines, (env.BOT_PIPELINES ?? "").split(",").map((x) => x.trim()).filter(Boolean));
   if (plan.action === "skip") return { fallThrough: true, skipped: plan.reason };
   if (dryRun) return { photo: plan, wouldSend: photoThanks(account, contact.firstName) };
 

@@ -14,9 +14,11 @@ const skip = (reason: string): PhotoPlan => ({ action: "skip", reason });
  * When a customer sends photos: if their open opportunity is in the New Lead stage, move it to Photos Received.
  * Any other stage is left alone, because by then the photos are no longer the next step.
  */
-export function planPhotoMove(opps: Opp[], pipelines: PipelineInfo[]): PhotoPlan {
-  const open = opps.filter((o) => o.status === "open");
-  if (!open.length) return skip("no open opportunity for this contact");
+export function planPhotoMove(opps: Opp[], pipelines: PipelineInfo[], allowedPipelines: string[] = []): PhotoPlan {
+  // Only pipelines on the allow list are ever touched. An empty list means no restriction.
+  const allowedIds = new Set(allowedPipelines.length ? pipelines.filter((p) => allowedPipelines.some((n) => n.trim().toLowerCase() === p.name.trim().toLowerCase())).map((p) => p.id) : pipelines.map((p) => p.id));
+  const open = opps.filter((o) => o.status === "open" && allowedIds.has(o.pipelineId));
+  if (!open.length) return skip(allowedPipelines.length ? `no open opportunity in the allowed pipeline (${allowedPipelines.join(", ")})` : "no open opportunity for this contact");
   for (const o of open) {
     const p = pipelines.find((x) => x.id === o.pipelineId);
     if (!p) continue;
