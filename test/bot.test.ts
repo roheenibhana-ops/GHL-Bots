@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { applyOutput, disallowedPrices, HANDOFF_REPLY, nextStep, parseBotOutput, promisesDate, replyProblems, systemPrompt, tryParseBotOutput } from "../src/bot";
+import { applyOutput, disallowedPrices, HANDOFF_REPLY, nextStep, parseBotOutput, promisesDate, replyProblems, stripQuestions, systemPrompt, tryParseBotOutput } from "../src/bot";
 
 describe("parseBotOutput", () => {
   it("reads a good reply and its facts", () => {
@@ -70,5 +70,12 @@ describe("facts and prompt", () => {
     expect(p).toContain("STILL NEEDED FROM THE CUSTOMER");
     expect(systemPrompt({ stories: 1, addressConfirmed: true, email: "a@b.co" })).toContain("nothing: you have everything");
     expect(systemPrompt({ quoteRequested: true })).toContain("ALREADY been sent on");
+  });
+});
+
+describe("stripQuestions (handoffs)", () => {
+  it("leaves a handoff reply with no question, or the safe default", () => {
+    expect(stripQuestions("Gutter guards are priced by our team, so they'll come back with a firm price. Is your home one or two stories?")).toBe("Gutter guards are priced by our team, so they'll come back with a firm price.");
+    expect(stripQuestions("Is that right?")).toBe(HANDOFF_REPLY);
   });
 });

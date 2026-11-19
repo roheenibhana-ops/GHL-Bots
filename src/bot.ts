@@ -150,6 +150,12 @@ export function replyProblems(reply: string): string[] {
   return problems;
 }
 
+/** Drops questions from a handoff reply: a person takes over, so the customer must not be left answering a bot that has gone quiet. */
+export function stripQuestions(text: string): string {
+  const kept = text.trim().split(/(?<=[.!?])\s+/).filter((sentence) => !sentence.trim().endsWith("?"));
+  return kept.join(" ").trim() || HANDOFF_REPLY;
+}
+
 /** Applies what a turn taught us to the known facts. */
 export function applyOutput(f: BotFacts, o: BotOutput): BotFacts {
   const next = { ...f };
@@ -175,7 +181,8 @@ export async function botTurn(env: Env, facts: BotFacts, history: { role: "user"
     output = tryParseBotOutput(retryRaw);
     problems = output ? replyProblems(output.reply) : ["the output was not valid JSON"];
   }
-  const good: BotOutput | null = output && !problems.length ? output : null;
+  const checked: BotOutput | null = output && !problems.length ? output : null;
+  const good: BotOutput | null = checked && checked.intent === "handoff" ? { ...checked, reply: stripQuestions(checked.reply) } : checked;
   const parsed: BotOutput = good ?? { ...FALLBACK, data: { reason: `guardrail: ${problems.join("; ")}`.slice(0, 200) } };
   const debug = good ? undefined : { problems, raw: raw.slice(0, 500), retryRaw: retryRaw?.slice(0, 500) };
   const next = applyOutput(facts, parsed);
