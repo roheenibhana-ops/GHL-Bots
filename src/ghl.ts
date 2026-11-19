@@ -107,3 +107,12 @@ export async function opportunityStageId(c: GhlCreds, oppId: string): Promise<st
   const r = await oppCall<{ opportunity?: { pipelineStageId?: string }; pipelineStageId?: string }>(c, "GET", `/opportunities/${oppId}`);
   return r.opportunity?.pipelineStageId ?? r.pipelineStageId;
 }
+
+export async function removeTags(c: GhlCreds, contactId: string, tags: string[]): Promise<unknown> {
+  return call(c, "DELETE", `/contacts/${contactId}/tags`, { tags });
+}
+
+/** Clears do-not-disturb on SMS (used only when resetting a test contact after a STOP test). */
+export async function clearDnd(c: GhlCreds, contactId: string): Promise<unknown> {
+  return call(c, "PUT", `/contacts/${contactId}`, { dnd: false, dndSettings: { SMS: { status: "inactive", message: "", code: "" } } });
+}

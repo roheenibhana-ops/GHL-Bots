@@ -7,6 +7,7 @@ import { addNote, addTags, credsFor, searchContacts, sendSms, setDnd, upsertByPh
 import { authorizeUrl, checkState, describeType, exchangeCode, describeField, findClientsByPhones, gql, listClientPhones, listMutations, listQuoteTemplates, makeState } from "./jobber";
 import { assess } from "./check";
 import { handleInbound, sendQueuedReplies, type InboundPayload } from "./convo";
+import { resetTestContact } from "./reset";
 import { createGutterQuote } from "./quote";
 import { overlapStats, type Sources } from "./overlap";
 import { createPilot } from "./pilot";
@@ -115,6 +116,14 @@ export default {
         return json({ ok: true, sentTo: `***${phone.slice(-4)}` });
       } catch (e) { return json({ error: (e as Error).message }, 502); }
     }
+    // Puts a TEST contact (tagged bot-test) back to a clean slate for the next scenario. Admin only.
+    if (url.pathname === "/admin/test/reset" && req.method === "POST") {
+      if (!isAdmin(req, env)) return json({ error: "unauthorized" }, 401);
+      const { contactId } = (await req.json()) as { contactId?: string };
+      if (!contactId) return json({ error: "contactId is required" }, 400);
+      try { return json({ ok: true, ...(await resetTestContact(env, contactId)) }); } catch (e) { return json({ error: (e as Error).message }, 400); }
+    }
+
     // Read-only: lists a GHL account's pipelines and stages (names and ids).
     if (url.pathname === "/admin/ghl/pipelines") {
       if (!isTester(req, env)) return json({ error: "unauthorized" }, 401);
