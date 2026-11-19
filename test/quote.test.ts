@@ -26,15 +26,22 @@ describe("addressKey and findProperty", () => {
 });
 
 describe("pickClient", () => {
-  it("one phone match is used as is", () => expect(pickClient([{ name: "Sam Lee" }], "Sam")).toMatchObject({ ambiguous: false, by: "phone" }));
+  it("a single phone match is used only if the name fits", () => {
+    expect(pickClient([{ name: "Sam Lee" }], "Sam", "Sam Lee")).toMatchObject({ ambiguous: false, by: "phone and name" });
+    expect(pickClient([{ name: "Victoria Partridge" }], "Clark", "Clark Partridge").ambiguous).toBe(true);
+  });
   it("none means create", () => expect(pickClient([], "Sam")).toEqual({ client: null, ambiguous: false }));
   it("shared phone: the first name picks the right person", () => {
-    const r = pickClient([{ name: "Katie Tinney" }, { name: "Clark Partridge" }, { name: "Victoria Partridge" }], "clark");
+    const r = pickClient([{ name: "Katie Tinney" }, { name: "Clark Partridge" }, { name: "Victoria Partridge" }], "Clark", "Clark Partridge");
     expect(r).toMatchObject({ ambiguous: false, by: "first name" });
     expect(r.client?.name).toBe("Clark Partridge");
   });
   it("shared phone with no or several name matches stays ambiguous", () => {
     expect(pickClient([{ name: "Katie Tinney" }, { name: "Sarah Hill" }], "Clark").ambiguous).toBe(true);
     expect(pickClient([{ name: "Clark Partridge" }, { name: "Clark Davis" }], "Clark").ambiguous).toBe(true);
+  });
+  it("couples and short names", () => {
+    expect(pickClient([{ name: "Cathy SooHoo" }], "Wilson", "Wilson & Cathy SooHoo").ambiguous).toBe(false);
+    expect(pickClient([{ name: "Robert Hale" }], "Rob", "Rob Hale").ambiguous).toBe(false);
   });
 });

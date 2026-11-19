@@ -39,13 +39,24 @@ async function loadClient(env: Env, id: string): Promise<ClientRef> {
   return { id: d.client.id, properties: d.client.clientProperties.nodes };
 }
 
-/** Several Jobber clients can share a phone (couples, families, test records). Pick the one whose first name matches; otherwise stay ambiguous. */
-export function pickClient<T extends { name: string }>(hits: T[], firstName: string): { client: T | null; ambiguous: boolean; by?: "phone" | "first name" } {
-  if (hits.length === 1) return { client: hits[0], ambiguous: false, by: "phone" };
+const tokens = (n: string) => n.toLowerCase().replace(/[^a-z\s]/g, " ").split(/\s+/).filter(Boolean);
+
+/** Does the Jobber client's first name show up in the contact's name ("Wilson & Cathy SooHoo" contains Cathy)? Allows short forms (Rob / Robert). */
+export function nameCompatible(jobberName: string, contactFullName: string): boolean {
+  const j = tokens(jobberName)[0];
+  if (!j) return false;
+  return tokens(contactFullName).some((t) => t === j || (t.length >= 3 && j.length >= 3 && (t.startsWith(j) || j.startsWith(t))));
+}
+
+/**
+ * Picks the Jobber client for a contact. A phone match alone is not enough: couples, families and test records share numbers,
+ * so the contact's name has to fit too. Anything else is flagged for a human, never guessed.
+ */
+export function pickClient<T extends { name: string }>(hits: T[], firstName: string, fullName = firstName): { client: T | null; ambiguous: boolean; by?: "phone and name" | "first name" } {
   if (hits.length === 0) return { client: null, ambiguous: false };
-  const want = firstName.trim().toLowerCase();
-  const named = want ? hits.filter((h) => h.name.trim().toLowerCase().split(/\s+/)[0] === want) : [];
-  return named.length === 1 ? { client: named[0], ambiguous: false, by: "first name" } : { client: null, ambiguous: true };
+  const fits = hits.filter((h) => nameCompatible(h.name, fullName));
+  if (fits.length === 1) return { client: fits[0], ambiguous: false, by: hits.length === 1 ? "phone and name" : "first name" };
+  return { client: null, ambiguous: true };
 }
 
 const errs = (e: { message: string }[]) => e.map((x) => x.message).join("; ");
@@ -56,7 +67,7 @@ export interface QuotePlan {
   clientId?: string;
   /** Every Jobber client that matched the phone, so duplicates are easy to find and tidy. */
   matches: { id: string; name: string }[];
-  matchedBy?: "phone" | "first name";
+  matchedBy?: "phone and name" | "first name";
   property: "will create" | "existing" | "n/a";
   problems: string[];
 }
@@ -72,7 +83,7 @@ export async function createGutterQuote(env: Env, r: QuoteRequest, create: boole
 
   const found = await findClientsByPhones(env, "dunzo", [r.phone]);
   const hits = (found.get(r.phone) ?? []).filter((c: JClient) => assess([c], r.phone).found);
-  const pick = pickClient(hits, r.firstName);
+  const pick = pickClient(hits, r.firstName, `${r.firstName} ${r.lastName ?? ""}`);
   const plan: QuotePlan = {
     template: tpl && line ? { id: tpl.id, name: tpl.name, unitPrice: line.unitPrice } : null,
     client: pick.ambiguous ? "ambiguous" : pick.client ? "existing" : "will create",
@@ -82,7 +93,7 @@ export async function createGutterQuote(env: Env, r: QuoteRequest, create: boole
     property: "n/a",
     problems,
   };
-  if (pick.ambiguous) problems.push("More than one Jobber client has this phone number and the first name does not single one out: needs a human to pick one");
+  if (pick.ambiguous) problems.push("A Jobber client has this phone number but the name does not clearly match one person: needs a human to check");
 
   let clientId = pick.client?.id;
   let propertyId: string | null = null;
