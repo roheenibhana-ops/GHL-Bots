@@ -21,8 +21,8 @@ CLAUDE_MODEL = "claude-haiku-5-5"
 BOT_MODE = "test"
 # Model for the sales conversation.
 BOT_MODEL = "claude-sonnet-5-5"
-# "alert" = tell the team a quote is ready | "draft" = also create a draft quote in Dunzo Jobber.
-QUOTE_MODE = "alert"
+# "alert" = tell the team a quote is ready | "draft" = also create a draft quote in Dunzo Jobber | "link" = create the quote, mark it sent and text the customer the link (they enter their email to sign in).
+QUOTE_MODE = "link"
 # Local hours the bot may text (contact timezone).
 BOT_START_HOUR = "8"
 BOT_END_HOUR = "21"

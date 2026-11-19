@@ -24,7 +24,7 @@ export interface Env {
   CLAUDE_MODEL: string;
   /** off = capture only | test = reply only to contacts tagged bot-test | live = reply to everyone */
   BOT_MODE: string;
-  /** alert = tell the team | draft = create a draft quote in Jobber and tell the team */
+  /** alert = tell the team | draft = draft quote in Jobber + tell the team | link = create, mark sent, text the customer the link */
   QUOTE_MODE: string;
   /** The sales conversation uses a stronger model than the cheap helpers. */
   BOT_MODEL?: string;

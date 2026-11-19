@@ -11,6 +11,13 @@ export interface QuoteRequest {
 }
 
 export const DEPOSIT_PERCENT = 50;
+export const PRICE: Record<1 | 2, number> = { 1: 219, 2: 319 };
+export const depositFor = (stories: 1 | 2): string => ((PRICE[stories] * DEPOSIT_PERCENT) / 100).toFixed(2);
+
+/** The text that carries the quote link. The customer must type the same email we saved on their Jobber client. */
+export function linkMessage(email: string, stories: 1 | 2, link: string): string {
+  return `Here's your Dunzo Gutters quote: ${link} Tap it and enter ${email} when asked, then open the sign-in link we email you. Approve the quote there and pay the 50% deposit ($${depositFor(stories)}) to lock it in.`;
+}
 
 /** Picks the Winter Warm Up promo template for the story count, by name. */
 export function pickTemplate(templates: QuoteTemplateInfo[], stories: 1 | 2): QuoteTemplateInfo | null {
@@ -31,12 +38,12 @@ export function findProperty(props: { id: string; address: { street1: string; po
   return props.find((p) => addressKey(p.address.street1, p.address.postalCode) === want)?.id ?? null;
 }
 
-interface ClientRef { id: string; properties: { id: string; address: { street1: string; postalCode: string } }[] }
+interface ClientRef { id: string; properties: { id: string; address: { street1: string; postalCode: string } }[]; emails: { address: string }[] }
 
 async function loadClient(env: Env, id: string): Promise<ClientRef> {
-  const d = await gql<{ client: { id: string; clientProperties: { nodes: { id: string; address: { street1: string; postalCode: string } }[] } } }>(
-    env, "dunzo", `query($id: EncodedId!) { client(id: $id) { id clientProperties(first: 25) { nodes { id address { street1 postalCode } } } } }`, { id });
-  return { id: d.client.id, properties: d.client.clientProperties.nodes };
+  const d = await gql<{ client: { id: string; clientProperties: { nodes: { id: string; address: { street1: string; postalCode: string } }[] }; emails: { address: string }[] } }>(
+    env, "dunzo", `query($id: EncodedId!) { client(id: $id) { id clientProperties(first: 25) { nodes { id address { street1 postalCode } } } emails { address } } }`, { id });
+  return { id: d.client.id, properties: d.client.clientProperties.nodes, emails: d.client.emails ?? [] };
 }
 
 const tokens = (n: string) => n.toLowerCase().replace(/[^a-z\s]/g, " ").split(/\s+/).filter(Boolean);
@@ -97,8 +104,10 @@ export async function createGutterQuote(env: Env, r: QuoteRequest, create: boole
 
   let clientId = pick.client?.id;
   let propertyId: string | null = null;
+  let existing: ClientRef | undefined;
   if (clientId) {
     const c = await loadClient(env, clientId);
+    existing = c;
     propertyId = findProperty(c.properties, r.address);
     plan.property = propertyId ? "existing" : "will create";
   } else if (!pick.ambiguous) {
@@ -132,6 +141,18 @@ export async function createGutterQuote(env: Env, r: QuoteRequest, create: boole
   }
   if (!propertyId) throw new Error("No property for the quote");
 
+  // The client hub login only works with an email that is on the Jobber client. Add the one the customer gave us.
+  let emailAdded = false;
+  const wantEmail = r.email;
+  if (existing && wantEmail && !existing.emails.some((e) => e.address.toLowerCase() === wantEmail.toLowerCase())) {
+    const e = await gql<{ clientEdit: { userErrors: { message: string }[] } }>(
+      env, "dunzo",
+      `mutation($clientId: EncodedId!, $input: ClientEditInput!) { clientEdit(clientId: $clientId, input: $input) { userErrors { message } } }`,
+      { clientId, input: { emailsToAdd: [{ address: wantEmail, primary: existing.emails.length === 0 }] } });
+    if (e.clientEdit.userErrors.length) throw new Error(`Could not save the email on the Jobber client: ${errs(e.clientEdit.userErrors)}`);
+    emailAdded = true;
+  }
+
   // 2. quote from the template's line item, 50% deposit, card + bank payment on, marked awaiting response
   const q = await gql<{ quoteCreate: { quote: { id: string; quoteNumber: string; quoteStatus: string; clientHubUri: string | null; jobberWebUri: string } | null; userErrors: { message: string }[] } }>(
     env, "dunzo",
@@ -148,5 +169,5 @@ export async function createGutterQuote(env: Env, r: QuoteRequest, create: boole
         ...(markSent ? { transitionQuoteTo: "AWAITING_RESPONSE" } : {}),
       } });
   if (!q.quoteCreate.quote) throw new Error(`quoteCreate failed: ${errs(q.quoteCreate.userErrors)}`);
-  return { created: true, plan, clientId, quote: q.quoteCreate.quote };
+  return { created: true, plan, clientId, emailAdded, quote: q.quoteCreate.quote };
 }

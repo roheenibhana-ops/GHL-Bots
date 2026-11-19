@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { addressKey, findProperty, pickClient, pickTemplate } from "../src/quote";
+import { addressKey, depositFor, findProperty, linkMessage, pickClient, pickTemplate } from "../src/quote";
 import type { QuoteTemplateInfo } from "../src/jobber";
 
 const t = (name: string): QuoteTemplateInfo => ({ id: name, name, message: null, disclaimer: null, requiredDeposit: null, lineItems: { nodes: [] } });
@@ -43,5 +43,18 @@ describe("pickClient", () => {
   it("couples and short names", () => {
     expect(pickClient([{ name: "Cathy SooHoo" }], "Wilson", "Wilson & Cathy SooHoo").ambiguous).toBe(false);
     expect(pickClient([{ name: "Robert Hale" }], "Rob", "Rob Hale").ambiguous).toBe(false);
+  });
+});
+
+describe("deposit and link message", () => {
+  it("50% of the promo price", () => {
+    expect(depositFor(1)).toBe("109.50");
+    expect(depositFor(2)).toBe("159.50");
+  });
+  it("tells the customer exactly which email to use", () => {
+    const m = linkMessage("sam@example.com", 2, "https://clienthub.getjobber.com/x");
+    expect(m).toContain("https://clienthub.getjobber.com/x");
+    expect(m).toContain("enter sam@example.com when asked");
+    expect(m).toContain("$159.50");
   });
 });

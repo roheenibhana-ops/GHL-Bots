@@ -1,7 +1,7 @@
 import { botTurn, type BotFacts } from "./bot";
 import { sb } from "./db";
 import { addNote, addTags, credsFor, getContact, sendSms, setDnd, setEmail, upsertByPhone } from "./ghl";
-import { createGutterQuote } from "./quote";
+import { createGutterQuote, linkMessage } from "./quote";
 import { inSendWindow, isStopMessage, normalizePhone } from "./safety";
 import type { Account, Env } from "./types";
 
@@ -110,6 +110,7 @@ export async function handleInbound(env: Env, p: InboundPayload, dryRun = false)
   const status = ["handoff", "repair"].includes(output.intent) ? "handed_off" : output.intent === "declined" ? "closed" : "active";
   await sb(env, "POST", "conversations?on_conflict=contact_id", { contact_id: p.contactId, account, facts: next, status, updated_at: new Date().toISOString() }, "resolution=merge-duplicates,return=minimal");
 
+  let followUp = ""; // a second text (the quote link) sent right after the bot's reply
   const name = [contact.firstName, contact.lastName].filter(Boolean).join(" ") || "Customer";
   const summary = `${name}${next.stories ? `, ${next.stories} story` : ""}${next.address ? `, ${next.address.street1}` : ""}${next.email ? `, ${next.email}` : ""}`;
   if (output.intent === "handoff") {
@@ -126,6 +127,20 @@ export async function handleInbound(env: Env, p: InboundPayload, dryRun = false)
     if (next.email && !contact.email) await setEmail(creds, p.contactId, next.email).catch(() => undefined);
     await addTags(creds, p.contactId, ["bot-quote-ready"]);
     let link = "";
+    if (env.QUOTE_MODE === "link" && next.stories && next.address && next.email) {
+      try {
+        const phone = normalizePhone(contact.phone ?? p.phone);
+        if (!phone) throw new Error("no valid phone");
+        const q = await createGutterQuote(env, { phone, firstName: contact.firstName ?? "", lastName: contact.lastName, email: next.email, address: next.address, stories: next.stories }, true, true);
+        if ("quote" in q && q.quote?.clientHubUri) {
+          followUp = linkMessage(next.email, next.stories, q.quote.clientHubUri);
+          link = ` Quote #${q.quote.quoteNumber} created and the link was texted to the customer: ${q.quote.jobberWebUri}`;
+          await addTags(creds, p.contactId, ["bot-quote-sent"]);
+        } else {
+          link = ` NEEDS A HUMAN: Jobber could not create it automatically (${q.plan.problems.join("; ") || "unknown"}). Please create and send the quote by hand.`;
+        }
+      } catch (e) { link = ` NEEDS A HUMAN: Jobber quote failed (${(e as Error).message.slice(0, 120)}). Please create and send the quote by hand.`; }
+    }
     if (env.QUOTE_MODE === "draft" && next.stories && next.address) {
       try {
         const phone = normalizePhone(contact.phone ?? p.phone);
@@ -141,6 +156,7 @@ export async function handleInbound(env: Env, p: InboundPayload, dryRun = false)
 
   const phone = normalizePhone(contact.phone ?? p.phone) ?? undefined;
   log.delivery = await sendReply(env, account, p.contactId, output.reply, contact.timezone, phone, name);
+  if (followUp) log.linkDelivery = await sendReply(env, account, p.contactId, followUp, contact.timezone, phone, name);
   return log;
 }
 
