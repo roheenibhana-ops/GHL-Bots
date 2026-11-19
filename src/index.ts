@@ -113,6 +113,19 @@ export default {
         return json({ ok: true, sentTo: `***${phone.slice(-4)}` });
       } catch (e) { return json({ error: (e as Error).message }, 502); }
     }
+    // Read-only: lists a GHL account's pipelines and stages (names and ids).
+    if (url.pathname === "/admin/ghl/pipelines") {
+      if (!isTester(req, env)) return json({ error: "unauthorized" }, 401);
+      const a = url.searchParams.get("account");
+      if (a !== "lights" && a !== "dunzo") return json({ error: "add ?account=lights or ?account=dunzo" }, 400);
+      try {
+        const c = credsFor(env, a);
+        const r = await fetch(`https://services.leadconnectorhq.com/opportunities/pipelines?locationId=${c.locationId}`, { headers: { Authorization: `Bearer ${c.token}`, Version: "2021-07-28", Accept: "application/json" } });
+        if (!r.ok) return json({ error: `GHL ${r.status}: ${(await r.text()).slice(0, 200)}` }, 502);
+        const j = (await r.json()) as { pipelines?: { id: string; name: string; stages?: { id: string; name: string }[] }[] };
+        return json({ account: a, pipelines: (j.pipelines ?? []).map((p) => ({ id: p.id, name: p.name, stages: (p.stages ?? []).map((st) => ({ id: st.id, name: st.name })) })) });
+      } catch (e) { return json({ error: (e as Error).message }, 502); }
+    }
     if (url.pathname === "/admin/webhook-log") {
       if (!isTester(req, env)) return json({ error: "unauthorized" }, 401);
       return json({ entries: await sb(env, "GET", "webhook_log?order=received_at.desc&limit=5") });
