@@ -79,3 +79,14 @@ describe("stripQuestions (handoffs)", () => {
     expect(stripQuestions("Is that right?")).toBe(HANDOFF_REPLY);
   });
 });
+
+describe("lenient parsing", () => {
+  it("recovers a reply that has unescaped quotation marks inside it", () => {
+    const o = tryParseBotOutput('{"reply": "It includes the "Dunzo 360 Home Check" and a photo report.", "intent": "reply_only", "data": {}}');
+    expect(o?.intent).toBe("reply_only");
+    expect(o?.reply).toContain('"Dunzo 360 Home Check"');
+  });
+  it("still returns null when there is no reply to recover", () => {
+    expect(tryParseBotOutput('{"intent": "reply_only"}')).toBeNull();
+  });
+});

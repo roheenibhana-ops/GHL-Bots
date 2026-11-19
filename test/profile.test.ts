@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { formatProfile, noteText, parseOpportunities } from "../src/profile";
+import { ageText, formatProfile, noteText, parseOpportunities } from "../src/profile";
 
 const base = { tags: [], notes: [], jobberMatched: false, quotes: [], jobs: [] };
 
@@ -7,14 +7,15 @@ describe("formatProfile", () => {
   it("says so when there is no customer record", () => {
     expect(formatProfile(base)).toContain("treat them as a lead");
   });
-  it("lists past quotes and jobs with month and year, and leaves amounts out", () => {
+  it("lists past quotes and jobs with month, year and age, and leaves amounts out", () => {
+    const now = Date.parse("2026-11-19T00:00:00Z");
     const t = formatProfile({
       ...base, jobberMatched: true,
       quotes: [{ title: "Gutter Guards", quoteStatus: "awaiting_response", sentAt: "2026-09-12T00:00:00Z" }],
       jobs: [{ title: "Gutter Cleaning", jobStatus: "requires_invoicing", completedAt: "2026-03-02T00:00:00Z" }],
-    });
-    expect(t).toContain("Gutter Guards (awaiting response, Sep 2026)");
-    expect(t).toContain("Gutter Cleaning (requires invoicing, Mar 2026)");
+    }, now);
+    expect(t).toContain("Gutter Guards (awaiting response, Sep 2026, about 2 months ago)");
+    expect(t).toContain("Gutter Cleaning (requires invoicing, completed Mar 2026, about 8 months ago)");
     expect(t).not.toMatch(/\$\d/);
   });
   it("drops noisy tags and our own bot notes, marks the rest untrusted", () => {
@@ -75,5 +76,18 @@ describe("machine notes are left out", () => {
     expect(t).not.toContain("INTERNAL");
     expect(t).not.toContain("Quote Number1020");
     expect(t).not.toContain("missed your call");
+  });
+});
+
+describe("ageText and job freshness", () => {
+  const now = Date.parse("2026-11-19T00:00:00Z");
+  it("describes age in months", () => {
+    expect(ageText("2025-12-15T00:00:00Z", now)).toBe("about 11 months ago");
+    expect(ageText("2026-11-10T00:00:00Z", now)).toBe("less than a month ago");
+    expect(ageText(undefined, now)).toBe("");
+  });
+  it("puts the age next to past jobs and quotes", () => {
+    const t = formatProfile({ ...base, jobberMatched: true, quotes: [], jobs: [{ title: "Gutter Cleaning", jobStatus: "requires_invoicing", completedAt: "2025-12-15T00:00:00Z" }] }, now);
+    expect(t).toContain("completed Dec 2025, about 11 months ago");
   });
 });

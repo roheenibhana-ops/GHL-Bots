@@ -27,22 +27,32 @@ function monthYear(iso?: string | null): string {
   return d.toLocaleString("en-US", { month: "short", year: "numeric", timeZone: "UTC" });
 }
 
+/** "about 11 months ago", so the bot can tell a repeat-clean customer from someone mid-job. */
+export function ageText(iso?: string | null, now = Date.now()): string {
+  if (!iso) return "";
+  const t = Date.parse(iso);
+  if (Number.isNaN(t)) return "";
+  const months = Math.floor((now - t) / (30.4 * 86_400_000));
+  if (months < 1) return "less than a month ago";
+  return `about ${months} month${months === 1 ? "" : "s"} ago`;
+}
+
 const clip = (s: string, n: number) => (s.replace(/\s+/g, " ").trim().length > n ? s.replace(/\s+/g, " ").trim().slice(0, n - 1) + "…" : s.replace(/\s+/g, " ").trim());
 
 /**
  * What we know about a customer, as text for the bot. Quote amounts and payment details are deliberately left out.
  * Notes come from forms and staff and are untrusted: the prompt marks them so the bot never follows instructions inside them.
  */
-export function formatProfile(i: ProfileInputs): string {
+export function formatProfile(i: ProfileInputs, now = Date.now()): string {
   const lines: string[] = [];
   const tags = i.tags.filter((t) => !NOISE_TAG.test(t)).slice(0, 12);
   if (tags.length) lines.push(`Tags in our system: ${tags.join(", ")}.`);
   if (i.jobberMatched) {
     if (i.quotes.length) {
-      lines.push("Past quotes from us: " + i.quotes.slice(0, 5).map((q) => `${q.title ?? "untitled"} (${q.quoteStatus.replace(/_/g, " ")}, ${monthYear(q.sentAt ?? q.createdAt)})`).join("; ") + ".");
+      lines.push("Past quotes from us: " + i.quotes.slice(0, 5).map((q) => `${q.title ?? "untitled"} (${q.quoteStatus.replace(/_/g, " ")}, ${monthYear(q.sentAt ?? q.createdAt)}, ${ageText(q.sentAt ?? q.createdAt, now)})`).join("; ") + ".");
     } else lines.push("Past quotes from us: none on file.");
     if (i.jobs.length) {
-      lines.push("Past jobs with us: " + i.jobs.slice(0, 5).map((j) => `${j.title ?? "untitled"} (${j.jobStatus.replace(/_/g, " ")}, ${monthYear(j.completedAt ?? j.startAt)})`).join("; ") + ".");
+      lines.push("Past jobs with us: " + i.jobs.slice(0, 5).map((j) => `${j.title ?? "untitled"} (${j.jobStatus.replace(/_/g, " ")}, ${j.completedAt ? "completed " : ""}${monthYear(j.completedAt ?? j.startAt)}, ${ageText(j.completedAt ?? j.startAt, now)})`).join("; ") + ".");
     } else lines.push("Past jobs with us: none on file.");
   } else {
     lines.push("No matching customer record in our job system (treat them as a lead, not an existing customer).");
