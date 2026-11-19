@@ -131,7 +131,7 @@ export async function handleInbound(env: Env, p: InboundPayload, dryRun = false)
         const phone = normalizePhone(contact.phone ?? p.phone);
         if (!phone) throw new Error("no valid phone");
         const q = await createGutterQuote(env, { phone, firstName: contact.firstName ?? "", lastName: contact.lastName, email: next.email, address: next.address, stories: next.stories }, true, false);
-        if (q.created && "quote" in q) link = ` Draft quote #${q.quote.quoteNumber}: ${q.quote.jobberWebUri}`;
+        if ("quote" in q && q.quote) link = ` Draft quote #${q.quote.quoteNumber}: ${q.quote.jobberWebUri}`;
         else link = ` (Jobber needs a human: ${q.plan.problems.join("; ") || "could not create"})`;
       } catch (e) { link = ` (Jobber quote failed: ${(e as Error).message.slice(0, 100)})`; }
     }
