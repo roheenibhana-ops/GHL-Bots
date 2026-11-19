@@ -39,6 +39,15 @@ async function loadClient(env: Env, id: string): Promise<ClientRef> {
   return { id: d.client.id, properties: d.client.clientProperties.nodes };
 }
 
+/** Several Jobber clients can share a phone (couples, families, test records). Pick the one whose first name matches; otherwise stay ambiguous. */
+export function pickClient<T extends { name: string }>(hits: T[], firstName: string): { client: T | null; ambiguous: boolean; by?: "phone" | "first name" } {
+  if (hits.length === 1) return { client: hits[0], ambiguous: false, by: "phone" };
+  if (hits.length === 0) return { client: null, ambiguous: false };
+  const want = firstName.trim().toLowerCase();
+  const named = want ? hits.filter((h) => h.name.trim().toLowerCase().split(/\s+/)[0] === want) : [];
+  return named.length === 1 ? { client: named[0], ambiguous: false, by: "first name" } : { client: null, ambiguous: true };
+}
+
 const errs = (e: { message: string }[]) => e.map((x) => x.message).join("; ");
 
 export interface QuotePlan {
@@ -47,6 +56,7 @@ export interface QuotePlan {
   clientId?: string;
   /** Every Jobber client that matched the phone, so duplicates are easy to find and tidy. */
   matches: { id: string; name: string }[];
+  matchedBy?: "phone" | "first name";
   property: "will create" | "existing" | "n/a";
   problems: string[];
 }
@@ -62,23 +72,25 @@ export async function createGutterQuote(env: Env, r: QuoteRequest, create: boole
 
   const found = await findClientsByPhones(env, "dunzo", [r.phone]);
   const hits = (found.get(r.phone) ?? []).filter((c: JClient) => assess([c], r.phone).found);
+  const pick = pickClient(hits, r.firstName);
   const plan: QuotePlan = {
     template: tpl && line ? { id: tpl.id, name: tpl.name, unitPrice: line.unitPrice } : null,
-    client: hits.length === 0 ? "will create" : hits.length === 1 ? "existing" : "ambiguous",
-    clientId: hits.length === 1 ? hits[0].id : undefined,
+    client: pick.ambiguous ? "ambiguous" : pick.client ? "existing" : "will create",
+    clientId: pick.client?.id,
     matches: hits.map((h) => ({ id: h.id, name: h.name })),
+    matchedBy: pick.by,
     property: "n/a",
     problems,
   };
-  if (hits.length > 1) problems.push("More than one Jobber client has this phone number: needs a human to pick one");
+  if (pick.ambiguous) problems.push("More than one Jobber client has this phone number and the first name does not single one out: needs a human to pick one");
 
-  let clientId = hits.length === 1 ? hits[0].id : undefined;
+  let clientId = pick.client?.id;
   let propertyId: string | null = null;
   if (clientId) {
     const c = await loadClient(env, clientId);
     propertyId = findProperty(c.properties, r.address);
     plan.property = propertyId ? "existing" : "will create";
-  } else if (hits.length === 0) {
+  } else if (!pick.ambiguous) {
     plan.property = "will create";
   }
 
