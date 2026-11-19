@@ -2,7 +2,7 @@ import { APP_HTML } from "./app";
 import { AGENTS, runAgent } from "./agents";
 import { sb } from "./db";
 import { addNote, addTags, credsFor, searchContacts, sendSms, setDnd, upsertByPhone } from "./ghl";
-import { authorizeUrl, checkState, describeType, exchangeCode, describeField, findClientsByPhones, gql, listClientPhones, listMutations, makeState } from "./jobber";
+import { authorizeUrl, checkState, describeType, exchangeCode, describeField, findClientsByPhones, gql, listClientPhones, listMutations, listQuoteTemplates, makeState } from "./jobber";
 import { assess } from "./check";
 import { overlapStats, type Sources } from "./overlap";
 import { createPilot } from "./pilot";
@@ -243,6 +243,12 @@ export default {
       const account = jobberAccount();
       if (!account) return json({ error: "add ?account=lights or ?account=dunzo" }, 400);
       try { return json({ account, jobber: await gql(env, account, "{ account { id name } }") }); } catch (e) { return json({ error: (e as Error).message }, 502); }
+    }
+    if (url.pathname === "/admin/jobber/templates") {
+      if (!isAdmin(req, env)) return json({ error: "unauthorized" }, 401);
+      const account = jobberAccount();
+      if (!account) return json({ error: "add ?account=lights or ?account=dunzo" }, 400);
+      try { return json({ account, templates: await listQuoteTemplates(env, account) }); } catch (e) { return json({ error: (e as Error).message }, 502); }
     }
     // Schema discovery: ?account=dunzo&mutations=quote  or  ?account=dunzo&type=QuoteCreateAttributes
     if (url.pathname === "/admin/jobber/schema") {

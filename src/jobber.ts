@@ -175,3 +175,15 @@ export async function findClientsByPhones(env: Env, account: Account, phonesE164
   }
   return out;
 }
+
+export interface QuoteTemplateInfo {
+  id: string; name: string; message: string | null; disclaimer: string | null;
+  requiredDeposit: { rate: number; type: string } | null;
+  lineItems: { nodes: { name: string; description: string; quantity: number; unitPrice: number; optional: boolean }[] };
+}
+
+export async function listQuoteTemplates(env: Env, account: Account): Promise<QuoteTemplateInfo[]> {
+  const d = await gql<{ quoteTemplates: { nodes: QuoteTemplateInfo[] } }>(env, account,
+    `{ quoteTemplates(first: 25) { nodes { id name message disclaimer requiredDeposit { rate type } lineItems(first: 20) { nodes { name description quantity unitPrice optional } } } } }`);
+  return d.quoteTemplates.nodes;
+}
