@@ -1,16 +1,18 @@
 import { runAgent } from "./agents";
+import { ALLOWED_PRICES, BUSINESS_KNOWLEDGE } from "./knowledge";
 import type { Env } from "./types";
 
-/** What the bot already knows about this customer. The system, not the model, owns these facts. */
+/** What the system knows about this customer. The system, not the model, owns these facts. */
 export interface BotFacts {
   firstName?: string;
-  /** Address on file for this contact, if any. */
   address?: { street1: string; city: string; province: string; postalCode: string };
   stories?: 1 | 2;
   addressConfirmed?: boolean;
   email?: string;
   /** The first message we sent them, so the bot knows what they are replying to. */
   opening?: string;
+  /** Set once the quote request has been handed on, so it only ever happens once per customer. */
+  quoteRequested?: boolean;
 }
 
 export type BotIntent =
@@ -29,7 +31,6 @@ export const HANDOFF_REPLY = "Thanks, let me get someone from the team to help w
 
 export type NextStep = "stories" | "address" | "email" | "quote";
 
-/** The code, not the model, decides what is still missing. */
 export function nextStep(f: BotFacts): NextStep {
   if (!f.stories) return "stories";
   if (!f.addressConfirmed) return "address";
@@ -37,79 +38,63 @@ export function nextStep(f: BotFacts): NextStep {
   return "quote";
 }
 
-const QUESTION: Record<Exclude<NextStep, "quote">, (f: BotFacts) => string> = {
-  stories: () => "Is your home single story (1) or two story (2)?",
-  address: (f) => f.address ? `Can you confirm the work is at ${f.address.street1}, ${f.address.city}, ${f.address.province} ${f.address.postalCode}?` : "What's the street address, city and zip for the work?",
-  email: () => "What's the best email to send your quote to?",
-};
-
-/** Drops any question the model tried to ask: the code asks the one question, so it can never be asked twice. */
-export function stripQuestions(text: string): string {
-  const kept = text.trim().split(/(?<=[.!?])\s+/).filter((sentence) => !sentence.trim().endsWith("?"));
-  return kept.join(" ").trim() || "Thanks.";
+function stillNeeded(f: BotFacts): string {
+  const need: string[] = [];
+  if (!f.stories) need.push("whether the home is single story or two story");
+  if (!f.addressConfirmed) need.push(f.address ? `confirmation that the work is at ${f.address.street1}, ${f.address.city}, ${f.address.province} ${f.address.postalCode}` : "the street address, city and zip");
+  if (!f.email) need.push("their best email address");
+  return need.length ? need.join("; ") : "nothing: you have everything for the quote";
 }
-
-/** The acknowledgement comes from the model; the next question always comes from the code. */
-export function composeReply(ack: string, facts: BotFacts): { reply: string; ready: boolean } {
-  const step = nextStep(facts);
-  if (step === "quote") return { reply: QUOTE_READY_REPLY, ready: true };
-  return { reply: `${stripQuestions(ack)} ${QUESTION[step](facts)}`.trim(), ready: false };
-}
-
-export const QUOTE_READY_REPLY = "Perfect, thank you. I'm sending your quote over now.";
 
 export function systemPrompt(f: BotFacts): string {
-  const known = [
-    f.firstName ? `Customer first name: ${f.firstName}` : "Customer first name: unknown",
-    f.address ? `Address on file: ${f.address.street1}, ${f.address.city}, ${f.address.province} ${f.address.postalCode} (${f.addressConfirmed ? "customer CONFIRMED it" : "not yet confirmed"})` : "Address on file: none yet",
-    `Home size: ${f.stories ? `${f.stories} story` : "not yet known"}`,
-    `Email for the quote: ${f.email ?? "not yet known"}`,
-  ].join("\n");
+  const done = f.quoteRequested;
   return [
-    "You are the text-message assistant for Dunzo Gutters, a gutter cleaning company in the Sacramento area. You reply to people who answered our offer text.",
+    "You are the text-message sales rep for Dunzo Gutters. You are texting a homeowner who is replying to our Winter Warm Up gutter cleaning offer. You are the whole sales team: nobody else is going to close this sale, so your job is to win the booking, honestly and warmly.",
     f.opening ? `The first message we sent them was: "${f.opening}"` : "",
     "",
-    "THE OFFER: one-time gutter cleaning, $219 for a single-story home or $319 for a two-story home. When the customer approves the quote they pay a 50% deposit online.",
+    "HOW TO SELL (this is a text conversation, so keep it human, short and natural):",
+    "- Sound like a friendly, confident local pro who genuinely wants to help. Not a form, not a script, not corporate. Vary your wording. Use their first name now and then, not every message.",
+    "- Read the person. If they are keen, move quickly toward the booking. If they are unsure, find out why: ask one easy question about their gutters (when were they last cleaned? overflowing? big trees?), then connect the offer to what they said.",
+    "- Build real value with the facts below: the rainy season is here (over half of Sacramento's rain falls November to February), what a cleaning includes (hand-cleared, downspout flush, photo report, 30-day no-clog guarantee, 30-day money-back promise), and that the price is firm.",
+    "- Handle objections calmly: price (it is a firm, all-in promo price, includes the downspout flush and photo report, backed by the money-back promise, and a clogged gutter in the rain costs far more); \"I'll think about it\" (respect it, offer to send the quote so they have it, mention the promo is the winter special); \"I already have someone\" (no pressure, mention the guarantee and photo report, leave the door open); \"is this legit?\" (licensed and insured, BBB accredited, 4.9 stars from 76 Google reviews, local since 2014).",
+    "- Ask for the booking. When they show interest, make it easy: assume the yes (\"Want me to get your quote over?\"). Ask one question at a time and keep each message to one to three short sentences (under about 300 characters). No emojis, no exclamation overload, no ALL CAPS.",
+    "- Never be pushy, never guilt-trip, never invent urgency. Only use urgency that is true (the rainy season, the winter promo). If they say no, accept it gracefully and leave the door open.",
     "",
-    "YOUR JOB is to collect, in this order: home size, confirmed address, then email (the email is needed for them to open the quote). Never include a link yourself.",
-    "A reply of just \"1\" or \"2\" ANSWERS the home size question (1 = single story, 2 = two story): acknowledge it with the price, do not ask it again.",
-    "A reply like \"yes\" or \"that's right\" to an address question CONFIRMS the address: use intent address_confirmed.",
+    "THE GOAL: get these three things naturally in the conversation, in whatever order fits: home size, a confirmed address, and their best email for the quote. Then tell them you are getting their quote over, that approving it is quick, and that a 50% deposit locks it in. After approval the team will be in touch with scheduling. Do not include any link yourself.",
+    `STILL NEEDED FROM THE CUSTOMER: ${stillNeeded(f)}`,
+    done ? "The quote request has ALREADY been sent on. Do not ask for those details again. Answer any follow-up question helpfully and reassure them." : "",
     "",
-    "IMPORTANT: your reply is ONLY the acknowledgement of, or answer to, what the customer just said. Do NOT ask for home size, address or email, and do not say you are sending the quote: the system adds the next question itself.",
-    "The one exception is intents handoff, repair and declined: there your reply is the complete message to the customer.",
+    "WHAT WE KNOW ABOUT THIS CUSTOMER:",
+    `First name: ${f.firstName ?? "unknown"}. Home size: ${f.stories ? `${f.stories} story` : "not yet known"}. Email: ${f.email ?? "not yet known"}.`,
+    f.address ? `Address on file: ${f.address.street1}, ${f.address.city}, ${f.address.province} ${f.address.postalCode} (${f.addressConfirmed ? "customer confirmed it" : "not yet confirmed"}).` : "Address: none on file yet.",
     "",
-    "KNOWN SO FAR:",
-    known,
+    "BUSINESS KNOWLEDGE (the only facts you may use):",
+    BUSINESS_KNOWLEDGE,
     "",
-    "HARD RULES:",
-    "- Never promise or suggest dates, times or availability. If asked, say the team will be in touch with dates and times once the quote is approved.",
-    "- Only quote the two prices above. Do not invent prices, discounts or services. Anything else (roofs, gutter guards, repairs pricing, other services) goes to the team: use intent handoff.",
-    "- If they say they do not need a cleaning but need a REPAIR, ask them to send a few photos of the problem, say the team will review them and come back with a price. Use intent repair.",
-    "- If they are unsure or ask questions you can answer from the offer (what is included, how payment works), answer briefly, then steer back to the next step.",
-    "- If they are upset, confused, ask for a person, or ask anything you are not sure about: use intent handoff. A person takes over after a handoff, so do NOT ask any further questions in that reply.",
-    "- If they say they are not interested, thank them politely in one short line and use intent declined. Do not push.",
-    "- Never mention that you are an AI unless asked directly; if asked, say you're the Dunzo Gutters text assistant and the team can step in anytime.",
+    "HARD RULES (these are never broken):",
+    "- Only state facts that appear in the business knowledge above. If you do not know, say the team will confirm and use intent handoff. Never invent reviews, stats, discounts, guarantees or services.",
+    "- The only prices you may say are the ones in the knowledge above. For anything other than the $219 / $319 cleaning (repairs, guards, seamless, roof, solar, windows) do not quote: use intent handoff and say the team will price it.",
+    "- NEVER promise or suggest a date, day or time for the work, and never say a crew is available on a particular day. If asked, say once the quote is approved the team will be in touch with dates and times.",
+    "- If they do not need a cleaning but need a repair, ask for a few photos, say the team will review them and come back with a firm price: use intent repair.",
+    "- If they are upset, confused, ask for a person, or ask something you are not sure about: use intent handoff. A person takes over after a handoff, so do not ask further questions in that reply. If their city is not in the service area, use handoff.",
+    "- If they are not interested, thank them in one short line: use intent declined.",
+    "- If they sincerely ask whether you are a bot: say you are the Dunzo Gutters text assistant and the team can step in anytime. Do not claim to be a human.",
     "",
-    "STYLE: warm, plain-spoken, short (one or two sentences, under 200 characters for the acknowledgement). No emojis. No corporate language.",
-    "",
-    'OUTPUT: reply with ONLY a JSON object, no other text: {"reply": "<text to send>", "intent": "<one of ' + INTENTS.join(" | ") + '>", "data": {}}',
+    'OUTPUT: reply with ONLY a JSON object, no other text: {"reply": "<the text to send>", "intent": "<one of ' + INTENTS.join(" | ") + '>", "data": {}}',
     'Put facts you learned in data: {"stories": 1 or 2}, {"address": {"street1","city","province","postalCode"}}, {"email": "..."}, {"reason": "..."} for handoff.',
-    "Use intent stories / address_confirmed / address_given / email_given when the customer's latest message gave that fact; reply_only when it did not change a fact.",
+    "Use intent stories / address_confirmed / address_given / email_given when the customer's latest message gave that fact; reply_only otherwise. Do not use ready_for_quote: the system decides that.",
   ].filter(Boolean).join("\n");
 }
 
 const isStories = (v: unknown): v is 1 | 2 => v === 1 || v === 2;
-
 const FALLBACK: BotOutput = { reply: HANDOFF_REPLY, intent: "handoff", data: { reason: "bot output could not be read" } };
 
-/** Parses the model's JSON. Anything malformed becomes a safe handoff: we never send junk to a customer. */
 export function parseBotOutput(text: string): BotOutput {
   return tryParseBotOutput(text) ?? FALLBACK;
 }
 
 /** null when the text cannot be read as a valid bot output (so the caller can retry once). */
 export function tryParseBotOutput(text: string): BotOutput | null {
-  const fallback = FALLBACK;
   const m = text.match(/\{[\s\S]*\}/);
   if (!m) return null;
   try {
@@ -123,13 +108,42 @@ export function tryParseBotOutput(text: string): BotOutput | null {
       data.address = { street1: d.address.street1, city: String(d.address.city ?? ""), province: String(d.address.province ?? "CA"), postalCode: d.address.postalCode };
     }
     if (typeof d.reason === "string") data.reason = d.reason.slice(0, 200);
-    let reply = j.reply.trim();
-    if (reply.length > 480) reply = reply.slice(0, 477) + "...";
-    if (/https?:\/\//i.test(reply)) return { ...fallback, data: { reason: "bot tried to send a link" } }; // links are added by the system only
-    return { reply, intent: j.intent as BotIntent, data };
+    return { reply: j.reply.trim(), intent: j.intent as BotIntent, data };
   } catch {
     return null;
   }
+}
+
+// ---- Guardrails: checked on every reply before it can be sent ----
+
+/** Dollar amounts in the text that are not on the approved list. */
+export function disallowedPrices(text: string): string[] {
+  const bad: string[] = [];
+  for (const m of text.matchAll(/\$\s?(\d{1,3}(?:,\d{3})+(?:\.\d{1,2})?|\d+(?:\.\d{1,2})?)/g)) {
+    const n = parseFloat(m[1].replace(/,/g, ""));
+    if (!ALLOWED_PRICES.some((p) => Math.abs(p - n) < 0.005)) bad.push(m[0]);
+  }
+  return bad;
+}
+
+const WHEN = "(today|tonight|tomorrow|this (?:week|weekend|afternoon|morning|evening)|next week|monday|tuesday|wednesday|thursday|friday|saturday|sunday|\\d{1,2}\\s?(?:am|pm))";
+const PROMISE_A = new RegExp(`\\b(?:we|i|our (?:team|crew)|the (?:team|crew))\\s*(?:can|could|will|'ll|are going to|will be able to)\\s+(?:be there|come(?: out| by)?|get (?:you|it) (?:in|done|scheduled)|fit you in|do it|schedule you|book you|stop by|swing by|be out)\\b[^.?!]*\\b${WHEN}`, "i");
+const PROMISE_B = new RegExp(`\\b(?:available|open|free)\\b[^.?!]*\\b${WHEN}`, "i");
+
+/** True if the reply commits the crew to a day or time. */
+export function promisesDate(text: string): boolean {
+  return PROMISE_A.test(text) || PROMISE_B.test(text);
+}
+
+/** Everything wrong with a reply that must not be sent. Empty means fine. */
+export function replyProblems(reply: string): string[] {
+  const problems: string[] = [];
+  if (/https?:\/\/|www\./i.test(reply)) problems.push("it contains a link (links are added by the system only)");
+  const bad = disallowedPrices(reply);
+  if (bad.length) problems.push(`it states prices that are not approved: ${bad.join(", ")}`);
+  if (promisesDate(reply)) problems.push("it promises or implies a date, day or time for the work");
+  if (reply.length > 600) problems.push("it is far too long for a text message");
+  return problems;
 }
 
 /** Applies what a turn taught us to the known facts. */
@@ -139,30 +153,33 @@ export function applyOutput(f: BotFacts, o: BotOutput): BotFacts {
   if (o.data.email) next.email = o.data.email;
   if (o.data.address) { next.address = o.data.address; next.addressConfirmed = true; }
   if (o.intent === "address_confirmed") next.addressConfirmed = true;
+  if (o.intent === "ready_for_quote") next.quoteRequested = true;
   return next;
 }
 
 /** One bot turn. No side effects: the caller decides what to do with the intent. */
-export async function botTurn(env: Env, facts: BotFacts, history: { role: "user" | "assistant"; content: string }[]): Promise<{ output: BotOutput; facts: BotFacts; debug?: { rawFirst?: string; rawRetry?: string } }> {
+export async function botTurn(env: Env, facts: BotFacts, history: { role: "user" | "assistant"; content: string }[]): Promise<{ output: BotOutput; facts: BotFacts; debug?: Record<string, unknown> }> {
   if (!history.length || history[history.length - 1].role !== "user") throw new Error("history must end with a customer message");
-  const agent = { name: "conversation", system: systemPrompt(facts), maxTokens: 500 };
-  const first = await runAgent(env, agent, history);
-  let output = tryParseBotOutput(first);
-  let retry: string | undefined;
-  if (!output) {
-    // One retry with a firm reminder before falling back to a human.
-    retry = await runAgent(env, { ...agent, system: agent.system + "\n\nYour previous output was not valid. Reply with ONLY the JSON object and nothing else." }, history);
-    output = tryParseBotOutput(retry);
+  const agent = { name: "sales", system: systemPrompt(facts), maxTokens: 500, model: env.BOT_MODEL };
+  const raw = await runAgent(env, agent, history);
+  let output = tryParseBotOutput(raw);
+  let problems = output ? replyProblems(output.reply) : ["the output was not valid JSON"];
+  let retryRaw: string | undefined;
+  if (!output || problems.length) {
+    // One retry that tells the model exactly what was wrong; after that a person takes over.
+    retryRaw = await runAgent(env, { ...agent, system: agent.system + `\n\nYour previous reply could not be used because ${problems.join("; ")}. Write the reply again, fixing this. Reply with ONLY the JSON object.` }, history);
+    output = tryParseBotOutput(retryRaw);
+    problems = output ? replyProblems(output.reply) : ["the output was not valid JSON"];
   }
-  const debug = output ? undefined : { rawFirst: first.slice(0, 600), rawRetry: retry?.slice(0, 600) };
-  const parsed = output ?? FALLBACK;
+  const good: BotOutput | null = output && !problems.length ? output : null;
+  const parsed: BotOutput = good ?? { ...FALLBACK, data: { reason: `guardrail: ${problems.join("; ")}`.slice(0, 200) } };
+  const debug = good ? undefined : { problems, raw: raw.slice(0, 500), retryRaw: retryRaw?.slice(0, 500) };
   const next = applyOutput(facts, parsed);
-  let final = parsed;
-  // The model never chooses the next question, and never decides the quote is ready: the code does both.
+  // The code, not the model, decides when the quote is ready, and only once.
   const stops: BotIntent[] = ["handoff", "declined", "repair"];
-  if (!stops.includes(parsed.intent)) {
-    const c = composeReply(parsed.reply, next);
-    final = { reply: c.reply, intent: c.ready ? "ready_for_quote" : parsed.intent, data: parsed.data };
+  if (good && !stops.includes(good.intent) && !facts.quoteRequested && nextStep(next) === "quote") {
+    const final: BotOutput = { ...good, intent: "ready_for_quote" };
+    return { output: final, facts: applyOutput(next, final), debug };
   }
-  return { output: final, facts: next, debug };
+  return { output: parsed, facts: next, debug };
 }

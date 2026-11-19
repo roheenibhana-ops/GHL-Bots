@@ -5,6 +5,8 @@ export interface AgentConfig {
   name: string;
   system: string;
   maxTokens: number;
+  /** Overrides CLAUDE_MODEL for this agent. */
+  model?: string;
 }
 
 export const AGENTS: Record<string, AgentConfig> = {
@@ -31,7 +33,7 @@ export async function runAgent(
   const res = await fetch("https://api.anthropic.com/v1/messages", {
     method: "POST",
     headers: { "x-api-key": env.ANTHROPIC_API_KEY, "anthropic-version": "2023-06-01", "content-type": "application/json" },
-    body: JSON.stringify({ model: env.CLAUDE_MODEL, max_tokens: agent.maxTokens, system: agent.system, messages: history }),
+    body: JSON.stringify({ model: agent.model ?? env.CLAUDE_MODEL, max_tokens: agent.maxTokens, system: agent.system, messages: history }),
   });
   if (!res.ok) throw new Error(`Claude API ${res.status}: ${(await res.text()).slice(0, 300)}`);
   const data = (await res.json()) as { content: { type: string; text?: string }[] };

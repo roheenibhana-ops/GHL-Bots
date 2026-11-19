@@ -26,6 +26,8 @@ export interface Env {
   BOT_MODE: string;
   /** alert = tell the team | draft = create a draft quote in Jobber and tell the team */
   QUOTE_MODE: string;
+  /** The sales conversation uses a stronger model than the cheap helpers. */
+  BOT_MODEL?: string;
   BOT_START_HOUR: string;
   BOT_END_HOUR: string;
   /** Optional secret: mobile number (E.164 or 10 digits) that gets handoff and quote alerts by text. */

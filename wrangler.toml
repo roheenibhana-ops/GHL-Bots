@@ -19,6 +19,8 @@ QUIET_END_HOUR = "9"
 CLAUDE_MODEL = "claude-haiku-5-5"
 # Bot: "off" = only capture replies | "test" = reply only to contacts tagged bot-test | "live" = reply to everyone.
 BOT_MODE = "test"
+# Model for the sales conversation.
+BOT_MODEL = "claude-sonnet-5-5"
 # "alert" = tell the team a quote is ready | "draft" = also create a draft quote in Dunzo Jobber.
 QUOTE_MODE = "alert"
 # Local hours the bot may text (contact timezone).
