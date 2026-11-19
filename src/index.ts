@@ -34,7 +34,7 @@ export default {
     if (url.pathname === "/health") {
       // Presence flags only (true/false), never values. Helps debug missing secrets.
       const secrets = Object.fromEntries(
-        ["GHL_TOKEN_LIGHTS", "GHL_LOCATION_LIGHTS", "GHL_TOKEN_DUNZO", "GHL_LOCATION_DUNZO", "SUPABASE_URL", "SUPABASE_SERVICE_KEY", "ANTHROPIC_API_KEY", "ADMIN_TOKEN", "WEBHOOK_SECRET"].map(
+        ["GHL_TOKEN_LIGHTS", "GHL_LOCATION_LIGHTS", "GHL_TOKEN_DUNZO", "GHL_LOCATION_DUNZO", "SUPABASE_URL", "SUPABASE_SERVICE_KEY", "ANTHROPIC_API_KEY", "ADMIN_TOKEN", "WEBHOOK_SECRET", "ALERT_PHONE"].map(
           (k) => [k, !!(env as unknown as Record<string, string>)[k]],
         ),
       );
@@ -93,6 +93,18 @@ export default {
       if (!isAdmin(req, env)) return json({ error: "unauthorized" }, 401);
       const b = (await req.json()) as InboundPayload;
       try { return json(await handleInbound(env, { ...b, locationId: b.locationId ?? env.GHL_LOCATION_DUNZO, direction: "inbound" }, true)); } catch (e) { return json({ error: (e as Error).message }, 502); }
+    }
+    // Sends ONE labelled test text to ALERT_PHONE so you can see alerts really arrive.
+    if (url.pathname === "/admin/alert-test" && req.method === "POST") {
+      if (!isAdmin(req, env)) return json({ error: "unauthorized" }, 401);
+      const phone = normalizePhone(env.ALERT_PHONE);
+      if (!phone) return json({ error: "ALERT_PHONE is not set, or is not a valid US number" }, 400);
+      try {
+        const creds = credsFor(env, "dunzo");
+        const { contact } = await upsertByPhone(creds, phone);
+        await sendSms(creds, contact.id, "Test alert from the Dunzo lead bot. If you got this, handoff and quote alerts will reach you here.");
+        return json({ ok: true, sentTo: `***${phone.slice(-4)}` });
+      } catch (e) { return json({ error: (e as Error).message }, 502); }
     }
     if (url.pathname === "/admin/webhook-log") {
       if (!isAdmin(req, env)) return json({ error: "unauthorized" }, 401);
