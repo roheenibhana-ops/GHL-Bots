@@ -133,6 +133,15 @@ export async function handleInbound(env: Env, p: InboundPayload, dryRun = false)
     address: conv?.facts?.address ?? (contact.address1 && contact.postalCode ? { street1: contact.address1, city: contact.city ?? "", province: contact.state ?? "CA", postalCode: contact.postalCode } : undefined),
   };
 
+  // An email address the customer typed is a fact we can read ourselves, without relying on the model to record it.
+  if (!facts.email) {
+    const mine = rows.filter((r) => r.direction === "inbound").map((r) => r.body ?? "").concat(dryRun ? [body] : []);
+    for (const t of mine.reverse()) {
+      const m = t.match(/[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}/);
+      if (m) { facts.email = m[0].toLowerCase(); break; }
+    }
+  }
+
   // 3b. What we know about this person (Jobber history and GHL notes). Built once, then reused for a day.
   if (!facts.profile || !facts.profileAt || Date.now() - facts.profileAt > 86_400_000) {
     const phone10 = normalizePhone(contact.phone ?? p.phone);
