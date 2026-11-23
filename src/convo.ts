@@ -221,7 +221,13 @@ export async function handleInbound(env: Env, p: InboundPayload, dryRun = false)
 
   const phone = normalizePhone(contact.phone ?? p.phone) ?? undefined;
   const testPerson = tags.includes("bot-test");
-  log.delivery = await sendReply(env, account, p.contactId, output.reply, contact.timezone, phone, name, "bot", testPerson);
+  // One clear text when the quote link goes out, not a chatty reply plus the link repeating the same thing. If the quote could not be made, never promise it.
+  let reply = output.reply;
+  if (output.intent === "ready_for_quote" && env.QUOTE_MODE === "link") {
+    const first = contact.firstName ? `${contact.firstName}, ` : "";
+    reply = followUp ? "" : `Thanks ${first}the team will text your quote over to you shortly.`;
+  }
+  if (reply) log.delivery = await sendReply(env, account, p.contactId, reply, contact.timezone, phone, name, "bot", testPerson);
   if (followUp) log.linkDelivery = await sendReply(env, account, p.contactId, followUp, contact.timezone, phone, name, "bot", testPerson);
   return log;
 }
