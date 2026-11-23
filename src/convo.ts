@@ -1,6 +1,7 @@
 import { botTurn, type BotFacts } from "./bot";
 import { sb } from "./db";
 import { addNote, addTags, credsFor, getContact, getPipelines, listOpportunities, moveOpportunity, opportunityStageId, sendSms, setDnd, setEmail, upsertByPhone } from "./ghl";
+import { setStage } from "./stages";
 import { photoThanks, planPhotoMove } from "./photo";
 import { blockingNote, formatProfile, ghlNotes, ghlOpportunities, jobberHistory, OUR_NOTE_PREFIX } from "./profile";
 import { createGutterQuote, linkMessage } from "./quote";
@@ -168,6 +169,7 @@ export async function handleInbound(env: Env, p: InboundPayload, dryRun = false)
     await alertTeam(env, `Repair enquiry: ${name}. Bot asked for photos. "${body.slice(0, 100)}"`);
   } else if (output.intent === "declined") {
     await addTags(creds, p.contactId, ["bot-declined"]);
+    await setStage(env, account, p.contactId, "Lost", name);
   } else if (output.intent === "ready_for_quote") {
     if (next.email && !contact.email) await setEmail(creds, p.contactId, next.email).catch(() => undefined);
     await addTags(creds, p.contactId, ["bot-quote-ready"]);
@@ -184,6 +186,7 @@ export async function handleInbound(env: Env, p: InboundPayload, dryRun = false)
           followUp = linkMessage(next.email, next.stories, q.quote.clientHubUri);
           link = ` Quote #${q.quote.quoteNumber} created and the link was texted to the customer: ${q.quote.jobberWebUri}`;
           await addTags(creds, p.contactId, ["bot-quote-sent"]);
+          await setStage(env, account, p.contactId, "Quote Sent", name);
         } else {
           link = ` NEEDS A HUMAN: Jobber could not create it automatically (${q.plan.problems.join("; ") || "unknown"}). Please create and send the quote by hand.`;
         }

@@ -1,5 +1,6 @@
 import { sb } from "./db";
 import { addTags, credsFor, getContact, sendSms } from "./ghl";
+import { setStage } from "./stages";
 import { isSmsDnd } from "./safety";
 import type { Account, Env } from "./types";
 
@@ -60,6 +61,7 @@ export async function runDailyBatch(env: Env): Promise<Record<string, unknown>> 
       await sendSms(creds, m.contact_id, m.body);
       await sb(env, "PATCH", `messages?id=eq.${m.id}`, { status: "sent", sent_at: new Date().toISOString() }, "return=minimal");
       if (env.BOT_TAG) await addTags(creds, m.contact_id, [env.BOT_TAG]).catch(() => undefined);
+      await setStage(env, m.account, m.contact_id, "New Lead");
       result.sent++;
     } catch {
       await sb(env, "PATCH", `messages?id=eq.${m.id}`, { status: "failed" }, "return=minimal");

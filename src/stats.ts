@@ -53,7 +53,7 @@ export function summarize(r: CampaignRows) {
 }
 
 /** Quote statuses straight from Jobber, 10 per request. Never throws. */
-async function quoteStatuses(env: Env, ids: string[]): Promise<Record<string, string>> {
+export async function quoteStatuses(env: Env, ids: string[]): Promise<Record<string, string>> {
   const out: Record<string, string> = {};
   try {
     for (let i = 0; i < ids.length; i += 10) {

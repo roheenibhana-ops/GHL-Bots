@@ -129,3 +129,7 @@ export async function conversationMessages(c: GhlCreds, conversationId: string, 
   const d = await call<{ messages?: { messages?: { direction?: string; body?: string; messageType?: string; dateAdded?: string; source?: string; userId?: string }[] } }>(c, "GET", `/conversations/${encodeURIComponent(conversationId)}/messages?limit=${limit}`);
   return d.messages?.messages ?? [];
 }
+
+export async function createOpportunity(c: GhlCreds, o: { pipelineId: string; stageId: string; contactId: string; name: string }): Promise<unknown> {
+  return oppCall(c, "POST", "/opportunities/", { pipelineId: o.pipelineId, locationId: c.locationId, name: o.name, pipelineStageId: o.stageId, status: "open", contactId: o.contactId });
+}

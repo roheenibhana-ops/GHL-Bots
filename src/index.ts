@@ -8,6 +8,7 @@ import { authorizeUrl, checkState, describeType, exchangeCode, describeField, fi
 import { assess } from "./check";
 import { handleInbound, sendQueuedReplies, type InboundPayload } from "./convo";
 import { approveBatch, runDailyBatch, unapproveAll } from "./batch";
+import { syncApprovals } from "./stages";
 import { resetTestContact } from "./reset";
 import { buildStats, STATS_HTML } from "./stats";
 import { createGutterQuote } from "./quote";
@@ -461,6 +462,7 @@ export default {
   // Outreach batches. Inert unless SENDING_ENABLED = "true". Pilot logic comes in the next step.
   async scheduled(_event: ScheduledEvent, env: Env): Promise<void> {
     await sendQueuedReplies(env).catch(() => undefined); // bot replies held overnight
+    await syncApprovals(env).catch(() => undefined);
     await runDailyBatch(env).catch(() => undefined);
   },
 };
