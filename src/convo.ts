@@ -167,7 +167,7 @@ export async function handleInbound(env: Env, p: InboundPayload, dryRun = false)
   Object.assign(log, { intent: output.intent, reply: output.reply, facts: { stories: next.stories, addressConfirmed: next.addressConfirmed, email: next.email }, profile: facts.profile });
   if (dryRun) return log;
 
-  const status = ["handoff", "repair"].includes(output.intent) ? "handed_off" : output.intent === "declined" ? "closed" : "active";
+  const status = output.intent === "handoff" ? "handed_off" : output.intent === "declined" ? "closed" : "active";
   await sb(env, "POST", "conversations?on_conflict=contact_id", { contact_id: p.contactId, account, facts: next, status, updated_at: new Date().toISOString() }, "resolution=merge-duplicates,return=minimal");
 
   let followUp = ""; // a second text (the quote link) sent right after the bot's reply
