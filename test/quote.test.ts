@@ -63,7 +63,7 @@ describe("deposit and link message", () => {
   it("tells the customer exactly which email to use", () => {
     const m = linkMessage("sam@example.com", 2, "https://clienthub.getjobber.com/x");
     expect(m).toContain("https://clienthub.getjobber.com/x");
-    expect(m).toContain("enter sam@example.com when asked");
+    expect(m).toContain("Pop sam@example.com in when it asks");
     expect(m).toContain("$159.50");
     expect(m).toContain("who else do you know");
     expect(m.replace(/https?:\/\/\S+/g, "").replace("sam@example.com", "")).not.toMatch(/[-\u2013\u2014]/);
