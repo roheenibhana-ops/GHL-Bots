@@ -6,6 +6,7 @@ export const DASH_HTML = String.raw`<!doctype html>
 <style>
 :root{--bg:#f4f5f7;--panel:#fff;--ink:#14171c;--mute:#6a7280;--line:#e5e8ee;--brand:#0b7a4b;--brand2:#e8f5ee;--warn:#b45309;--warn2:#fef3e2;--bad:#c0262d;--bad2:#fdecee;--blue:#1d5fd1;--blue2:#e8f0fd;--me:#e6efff;--shadow:0 1px 2px rgba(16,24,40,.06),0 4px 14px rgba(16,24,40,.05)}
 @media(prefers-color-scheme:dark){:root:not([data-theme=light]){--bg:#0e1116;--panel:#171b22;--ink:#eef1f6;--mute:#9aa3b2;--line:#262c36;--brand:#34c57f;--brand2:#12281d;--warn:#f0a84a;--warn2:#2c2111;--bad:#ff7076;--bad2:#2e1618;--blue:#6ea2ff;--blue2:#16233b;--me:#1a2a47;--shadow:none}}
+:root[data-theme=dark]{--bg:#0e1116;--panel:#171b22;--ink:#eef1f6;--mute:#9aa3b2;--line:#262c36;--brand:#34c57f;--brand2:#12281d;--warn:#f0a84a;--warn2:#2c2111;--bad:#ff7076;--bad2:#2e1618;--blue:#6ea2ff;--blue2:#16233b;--me:#1a2a47;--shadow:none}
 *{box-sizing:border-box}html,body{margin:0;background:var(--bg);color:var(--ink);font:15px/1.45 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif}
 button,input,select,textarea{font:inherit;color:inherit}
 .app{display:grid;grid-template-columns:232px 1fr;min-height:100vh}
@@ -25,7 +26,9 @@ button,input,select,textarea{font:inherit;color:inherit}
 .ok{background:var(--brand2);color:var(--brand)}.wr{background:var(--warn2);color:var(--warn)}.bd{background:var(--bad2);color:var(--bad)}.bl{background:var(--blue2);color:var(--blue)}
 .btn{border:1px solid var(--line);background:var(--panel);padding:8px 14px;border-radius:10px;cursor:pointer;font-weight:600}
 .btn:hover{background:var(--bg)}.btn.pri{background:var(--brand);border-color:var(--brand);color:#fff}.btn.pri:hover{filter:brightness(1.08)}
-.btn.dng{background:var(--bad);border-color:var(--bad);color:#fff}.btn.sm{padding:5px 10px;font-size:13px;border-radius:8px}
+.btn.dng{background:var(--bad);border-color:var(--bad);color:#fff}
+:root[data-theme=dark] .btn.dng,:root:not([data-theme=light]) .btn.dng{color:#1a0a0b}
+.theme{width:40px;padding:8px 0;text-align:center}.btn.sm{padding:5px 10px;font-size:13px;border-radius:8px}
 .btn[disabled]{opacity:.5;cursor:default}
 .page{padding:24px 26px 60px;max-width:1280px;width:100%;min-width:0}
 .grid{display:grid;gap:16px}.grid>*{min-width:0}.g4{grid-template-columns:repeat(4,minmax(0,1fr))}.g2{grid-template-columns:minmax(0,1.1fr) minmax(0,.9fr)}
@@ -90,7 +93,7 @@ pre{white-space:pre-wrap;word-wrap:break-word;background:var(--bg);border:1px so
 <aside class="side"><div class="logo"><i>D</i>Dunzo Control</div><div id="nav"></div><div class="spacer"></div>
 <button class="nav" id="lock"><svg viewBox="0 0 24 24"><rect x="4" y="11" width="16" height="9" rx="2"/><path d="M8 11V8a4 4 0 0 1 8 0v3"/></svg>Lock</button></aside>
 <div class="main"><div class="top"><h1 id="title">Overview</h1><span class="pill ok" id="status"><i></i>Loading</span><span class="spacer"></span>
-<button class="btn" id="refresh">Refresh</button><button class="btn dng" id="panic">Pause everything</button></div>
+<button class="btn theme" id="theme" title="Switch light or dark"></button><button class="btn" id="refresh">Refresh</button><button class="btn dng" id="panic">Pause everything</button></div>
 <div class="page" id="page"></div></div></div>
 <div class="tabs" id="tabs"></div><div class="toast" id="toast"></div>
 <script>
@@ -210,7 +213,13 @@ function vSim(p){var c=el('div','card');c.appendChild(el('h3',null,'Practice cha
  c.appendChild(th);c.appendChild(el('div','compose',null,[ta,reset]));p.appendChild(c)}
 $('panic').onclick=function(){var pa=(S.settings||{}).PAUSE_ALL==='true';if(!pa&&!confirm('Pause everything? The bot stops replying and no promo texts go out.'))return;
  api('/admin/dash/settings',{key:'PAUSE_ALL',value:String(!pa)}).then(function(){toast(pa?'Resumed':'Everything paused');render()}).catch(function(e){toast(e.message)})};
-$('refresh').onclick=function(){render()};$('lock').onclick=lock;
+$('refresh').onclick=function(){render()};
+var SUN='<svg viewBox="0 0 24 24" width="18" height="18" stroke="currentColor" fill="none" stroke-width="1.9" stroke-linecap="round"><circle cx="12" cy="12" r="4"/><path d="M12 3v2M12 19v2M3 12h2M19 12h2M5.6 5.6l1.4 1.4M17 17l1.4 1.4M5.6 18.4L7 17M17 7l1.4-1.4"/></svg>';
+var MOON='<svg viewBox="0 0 24 24" width="18" height="18" stroke="currentColor" fill="none" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M20 14.5A8 8 0 0 1 9.5 4 8 8 0 1 0 20 14.5z"/></svg>';
+function theme(t){document.documentElement.setAttribute('data-theme',t);$('theme').innerHTML=t==='dark'?SUN:MOON;$('theme').title=t==='dark'?'Switch to light':'Switch to dark'}
+var saved=null;try{saved=localStorage.getItem('theme')}catch(e){}
+theme(saved||((window.matchMedia&&window.matchMedia('(prefers-color-scheme: dark)').matches)?'dark':'light'));
+$('theme').onclick=function(){var t=document.documentElement.getAttribute('data-theme')==='dark'?'light':'dark';theme(t);try{localStorage.setItem('theme',t)}catch(e){}};$('lock').onclick=lock;
 function start(){$('gate').classList.remove('on');$('app').style.display='grid';go(view)}
 $('enter').onclick=function(){var v=$('tok').value.trim();if(!v)return;T=v;$('gerr').textContent='';api('/admin/dash/overview').then(function(){sessionStorage.setItem('t',T);start()}).catch(function(e){$('gerr').textContent=e.message==='Wrong token'?'That token is not right.':e.message;lock()})};
 $('tok').onkeydown=function(e){if(e.key==='Enter')$('enter').onclick()};
