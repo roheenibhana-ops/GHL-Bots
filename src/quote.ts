@@ -16,7 +16,7 @@ export const depositFor = (stories: 1 | 2): string => ((PRICE[stories] * DEPOSIT
 
 /** The text that carries the quote link. The customer must type the same email we saved on their Jobber client. */
 export function linkMessage(email: string, stories: 1 | 2, link: string): string {
-  return `Here's your Dunzo Gutters quote: ${link} Tap it and enter ${email} when asked, then open the sign-in link we email you. Approve the quote there and pay the 50% deposit ($${depositFor(stories)}) to lock it in.`;
+  return `Here's your Dunzo Gutters quote: ${link} Tap it and enter ${email} when asked, then open the sign-in link we email you. Approve the quote there and pay the 50% deposit ($${depositFor(stories)}) to lock it in. And who else do you know that would benefit from this offer? Neighbors, family or friends are welcome to text us for the same deal.`;
 }
 
 /** Picks the Winter Warm Up promo template for the story count, by name. */

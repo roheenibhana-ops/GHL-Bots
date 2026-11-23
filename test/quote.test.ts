@@ -56,5 +56,7 @@ describe("deposit and link message", () => {
     expect(m).toContain("https://clienthub.getjobber.com/x");
     expect(m).toContain("enter sam@example.com when asked");
     expect(m).toContain("$159.50");
+    expect(m).toContain("who else do you know");
+    expect(m.replace(/https?:\/\/\S+/g, "").replace("sam@example.com", "")).not.toMatch(/[-\u2013\u2014]/);
   });
 });
