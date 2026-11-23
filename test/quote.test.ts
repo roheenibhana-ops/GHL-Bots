@@ -46,6 +46,15 @@ describe("pickClient", () => {
   });
 });
 
+describe("promo template names", () => {
+  const T = (name: string) => ({ id: name, name } as never);
+  it("finds the Winter Ready promo templates", () => {
+    const list = [T("Dunzo Winter Ready Promo - Single Story Home"), T("Dunzo Winter Ready Promo - Two Story Home")];
+    expect(pickTemplate(list, 1)?.name).toMatch(/Single Story/);
+    expect(pickTemplate(list, 2)?.name).toMatch(/Two Story/);
+  });
+});
+
 describe("deposit and link message", () => {
   it("50% of the promo price", () => {
     expect(depositFor(1)).toBe("109.50");

@@ -21,7 +21,7 @@ export function linkMessage(email: string, stories: 1 | 2, link: string): string
 
 /** Picks the Winter Warm Up promo template for the story count, by name. */
 export function pickTemplate(templates: QuoteTemplateInfo[], stories: 1 | 2): QuoteTemplateInfo | null {
-  const re = stories === 1 ? /winter warm up promo.*single story/i : /winter warm up promo.*two story/i;
+  const re = stories === 1 ? /winter (warm up|ready) promo.*single story/i : /winter (warm up|ready) promo.*two story/i;
   return templates.find((t) => re.test(t.name)) ?? null;
 }
 
