@@ -1,6 +1,16 @@
 import { describe, expect, it } from "vitest";
 import { dedupe, inSendWindow, isSmsDnd, isStopMessage, normalizePhone } from "../src/safety";
 
+import { isStopMessage as isStopAnywhere } from "../src/safety";
+describe("opt out phrases anywhere", () => {
+  it("catches natural opt outs", () => {
+    for (const t of ["why are you texting me, take me off your list", "please stop texting me", "dont contact me again", "leave me alone", "can you unsubscribe me"]) expect(isStopAnywhere(t)).toBe(true);
+  });
+  it("does not catch normal chat", () => {
+    for (const t of ["1", "yes that is my address", "can you stop by tomorrow", "what does the quote include"]) expect(isStopAnywhere(t)).toBe(false);
+  });
+});
+
 describe("isStopMessage", () => {
   it.each(["STOP", "stop", " Stop.", "unsubscribe", "do not text me"])("catches %s", (t) => {
     expect(isStopMessage(t)).toBe(true);

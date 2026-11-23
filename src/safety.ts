@@ -3,8 +3,10 @@ import type { GhlContact } from "./types";
 const STOP_WORDS = /^\s*(stop|stopall|unsubscribe|cancel|end|quit|optout|opt out|remove me|do not text|don'?t text)\b/i;
 
 /** True if an inbound message is an opt-out. Err on the side of treating it as one. */
+const STOP_PHRASES = /(take me off|remove me|off (your|the|this) (list|database)|stop (texting|messaging|contacting|sending)|quit (texting|messaging)|(do not|don'?t|dont) (text|message|contact|call) me|leave me alone|opt me out|unsubscribe|never (text|message|contact) me)/i;
+
 export function isStopMessage(text: string): boolean {
-  return STOP_WORDS.test(text);
+  return STOP_WORDS.test(text) || STOP_PHRASES.test(text);
 }
 
 /** Normalise a US phone number to E.164, or null if it can't be. */
