@@ -255,6 +255,17 @@ export default {
       } catch (e) { return json({ error: (e as Error).message }, 502); }
     }
 
+    // Read only: one contact's recent messages and conversation state.
+    if (url.pathname === "/admin/convo") {
+      if (!isAdmin(req, env)) return json({ error: "unauthorized" }, 401);
+      const id = encodeURIComponent(url.searchParams.get("contactId") ?? "");
+      try {
+        const msgs = await sb<unknown[]>(env, "GET", `messages?contact_id=eq.${id}&status=neq.archived&order=created_at.asc&select=created_at,direction,status,campaign,body&limit=60`);
+        const conv = await sb<unknown[]>(env, "GET", `conversations?contact_id=eq.${id}&select=status,facts,updated_at`);
+        return json({ conversation: conv[0] ?? null, messages: msgs });
+      } catch (e) { return json({ error: (e as Error).message }, 502); }
+    }
+
     if (url.pathname === "/admin/pilot/approve-batch" && req.method === "POST") {
       if (!isAdmin(req, env)) return json({ error: "unauthorized" }, 401);
       const b = (await req.json().catch(() => ({}))) as { campaign?: string; count?: number };
