@@ -120,7 +120,12 @@ export async function handleInbound(env: Env, p: InboundPayload, dryRun = false)
   // 3. What we know so far.
   const [conv] = await sb<{ facts: BotFacts; status: string }[]>(env, "GET", `conversations?contact_id=eq.${encodeURIComponent(p.contactId)}&select=facts,status&limit=1`);
   if (conv?.status === "closed" || conv?.status === "handed_off") {
-    if (conv.status === "handed_off" && !dryRun) await alertTeam(env, `${who} replied while the team has the conversation: ${body.slice(0, 120)}`);
+    const lastAlert = Number((conv.facts as { lastAlertAt?: number } | null)?.lastAlertAt ?? 0);
+    // One alert per 15 minutes per customer, so a chatty customer doesn't flood the team.
+    if (conv.status === "handed_off" && !dryRun && Date.now() - lastAlert > 900_000) {
+      await alertTeam(env, `${who} replied while the team has the conversation: ${body.slice(0, 120)}`);
+      await sb(env, "PATCH", `conversations?contact_id=eq.${encodeURIComponent(p.contactId)}`, { facts: { ...(conv.facts ?? {}), lastAlertAt: Date.now() } }, "return=minimal").catch(() => undefined);
+    }
     return { skipped: `conversation is ${conv.status}` };
   }
   const rows = await sb<Row[]>(env, "GET", `messages?contact_id=eq.${encodeURIComponent(p.contactId)}&status=in.(sent,received)&order=created_at.asc&select=direction,body&limit=40`);
