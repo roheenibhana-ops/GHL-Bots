@@ -36,6 +36,7 @@ export function planStage(opps: Opp[], pipelines: PipelineInfo[], pipelineName: 
 
 /** Puts the contact's promo opportunity in the named stage, creating it if needed. Best effort: never throws. */
 export async function setStage(env: Env, account: "dunzo" | "lights", contactId: string, target: string, contactName?: string): Promise<string> {
+  if (!env.PROMO_PIPELINE || env.PROMO_PIPELINE.toLowerCase() === "off") return "stage moves are off";
   try {
     const creds = credsFor(env, account);
     const name = env.PROMO_PIPELINE ?? DEFAULT_PROMO_PIPELINE;

@@ -26,7 +26,8 @@ BOT_MODE = "test"
 PHOTO_MODE = "test"
 # The bots only ever touch opportunities in these pipelines (comma separated names).
 BOT_PIPELINES = "Gutter Promo Nurture Pipeline 2027, Lead Nurture Pipeline 2027, Christmas Lighting Nurture"
-PROMO_PIPELINE = "Gutter Promo Nurture Pipeline 2027"
+# Stage moves by the bot: a pipeline name, or "off" (the Zaps move leads on the existing board).
+PROMO_PIPELINE = "off"
 # The campaign tag, added to each contact when their promo text is approved and sent.
 BOT_TAG = "winter promo"
 # Model for the sales conversation.
