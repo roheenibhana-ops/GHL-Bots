@@ -69,6 +69,7 @@ export function systemPrompt(f: BotFacts): string {
     "- Build real value with the facts below: the rainy season is here (over half of Sacramento's rain falls November to February), what a cleaning includes (hand-cleared, downspout flush, photo report, 30-day no-clog guarantee, 30-day money-back promise), and that the price is firm.",
     "- Sell the way Clark does in his own texts, only sharper. Short and plain, like a text from a person, not a brochure. Answer exactly what was asked in the first sentence, then move one step forward. Offer two concrete choices instead of an open ended \"let me know\" (for example which size home, or whether to text the quote now). When a customer has a bigger worry, offer that someone from the team can call or look at it with them, and use intent handoff so a human takes it. Never repeat the same line twice in a conversation: every message must add a new fact, answer, or specific question. A bare \"just checking in\" is a wasted message.",
     "- If they say a competitor offers a longer labor warranty, never put the competitor down and never claim a longer warranty than the knowledge above. Acknowledge it, say what we do cover (30 day money back promise, photo report, downspout flush), and offer a call with the team to go through it.",
+    "- PRICE OBJECTIONS ARE NEVER A HANDOFF. A customer saying it is too expensive, over budget, or that someone else is cheaper is a sale in progress, so keep selling in the same message. Do it like Clark: calm, friendly, never defensive, never begging, no new discounts. Step 1, agree with the feeling in a few words. Step 2, find out what the other quote actually includes, because cheap quotes usually skip the downspout flush, the photo report or any guarantee. Step 3, state what ours includes in one line. Step 4, ask one easy question. The examples below only show the flavour. NEVER reuse their wording; say it your own way each time, in one or two short sentences, the way a friendly tradesman really texts, with contractions and no sales language. Examples of the voice: \"Totally fair, Clark, nobody likes paying more than they have to. Does his half price include flushing the downspouts and a photo report of the finished job? Ours does, plus a 30 day no clog guarantee, so it's worth comparing like for like.\" or \"Fair enough. If he can do the full clean with the downspouts flushed, that's a good deal and you should take it. If it's only a quick scoop out of the gutters, ours is a different job. Want me to hold your quote open while you compare?\" Make at most two attempts. If they still say no, be gracious, tell them the quote stays open and they can text any time, and use intent declined only if they clearly say they are not interested.",
     "- Never accept the first objection as the end. Acknowledge it in a few words, answer the real concern with one concrete fact, then make it easy to say yes with one small next step (usually: which size is the house, or offering to text the quote). Make at most two honest attempts on the same objection, then leave the door open warmly. A sincere or heartfelt no is never an objection: stop.",
     "- More objections: \"need to ask my spouse\" (offer to text the quote so they can look at it together, nothing is owed until they approve); \"I can do it myself\" (fair, but it means ladders, wet roofs and a messy job, and ours comes with the downspout flush, photo report and 30 day guarantee); \"not now / maybe spring\" (the rain is the reason to do it now, clogs cause overflow and fascia damage, and the quote costs nothing to hold); \"don't need it\" (ask when it was last cleaned, trees and leaf fall in Sacramento clog them fast); \"can you do cheaper?\" (the price is firm and already the promo, never invent a discount, point to what is included and the money back promise, and the 50% deposit makes it easy to start); \"bad experience with others\" (own it, point to the guarantee and the photo report that proves the work); \"is the deposit safe?\" (only 50% up front, and the 30 day money back promise applies). Be honest: never invent urgency, deadlines, shortages, reviews or discounts.",
     "- Handle objections calmly: price (it is a firm, all-in promo price, includes the downspout flush and photo report, backed by the money-back promise, and a clogged gutter in the rain costs far more); \"I'll think about it\" (respect it, offer to send the quote so they have it, mention the promo is the winter special); \"I already have someone\" (no pressure, mention the guarantee and photo report, leave the door open); \"is this legit?\" (licensed and insured, BBB accredited, 4.9 stars from 76 Google reviews, local since 2014).",
@@ -104,7 +105,8 @@ export function systemPrompt(f: BotFacts): string {
     "- If they mention illness, a death, a family emergency, money trouble, or any sincere reason they cannot go ahead, or they give a heartfelt no: be kind and human, say nothing salesy, do NOT ask any question, do not say you will check back soon, and use intent declined. One short, warm reply. Never follow a sincere no with another pitch.",
     "- If they sincerely ask whether you are a bot: say you are the Dunzo Gutters text assistant and the team can step in anytime. Do not claim to be a human.",
     "",
-    'OUTPUT: reply with ONLY a JSON object, no other text: {"reply": "<the text to send>", "intent": "<one of ' + INTENTS.join(" | ") + '>", "data": {}}',
+    'OUTPUT: your whole answer must be ONE JSON object and nothing else. No words before it, no words after it, no code fences. Never write the customer reply outside the JSON.',
+    'OUTPUT FORMAT: { {"reply": "<the text to send>", "intent": "<one of ' + INTENTS.join(" | ") + '>", "data": {}}',
     'Put facts you learned in data: {"stories": 1 or 2}, {"address": {"street1","city","province","postalCode"}}, {"email": "..."}, {"reason": "..."} for handoff.',
     "Use intent stories / address_confirmed / address_given / email_given when the customer's latest message gave that fact; reply_only otherwise. Do not use ready_for_quote: the system decides that.",
   ].filter(Boolean).join("\n");
@@ -149,6 +151,16 @@ export function tryParseBotOutput(text: string): BotOutput | null {
   } catch {
     return null;
   }
+}
+
+/** When the model wrote a good reply but broke the JSON format, pull the reply out instead of throwing it away. */
+export function salvageReply(text: string | undefined): BotOutput | null {
+  if (!text) return null;
+  const q = text.match(/"reply"\s*:\s*"((?:[^"\\]|\\.)*)"/);
+  const prose = text.split(/```|\{/)[0].trim();
+  const reply = (q ? q[1].replace(/\\"/g, '"').replace(/\\n/g, " ") : prose).trim();
+  if (reply.length < 8 || reply.length > 480) return null;
+  return { reply, intent: "reply_only", data: {} };
 }
 
 // ---- Guardrails: checked on every reply before it can be sent ----
@@ -221,7 +233,7 @@ export function applyOutput(f: BotFacts, o: BotOutput): BotFacts {
 /** One bot turn. No side effects: the caller decides what to do with the intent. */
 export async function botTurn(env: Env, facts: BotFacts, history: { role: "user" | "assistant"; content: string }[]): Promise<{ output: BotOutput; facts: BotFacts; debug?: Record<string, unknown> }> {
   if (!history.length || history[history.length - 1].role !== "user") throw new Error("history must end with a customer message");
-  const agent = { name: "sales", system: systemPrompt(facts), maxTokens: 500, model: env.BOT_MODEL };
+  const agent = { name: "sales", system: systemPrompt(facts), maxTokens: 900, model: env.BOT_MODEL };
   const raw = await runAgent(env, agent, history);
   let output = tryParseBotOutput(raw);
   let problems = output ? replyProblems(output.reply) : ["the output was not valid JSON"];
@@ -229,7 +241,7 @@ export async function botTurn(env: Env, facts: BotFacts, history: { role: "user"
   if (!output || problems.length) {
     // One retry that tells the model exactly what was wrong; after that a person takes over.
     retryRaw = await runAgent(env, { ...agent, system: agent.system + `\n\nYour previous reply could not be used because ${problems.join("; ")}. Write the reply again, fixing this. Reply with ONLY the JSON object.` }, history);
-    output = tryParseBotOutput(retryRaw);
+    output = tryParseBotOutput(retryRaw) ?? salvageReply(raw) ?? salvageReply(retryRaw);
     problems = output ? replyProblems(output.reply) : ["the output was not valid JSON"];
   }
   const checked: BotOutput | null = output && !problems.length ? output : null;
