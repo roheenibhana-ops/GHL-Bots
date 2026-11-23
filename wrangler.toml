@@ -15,7 +15,7 @@ SEND_MODE = "approve"
 BATCH_SIZE = "10"
 # Local send window (contact timezone), 24h clock.
 QUIET_START_HOUR = "20"
-QUIET_END_HOUR = "9"
+QUIET_END_HOUR = "8"
 # Daily batch sender: texts per day (0 = none) and which campaign it sends.
 DAILY_CAP = "0"
 BATCH_CAMPAIGN = "pilot-2"
@@ -36,7 +36,7 @@ BOT_MODEL = "claude-sonnet-5-5"
 QUOTE_MODE = "link"
 # Local hours the bot may text (contact timezone).
 BOT_START_HOUR = "8"
-BOT_END_HOUR = "21"
+BOT_END_HOUR = "20"
 # Jobber GraphQL version header (must be a version Jobber supports; change here if rejected).
 JOBBER_API_VERSION = "2025-01-20"
 
