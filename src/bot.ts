@@ -1,5 +1,5 @@
 import { runAgent } from "./agents";
-import { ALLOWED_PRICES, BUSINESS_KNOWLEDGE } from "./knowledge";
+import { ALLOWED_PRICES, BUSINESS_KNOWLEDGE, SITE_LINKS } from "./knowledge";
 import type { Env } from "./types";
 
 /** What the system knows about this customer. The system, not the model, owns these facts. */
@@ -96,7 +96,7 @@ export function systemPrompt(f: BotFacts): string {
     "",
     "HARD RULES (these are never broken):",
     "- Only state facts that appear in the business knowledge above. If you do not know, say the team will confirm and use intent handoff. Never invent reviews, stats, discounts, guarantees or services.",
-    "- The only prices you may say are the ones in the knowledge above. For anything other than the $219 / $319 cleaning (repairs, guards, seamless, roof, solar, windows) do not quote: use intent handoff and say the team will price it.",
+    "- The only prices you may say are the ones in the knowledge above. For other services (repairs, guards, seamless, roof, solar, windows, pressure washing and so on) you may give the typical range or starting price from the knowledge, always as typical and never as a firm quote, and say the team confirms the firm price after a free virtual assessment or a visit. If they want an actual quote for that job, or ask something the knowledge does not cover, say the team will confirm and use intent handoff. Never state a price that is not in the knowledge.",
     "- NEVER promise or suggest a date, day or time for the work, and never say a crew is available on a particular day. If asked, say once the quote is approved the team will be in touch with dates and times.",
     "- A repair request never ends the sale. The cleaning quote stays live and you keep helping with it, including price questions and objections. While a repair is being discussed, remind them to send photos, say the team will price the repair, and never state a repair price.",
     "- TIMING: if they ask how soon or when, you may say we are currently booking about 1 to 2 weeks out depending on weather, and that the team confirms the exact day once the quote is approved and the deposit is paid. Never give a specific date or day of the week, and never promise one.",
@@ -193,7 +193,10 @@ export function promisesDate(text: string): boolean {
 /** Everything wrong with a reply that must not be sent. Empty means fine. */
 export function replyProblems(reply: string): string[] {
   const problems: string[] = [];
-  if (/https?:\/\/|www\./i.test(reply)) problems.push("it contains a link (links are added by the system only)");
+  const links = reply.match(/https?:\/\/[^\s]+|www\.[^\s]+/gi) ?? [];
+  const clean = (u: string) => u.replace(/[.,;:!?)]+$/, "");
+  if (links.some((u) => !SITE_LINKS.includes(clean(u)))) problems.push("it contains a link that is not on the approved page list: only copy a link exactly from PAGES YOU MAY LINK");
+  if (links.length > 1) problems.push("it contains more than one link: send at most one");
   const bad = disallowedPrices(reply);
   if (bad.length) problems.push(`it states prices that are not approved: ${bad.join(", ")}`);
   if (promisesDate(reply)) problems.push("it promises or implies a date, day or time for the work");
@@ -215,7 +218,7 @@ export function plainPunctuation(text: string): string {
   return text
     .split(/(\s+)/)
     .map((tok) => {
-      if (/^\s+$/.test(tok) || tok.includes("@") || /\d-\d/.test(tok)) return tok;
+      if (/^\s+$/.test(tok) || tok.includes("@") || /\d-\d/.test(tok) || /^https?:\/\//i.test(tok)) return tok;
       return tok.replace(/[\u2013\u2014]/g, ",").replace(/(?<=[A-Za-z0-9])-(?=[A-Za-z])|(?<=[A-Za-z])-(?=[0-9])/g, " ");
     })
     .join("")

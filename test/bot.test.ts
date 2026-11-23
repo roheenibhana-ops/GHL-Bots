@@ -32,7 +32,7 @@ describe("parseBotOutput", () => {
 describe("guardrails", () => {
   it("allows approved prices and blocks invented ones", () => {
     expect(disallowedPrices("It's $219 for a single story, $319 for two, with a $109.50 deposit. Regular is from $249.")).toEqual([]);
-    expect(disallowedPrices("I can do it for $199 today")).toEqual(["$199"]);
+    expect(disallowedPrices("I can do it for $177 today")).toEqual(["$177"]);
     expect(disallowedPrices("Foundation damage can run $7,500 or more")).toEqual([]);
     expect(disallowedPrices("That's $1,200")).toEqual(["$1,200"]);
   });
@@ -107,5 +107,20 @@ describe("lead time wording", () => {
   it("allows a general lead time but still blocks a promised day", () => {
     expect(promisesDate("We're booking about 1 to 2 weeks out depending on weather, and the team confirms your exact day once the deposit is in.")).toBe(false);
     expect(promisesDate("We can be there on Tuesday morning.")).toBe(true);
+  });
+});
+
+describe("approved page links", () => {
+  it("allows one real site link and keeps its hyphens", () => {
+    expect(replyProblems("Here you go https://dunzogutters.com/blog/are-gutter-guards-worth-it")).toEqual([]);
+    expect(plainPunctuation("Have a look: https://dunzogutters.com/blog/are-gutter-guards-worth-it, it helps")).toContain("are-gutter-guards-worth-it");
+  });
+  it("blocks invented links and more than one link", () => {
+    expect(replyProblems("See https://dunzogutters.com/made-up-page").length).toBeGreaterThan(0);
+    expect(replyProblems("See https://example.com/x").length).toBeGreaterThan(0);
+    expect(replyProblems("See https://dunzogutters.com/pricing and https://dunzogutters.com/financing").length).toBeGreaterThan(0);
+  });
+  it("allows the website price ranges", () => {
+    expect(disallowedPrices("Seamless is typically $2,500 to $4,500 and guards $1,000 to $3,000")).toEqual([]);
   });
 });
