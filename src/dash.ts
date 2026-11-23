@@ -31,7 +31,7 @@ export interface InboxRow { contactId: string; name: string; account: Account; s
 export function buildInbox(convs: Conv[], msgs: Msg[]): InboxRow[] {
   const latest = new Map<string, Msg>();
   for (const m of msgs) if (!latest.has(m.contact_id)) latest.set(m.contact_id, m); // msgs are newest first
-  return convs.map((c) => {
+  return convs.filter((c) => latest.has(c.contact_id)).map((c) => {
     const m = latest.get(c.contact_id);
     const waiting = !!m && m.direction === "inbound" && c.status !== "closed";
     return {

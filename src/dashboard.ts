@@ -17,7 +17,7 @@ button,input,select,textarea{font:inherit;color:inherit}
 .nav svg{width:19px;height:19px;stroke:currentColor;fill:none;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round;flex:none}
 .nav b{margin-left:auto;background:var(--bad);color:#fff;border-radius:99px;font-size:11px;padding:1px 7px}
 .spacer{flex:1}
-.main{min-width:0;display:flex;flex-direction:column}
+.main{min-width:0;display:flex;flex-direction:column;overflow-x:hidden}
 .top{display:flex;align-items:center;gap:12px;padding:14px 26px;border-bottom:1px solid var(--line);background:var(--panel);position:sticky;top:0;z-index:5}
 .top h1{margin:0;font-size:19px;letter-spacing:-.01em}
 .pill{display:inline-flex;align-items:center;gap:7px;padding:6px 12px;border-radius:99px;font-weight:600;font-size:13px}
@@ -27,8 +27,8 @@ button,input,select,textarea{font:inherit;color:inherit}
 .btn:hover{background:var(--bg)}.btn.pri{background:var(--brand);border-color:var(--brand);color:#fff}.btn.pri:hover{filter:brightness(1.08)}
 .btn.dng{background:var(--bad);border-color:var(--bad);color:#fff}.btn.sm{padding:5px 10px;font-size:13px;border-radius:8px}
 .btn[disabled]{opacity:.5;cursor:default}
-.page{padding:24px 26px 60px;max-width:1280px;width:100%}
-.grid{display:grid;gap:16px}.g4{grid-template-columns:repeat(4,1fr)}.g2{grid-template-columns:1.1fr .9fr}
+.page{padding:24px 26px 60px;max-width:1280px;width:100%;min-width:0}
+.grid{display:grid;gap:16px}.grid>*{min-width:0}.g4{grid-template-columns:repeat(4,minmax(0,1fr))}.g2{grid-template-columns:minmax(0,1.1fr) minmax(0,.9fr)}
 .card{background:var(--panel);border:1px solid var(--line);border-radius:16px;padding:18px;box-shadow:var(--shadow)}
 .card h3{margin:0 0 12px;font-size:14px;color:var(--mute);font-weight:650;text-transform:uppercase;letter-spacing:.05em}
 .kpi .n{font-size:34px;font-weight:750;letter-spacing:-.03em;line-height:1.1}.kpi .l{color:var(--mute);margin-top:4px;font-size:13.5px}
@@ -76,10 +76,10 @@ pre{white-space:pre-wrap;word-wrap:break-word;background:var(--bg);border:1px so
 .tabs{display:none}
 @media(max-width:900px){
  .app{grid-template-columns:1fr}.side{display:none}.page{padding:16px 14px 90px}.top{padding:12px 14px;flex-wrap:wrap}
- .g4{grid-template-columns:1fr 1fr}.g2{grid-template-columns:1fr}.split{grid-template-columns:1fr;height:auto}
+ .g4{grid-template-columns:repeat(2,minmax(0,1fr))}.g2{grid-template-columns:minmax(0,1fr)}.split{grid-template-columns:1fr;height:auto}
  .split .thread{min-height:320px;max-height:60vh}.fun{grid-template-columns:110px 1fr 44px}
  .tabs{display:flex;position:fixed;bottom:0;left:0;right:0;background:var(--panel);border-top:1px solid var(--line);z-index:9;padding:6px 4px;justify-content:space-around}
- .tabs button{border:0;background:none;color:var(--mute);font-size:11px;font-weight:600;display:flex;flex-direction:column;align-items:center;gap:2px;padding:4px 8px}
+ .tabs button{border:0;background:none;color:var(--mute);font-size:10px;font-weight:600;display:flex;flex-direction:column;align-items:center;gap:2px;padding:4px 2px;flex:1;min-width:0}
  .tabs button.on{color:var(--brand)}.tabs svg{width:22px;height:22px;stroke:currentColor;fill:none;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
 }
 </style></head><body>
@@ -107,7 +107,7 @@ function ago(iso){var s=(Date.now()-new Date(iso).getTime())/1000;if(s<60)return
 function lock(){sessionStorage.removeItem('t');T='';$('app').style.display='none';$('gate').classList.add('on');clearInterval(timer)}
 function nav(){var n=$('nav'),tb=$('tabs');n.textContent='';tb.textContent='';VIEWS.forEach(function(v){
  var b=el('button','nav'+(v[0]===view?' on':''),null,[svg(v[0]),el('span',null,v[1])]);if(v[0]==='inbox'&&pendingCount)b.appendChild(el('b',null,String(pendingCount)));b.onclick=function(){go(v[0])};n.appendChild(b);
- var t=el('button',v[0]===view?'on':'',null,[svg(v[0]),el('span',null,v[1])]);t.onclick=function(){go(v[0])};tb.appendChild(t)})}
+ var t=el('button',v[0]===view?'on':'',null,[svg(v[0]),el('span',null,v[1]==='Approvals'?'Approve':v[1]==='Simulator'?'Practice':v[1])]);t.onclick=function(){go(v[0])};tb.appendChild(t)})}
 function go(v){view=v;openId=null;nav();$('title').textContent=(VIEWS.filter(function(x){return x[0]===v})[0]||[0,'']) [1];render()}
 function status(){var s=S.settings||{};var p=$('status'),pa=s.PAUSE_ALL==='true';
  var sending=s.SENDING_ENABLED==='true'&&Number(s.DAILY_CAP)>0;
