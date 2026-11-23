@@ -102,3 +102,10 @@ describe("plainPunctuation", () => {
     expect(plainPunctuation("Send it to sam-lee@example.com")).toBe("Send it to sam-lee@example.com");
   });
 });
+
+describe("lead time wording", () => {
+  it("allows a general lead time but still blocks a promised day", () => {
+    expect(promisesDate("We're booking about 1 to 2 weeks out depending on weather, and the team confirms your exact day once the deposit is in.")).toBe(false);
+    expect(promisesDate("We can be there on Tuesday morning.")).toBe(true);
+  });
+});
