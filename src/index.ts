@@ -1,4 +1,7 @@
 import { APP_HTML } from "./app";
+import { DASH_HTML } from "./dashboard";
+import { handleDash } from "./dash";
+import { applySettings } from "./settings";
 import { botTurn, type BotFacts } from "./bot";
 import { SIM_HTML } from "./sim";
 import { AGENTS, runAgent } from "./agents";
@@ -37,6 +40,14 @@ function isAdmin(req: Request, env: Env): boolean {
 export default {
   async fetch(req: Request, env: Env, ctx: ExecutionContext): Promise<Response> {
     const url = new URL(req.url);
+    // The control panel page is static. Everything else sees the settings you changed on the dashboard.
+    if (url.pathname === "/dashboard") return new Response(DASH_HTML, { headers: { "content-type": "text/html; charset=utf-8", "cache-control": "no-store" } });
+    if (!["/health", "/sim", "/app", "/stats"].includes(url.pathname)) env = await applySettings(env);
+    if (url.pathname.startsWith("/admin/dash/")) {
+      if (!isAdmin(req, env)) return json({ error: "unauthorized" }, 401);
+      const r = await handleDash(req, env, url);
+      if (r) return r;
+    }
     const jobberAccount = (): Account | null => {
       const a = url.searchParams.get("account");
       return a === "lights" || a === "dunzo" ? a : null;
@@ -471,7 +482,8 @@ export default {
   },
 
   // Outreach batches. Inert unless SENDING_ENABLED = "true". Pilot logic comes in the next step.
-  async scheduled(_event: ScheduledEvent, env: Env): Promise<void> {
+  async scheduled(_event: ScheduledEvent, rawEnv: Env): Promise<void> {
+    const env = await applySettings(rawEnv);
     await sendQueuedReplies(env).catch(() => undefined); // bot replies held overnight
     await syncApprovals(env).catch(() => undefined);
     await runDailyBatch(env).catch(() => undefined);
