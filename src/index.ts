@@ -3,7 +3,7 @@ import { botTurn, type BotFacts } from "./bot";
 import { SIM_HTML } from "./sim";
 import { AGENTS, runAgent } from "./agents";
 import { sb } from "./db";
-import { addNote, addTags, credsFor, searchContacts, sendSms, setDnd, upsertByPhone } from "./ghl";
+import { addNote, addTags, conversationMessages, credsFor, searchConversations, searchContacts, sendSms, setDnd, upsertByPhone } from "./ghl";
 import { authorizeUrl, checkState, describeType, exchangeCode, describeField, findClientsByPhones, gql, listClientPhones, listMutations, listQuoteTemplates, makeState } from "./jobber";
 import { assess } from "./check";
 import { handleInbound, sendQueuedReplies, type InboundPayload } from "./convo";
@@ -231,6 +231,26 @@ export default {
           await sb(env, "PATCH", `messages?id=in.(${[...heldIds].join(",")})&status=eq.pending_approval`, { status: "held" }, "return=minimal");
         }
         return json({ campaign, checked: msgs.length, holdCount: heldIds.size, applied: !!b.apply && heldIds.size > 0, held });
+      } catch (e) { return json({ error: (e as Error).message }, 502); }
+    }
+
+    // Read only: a sample of real SMS conversations, names and numbers stripped, for learning how the team sells.
+    if (url.pathname === "/admin/convo-sample") {
+      if (!isAdmin(req, env)) return json({ error: "unauthorized" }, 401);
+      const account = (url.searchParams.get("account") === "lights" ? "lights" : "dunzo") as Account;
+      const n = Math.min(Number(url.searchParams.get("n") ?? 15), 30);
+      const before = Number(url.searchParams.get("before") ?? 0) || undefined;
+      try {
+        const creds = credsFor(env, account);
+        const convs = (await searchConversations(creds, n, before)).filter((c) => /sms|phone/i.test(c.lastMessageType ?? "") || !c.lastMessageType);
+        const out: unknown[] = [];
+        for (const c of convs) {
+          const msgs = (await conversationMessages(creds, c.id, 60)).reverse();
+          const first = (c.fullName ?? "").split(" ")[0];
+          const clean = (t: string) => t.replace(/\+?\d[\d\s().-]{8,}\d/g, "[phone]").replace(/\S+@\S+/g, "[email]").split(first && first.length > 1 ? first : "\u0000").join("[name]");
+          out.push({ last: c.lastMessageDate, msgs: msgs.filter((m) => m.body && /sms|call|activity/i.test(m.messageType ?? "SMS") || m.body).map((m) => `${m.direction === "inbound" ? "CUSTOMER" : (m.source === "workflow" || m.source === "bulk_actions" ? "AUTO" : m.userId ? "TEAM" : "BOT/AUTO")}: ${clean(m.body ?? "")}`) });
+        }
+        return json({ account, count: out.length, oldest: convs.at(-1)?.lastMessageDate, conversations: out });
       } catch (e) { return json({ error: (e as Error).message }, 502); }
     }
 

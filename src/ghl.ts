@@ -116,3 +116,16 @@ export async function removeTags(c: GhlCreds, contactId: string, tags: string[])
 export async function clearDnd(c: GhlCreds, contactId: string): Promise<unknown> {
   return call(c, "PUT", `/contacts/${contactId}`, { dnd: false, dndSettings: { SMS: { status: "inactive", message: "", code: "" } } });
 }
+
+/** Read only: recent conversations, newest first. */
+export async function searchConversations(c: GhlCreds, limit = 20, startAfterDate?: number): Promise<{ id: string; contactId: string; fullName?: string; lastMessageType?: string; lastMessageDate?: number }[]> {
+  const q = `/conversations/search?locationId=${encodeURIComponent(c.locationId)}&limit=${limit}&sortBy=last_message_date&sort=desc${startAfterDate ? `&startAfterDate=${startAfterDate}` : ""}`;
+  const d = await call<{ conversations?: { id: string; contactId: string; fullName?: string; lastMessageType?: string; lastMessageDate?: number }[] }>(c, "GET", q);
+  return d.conversations ?? [];
+}
+
+/** Read only: the messages of one conversation. */
+export async function conversationMessages(c: GhlCreds, conversationId: string, limit = 60): Promise<{ direction?: string; body?: string; messageType?: string; dateAdded?: string; source?: string; userId?: string }[]> {
+  const d = await call<{ messages?: { messages?: { direction?: string; body?: string; messageType?: string; dateAdded?: string; source?: string; userId?: string }[] } }>(c, "GET", `/conversations/${encodeURIComponent(conversationId)}/messages?limit=${limit}`);
+  return d.messages?.messages ?? [];
+}
