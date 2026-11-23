@@ -23,19 +23,19 @@ button.go{background:#1a7f37;color:#fff;border-color:#1a7f37} #err{color:#b00;ma
 <div class="row"><input id="msg" placeholder="Type as the customer, press Enter"><button class="go" id="send">Send</button></div>
 <p id="facts"></p>
 <script>
-var tok=document.getElementById('tok'),chat=document.getElementById('chat'),err=document.getElementById('err'),facts={},history=[];
+var tok=document.getElementById('tok'),chat=document.getElementById('chat'),err=document.getElementById('err'),facts={},convo=[];
 try{tok.value=sessionStorage.getItem('t')||''}catch(e){}
 function parseAddr(s){var p=s.split(',').map(function(x){return x.trim()}).filter(Boolean);if(p.length<3)return undefined;var z=(p[p.length-1].match(/\\d{5}/)||[''])[0];return {street1:p[0],city:p[1],province:'CA',postalCode:z}}
 function bubble(t,c,meta){var d=document.createElement('div');d.className='bubble '+c;d.textContent=t;chat.appendChild(d);if(meta){var m=document.createElement('div');m.className='meta';m.textContent=meta;chat.appendChild(m)}}
 function show(){document.getElementById('facts').textContent='Known: '+JSON.stringify(facts)}
-function start(){chat.textContent='';history=[];err.textContent='';facts={firstName:document.getElementById('fn').value,address:parseAddr(document.getElementById('addr').value),opening:document.getElementById('open').value,profile:document.getElementById('prof').value||undefined};bubble(facts.opening,'bot','what we texted them');show()}
+function start(){chat.textContent='';convo=[];err.textContent='';facts={firstName:document.getElementById('fn').value,address:parseAddr(document.getElementById('addr').value),opening:document.getElementById('open').value,profile:document.getElementById('prof').value||undefined};bubble(facts.opening,'bot','what we texted them');show()}
 document.getElementById('reset').onclick=start;
 function send(){var box=document.getElementById('msg'),t=box.value.trim();if(!t)return;box.value='';try{sessionStorage.setItem('t',tok.value)}catch(e){}
- bubble(t,'me');history.push({role:'user',content:t});err.textContent='';
+ bubble(t,'me');convo.push({role:'user',content:t});err.textContent='';
  var wait=document.createElement('div');wait.className='bubble bot';wait.textContent='Thinking...';chat.appendChild(wait);
- fetch('/admin/sim',{method:'POST',headers:{'Authorization':'Bearer '+tok.value,'Content-Type':'application/json'},body:JSON.stringify({facts:facts,history:history})})
+ fetch('/admin/sim',{method:'POST',headers:{'Authorization':'Bearer '+tok.value,'Content-Type':'application/json'},body:JSON.stringify({facts:facts,history:convo})})
  .then(function(r){return r.json().then(function(j){if(!r.ok)throw new Error(j.error||r.status);return j})})
- .then(function(j){wait.remove();if(j.debug){err.textContent='Could not read the model output. First: '+(j.debug.rawFirst||'')}history.push({role:'assistant',content:j.output.reply});facts=j.facts;bubble(j.output.reply,'bot','intent: '+j.output.intent+(Object.keys(j.output.data).length?' '+JSON.stringify(j.output.data):''));show()})
+ .then(function(j){wait.remove();if(j.debug){err.textContent='Could not read the model output. First: '+(j.debug.rawFirst||'')}convo.push({role:'assistant',content:j.output.reply});facts=j.facts;bubble(j.output.reply,'bot','intent: '+j.output.intent+(Object.keys(j.output.data).length?' '+JSON.stringify(j.output.data):''));show()})
  .catch(function(e){wait.remove();err.textContent=(e.message==='unauthorized'?'Wrong admin token. Paste the current ADMIN_TOKEN (a long string of letters and numbers) into the box at the top, then send again.':'Something went wrong: '+e.message)})}
 document.getElementById('send').onclick=send;document.getElementById('msg').onkeydown=function(e){if(e.key==='Enter')send()};
 start();
