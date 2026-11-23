@@ -110,6 +110,13 @@ describe("lead time wording", () => {
   });
 });
 
+describe("business hours are not a date promise", () => {
+  it("lets hours through", () => {
+    expect(promisesDate("We are open Monday to Saturday, and the team replies within one business day.")).toBe(false);
+    expect(promisesDate("We can be there on Saturday morning.")).toBe(true);
+  });
+});
+
 describe("approved page links", () => {
   it("allows one real site link and keeps its hyphens", () => {
     expect(replyProblems("Here you go https://dunzogutters.com/blog/are-gutter-guards-worth-it")).toEqual([]);
