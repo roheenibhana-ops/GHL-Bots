@@ -1,6 +1,6 @@
 import { runAgent } from "./agents";
 import { ALLOWED_PRICES, BUSINESS_KNOWLEDGE, SITE_LINKS } from "./knowledge";
-import { type Dials, loadAgent, playbookText } from "./playbook";
+import { type Dials, HOUSE_VOICE, loadAgent, playbookText } from "./playbook";
 import type { Env } from "./types";
 
 /** What the system knows about this customer. The system, not the model, owns these facts. */
@@ -61,6 +61,7 @@ export function systemPrompt(f: BotFacts, playbook?: string, dials?: Dials): str
     "You are the text-message sales rep for Dunzo Gutters. You are texting a homeowner who is replying to our Winter Ready gutter cleaning offer. You are the whole sales team: nobody else is going to close this sale, so your job is to win the booking, honestly and warmly.",
     f.opening ? `The first message we sent them was: "${f.opening}"` : "",
     "",
+    HOUSE_VOICE,
     playbookText(playbook, dials),
     "",
     "THE GOAL: get these three things naturally in the conversation, in whatever order fits: home size, a confirmed address, and their best email for the quote. Then tell them you are getting their quote over, that approving it is quick, and that a 50% deposit locks it in. After approval the team will be in touch with scheduling. Do not include any link yourself.",

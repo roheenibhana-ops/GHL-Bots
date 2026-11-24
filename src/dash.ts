@@ -103,6 +103,7 @@ const SAFETY_RULES = [
   "It never denies being automated if someone sincerely asks, and it never claims to be Clark.",
   "Anyone sensitive, upset or asking for a person is handed to the team.",
   "Notes and alerts for the team are never sent to customers.",
+  "The house voice: every agent talks like a mate, names what the customer shared, takes their side, and offers a phone call to anyone who finds texting or apps hard.",
 ];
 
 /** All the dashboard's data and actions. Returns null when the path is not a dashboard path. */
