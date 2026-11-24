@@ -87,6 +87,7 @@ export async function handleInbound(env: Env, p: InboundPayload, dryRun = false)
   // 1. Opt-outs come first, for everyone, in every mode.
   if (isStopMessage(body)) {
     if (!dryRun) {
+      await sb(env, "POST", "messages", { account, contact_id: p.contactId, direction: "inbound", body, status: "received", campaign: "bot" }, "return=minimal").catch(() => undefined);
       await setDnd(creds, p.contactId);
       await addTags(creds, p.contactId, ["bot-opted-out"]);
       await sb(env, "POST", "optouts", { account, contact_id: p.contactId }, "resolution=ignore-duplicates,return=minimal");

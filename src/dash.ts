@@ -17,7 +17,7 @@ import { effectiveValues, loadSettings, SETTINGS, saveSetting, validSetting } fr
 import type { Account, Env } from "./types";
 
 type Conv = { contact_id: string; account: Account; status: string; facts: (BotFacts & { lastAlertAt?: number; approvedAt?: string }) | null; updated_at: string };
-type Msg = { contact_id: string; direction: "inbound" | "outbound"; status: string; campaign: string; body: string | null; created_at: string; contact_name?: string | null };
+type Msg = { contact_id: string; direction: "inbound" | "outbound"; status: string; campaign: string; body: string | null; created_at: string; sent_at?: string | null; contact_name?: string | null };
 
 type AgentRow = { id: string; status: string; instructions: string; dials: Dials | null; note: string | null; created_at: string; published_at: string | null };
 
@@ -41,7 +41,9 @@ export interface InboxRow { contactId: string; name: string; account: Account; s
 /** Joins conversations with their latest message. Pure, so it can be tested. */
 export function buildInbox(convs: Conv[], msgs: Msg[]): InboxRow[] {
   const latest = new Map<string, Msg>();
-  for (const m of msgs) if (!latest.has(m.contact_id)) latest.set(m.contact_id, m); // msgs are newest first
+  // A promo is drafted days before it is sent, so go by when it actually went out.
+  const at = (m: Msg) => m.sent_at ?? m.created_at;
+  for (const m of msgs) { const cur = latest.get(m.contact_id); if (!cur || at(m) > at(cur)) latest.set(m.contact_id, m); }
   return convs.filter((c) => latest.has(c.contact_id)).map((c) => {
     const m = latest.get(c.contact_id);
     const waiting = !!m && m.direction === "inbound" && c.status !== "closed";
@@ -53,7 +55,7 @@ export function buildInbox(convs: Conv[], msgs: Msg[]): InboxRow[] {
       stage: stageOf(c),
       waiting,
       last: (m?.body ?? "").slice(0, 140),
-      lastAt: m?.created_at ?? c.updated_at,
+      lastAt: (m ? at(m) : null) ?? c.updated_at,
       lastFrom: m?.direction ?? "outbound",
     };
   }).sort((a, b) => (a.lastAt < b.lastAt ? 1 : -1));
@@ -149,7 +151,7 @@ export async function handleDash(req: Request, env: Env, url: URL): Promise<Resp
     if (p === "/admin/dash/inbox") {
       const [convs, msgs] = await Promise.all([
         sb<Conv[]>(env, "GET", "conversations?select=contact_id,account,status,facts,updated_at&order=updated_at.desc&limit=300" + af),
-        sb<Msg[]>(env, "GET", "messages?status=in.(sent,received,queued_hours)&direction=in.(inbound,outbound)&order=created_at.desc&limit=900&select=contact_id,direction,status,campaign,body,created_at,contact_name" + af),
+        sb<Msg[]>(env, "GET", "messages?status=in.(sent,received,queued_hours)&direction=in.(inbound,outbound)&order=created_at.desc&limit=900&select=contact_id,direction,status,campaign,body,created_at,sent_at,contact_name" + af),
       ]);
       return json({ rows: buildInbox(convs, msgs) });
     }
