@@ -29,3 +29,11 @@ describe("who Dash follows up", () => {
     expect(pick({ convs: [conv("q", { quoteId: "Q1" })], msgs: [msg("q", "outbound", "bot", "2026-11-28T10:00:00Z")] })).toEqual([]);
   });
 });
+
+describe("customers who asked for time", () => {
+  const old = [msg("w", "outbound", "bot", "2026-11-15T17:00:00Z")]; // quote sent 13 days ago
+  it("leaves them alone during the hold and comes back when it ends", () => {
+    expect(pick({ convs: [conv("w", { quoteId: "Q1", dashHoldUntil: now + 86_400_000 })], msgs: old })).toEqual([]);
+    expect(pick({ convs: [conv("w", { quoteId: "Q1", dashHoldUntil: now - 3_600_000 })], msgs: old }).map((t) => t.contactId)).toEqual(["w"]);
+  });
+});

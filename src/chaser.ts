@@ -49,7 +49,8 @@ export function pickTargets(o: { promos: Promo[]; convs: Conv[]; msgs: Msg[]; no
     const ms = (by.get(c.contact_id) ?? []).filter((m) => ["sent", "received"].includes(m.status)).sort((a, b) => when(a) - when(b));
     const last = ms[ms.length - 1];
     if (!last || last.direction !== "outbound") continue; // the customer spoke last: Gus answers, not Dash
-    const quiet = o.now - when(last);
+    // After a hold (they asked for time) the clock starts when the hold ends, so they are not forgotten.
+    const quiet = f.dashHoldUntil ? Math.max(20 * 3_600_000, o.now - f.dashHoldUntil) : o.now - when(last);
     if (quiet < 20 * 3_600_000 || quiet > 7 * DAY) continue;
     const all = by.get(c.contact_id) ?? [];
     const done = all.filter((m) => m.campaign === DASH_CAMPAIGN && m.status === "sent").length;
