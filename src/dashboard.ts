@@ -40,6 +40,7 @@ a.nav{text-decoration:none}
 .stem{width:2px;height:22px;background:var(--line);margin:-6px auto 0}
 .team{font-size:12px;font-weight:700;color:var(--mute);text-transform:uppercase;letter-spacing:.05em;margin:14px 0 2px}
 .dim{opacity:1}
+.mcard.tool{cursor:default}.mcard.tool:hover{transform:none}.tname{font-weight:700;color:var(--ink);text-decoration:underline;text-decoration-color:var(--line);text-underline-offset:3px;margin-right:8px}.tname:hover{color:var(--brand)}.mcard.tool .sub2{white-space:normal;margin-top:5px;line-height:1.4}.tnote{margin-top:7px;font-size:12.5px;color:var(--mute);border-left:3px solid var(--line);padding-left:9px;line-height:1.4}
 .oc{display:flex;flex-direction:column;align-items:center;margin-top:12px;padding:26px 18px;overflow-x:auto}
 .onode{display:flex;gap:10px;align-items:center;padding:7px 11px 7px 7px;border:1px solid var(--line);border-radius:14px;background:var(--panel);cursor:pointer;transition:transform .12s,box-shadow .12s,border-color .12s;min-width:0}
 .onode:hover{transform:translateY(-2px);box-shadow:var(--shadow);border-color:var(--brand)}.onode:hover .avl{transform:rotate(-4deg) scale(1.08)}
@@ -565,7 +566,13 @@ function vRoadmap(p){api('/admin/dash/roadmap').then(function(d){
    var card=el('div','rcard',null,[el('div','rtop',null,[el('span','remo',i.emoji),el('div','grow',null,[el('div','nm',i.title),i.who?el('div','sub2',i.who):null]),el('span','tag',i.area)]),det]);
    card.onclick=function(){det.style.display=det.style.display==='none'?'block':'none'};col.appendChild(card)});
   lanes.appendChild(col)});
- p.appendChild(lanes)}).catch(function(e){p.appendChild(el('div','empty',e.message))})}
+ p.appendChild(lanes);
+ var tb=el('div','card');tb.style.marginTop='16px';tb.appendChild(el('h3',null,'Toolbox: what the social and video agents will need'));tb.appendChild(el('div','sub','Free and open source tools, plus the ones you already pay for. Nothing here is installed yet. Click a name to see it.'));
+ var groups=[];(d.tools||[]).forEach(function(t){if(groups.indexOf(t.group)<0)groups.push(t.group)});
+ groups.forEach(function(g){tb.appendChild(el('div','team',g));var grid=el('div','sysgrid');(d.tools||[]).filter(function(t){return t.group===g}).forEach(function(t){
+  var a=el('a','tname',t.name);a.href=t.url;a.target='_blank';a.rel='noopener';
+  var c=el('div','mcard sys tool',null,[el('div','grow',null,[el('div','nm',null,[a,el('span','tag '+(t.cost==='Have it'?'g':t.cost==='Free'?'b':'o'),t.cost)]),el('div','sub2',t.what),t.note?el('div','tnote',t.note):null])]);grid.appendChild(c)});tb.appendChild(grid)});
+ p.appendChild(tb)}).catch(function(e){p.appendChild(el('div','empty',e.message))})}
 function vSettings(p){api('/admin/dash/settings').then(function(d){
  if(!d.ready)p.appendChild(el('div','banner wr','These switches cannot save yet. '+(d.error||'Run supabase/006_settings.sql in the Supabase SQL editor, then reload.')));
  var groups={};d.defs.forEach(function(x){(groups[x.group]=groups[x.group]||[]).push(x)});
