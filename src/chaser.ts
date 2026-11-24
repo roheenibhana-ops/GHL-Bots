@@ -71,7 +71,7 @@ export async function writeFollowUp(env: Env, t: { kind: "promo" | "quote"; firs
     "HOW YOU FOLLOW UP (set by the owner and editable):",
     live.instructions,
     dialsText(live.dials),
-    "FIXED RULES: one text, one or two short sentences, under 240 characters. Never repeat a line that is already in the conversation. Never invent urgency, deadlines, discounts or prices. If a deadline is given below you may mention it once, plainly, as helpful information and never as pressure. Never mention when a clean would be scheduled. The only prices you may mention are in the offer below. No links. Never promise a day or time. Never guilt them for not replying. Make it easy to say not now. Plain text only, no quotation marks around it, no emojis.",
+    "FIXED RULES: one text, one or two short sentences, under 240 characters. Never repeat a line that is already in the conversation. Never invent urgency, deadlines, discounts or prices. If a deadline is given below you may mention it once, plainly, as helpful information and never as pressure. About when the clean happens, say only that the team will be in touch to schedule the job, and never name a month or date for it. The only prices you may mention are in the offer below. No links. Never promise a day or time. Never guilt them for not replying. Make it easy to say not now. Plain text only, no quotation marks around it, no emojis.",
     OFFER,
     t.deadline && formatDeadline(t.deadline) && !deadlinePassed(t.deadline) ? `DEADLINE for this customer: the price is good through ${formatDeadline(t.deadline)}. Approving the quote by then locks it in.` : "There is no deadline to mention for this customer.",
   ].filter(Boolean).join("\n");
