@@ -165,7 +165,7 @@ pre{white-space:pre-wrap;word-wrap:break-word;background:var(--bg);border:1px so
 <div style="color:var(--mute)">Enter your admin token to open the control panel.</div>
 <input id="tok" type="password" placeholder="Admin token" autocomplete="current-password"><button class="btn pri" id="enter" style="width:100%">Open</button><div class="err" id="gerr"></div></div></div>
 <div class="app" id="app" style="display:none">
-<aside class="side"><div class="logo"><i>P</i>The Partridge Standard</div><div id="nav"></div><a class="nav" id="sblink" href="https://santas-lights-scoreboard.roheeni-bhana.workers.dev/" target="_blank" rel="noopener"><svg viewBox="0 0 24 24"><path d="M14 4h6v6"/><path d="M20 4l-9 9"/><path d="M18 14v5a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1V7a1 1 0 0 1 1-1h5"/></svg>Scoreboard</a><div class="spacer"></div>
+<aside class="side"><div class="logo"><i>P</i>The Partridge Standard</div><div id="nav"></div><div class="spacer"></div>
 <button class="nav" id="lock"><svg viewBox="0 0 24 24"><rect x="4" y="11" width="16" height="9" rx="2"/><path d="M8 11V8a4 4 0 0 1 8 0v3"/></svg>Lock</button></aside>
 <div class="main"><div class="top"><h1 id="title">Overview</h1><div class="seg" id="seg"></div><span class="pill ok" id="status"><i></i>Loading</span><span class="spacer"></span>
 <a class="btn sb-top" href="https://santas-lights-scoreboard.roheeni-bhana.workers.dev/" target="_blank" rel="noopener">Scoreboard</a><button class="btn theme" id="theme" title="Switch light or dark"></button><button class="btn" id="refresh">Refresh</button><button class="btn dng" id="panic">Pause everything</button></div>
@@ -187,7 +187,7 @@ function api(path,body){var o={headers:{'Authorization':'Bearer '+T,'Content-Typ
 function ago(iso){var s=(Date.now()-new Date(iso).getTime())/1000;if(s<60)return 'just now';if(s<3600)return Math.floor(s/60)+'m ago';if(s<86400)return Math.floor(s/3600)+'h ago';return Math.floor(s/86400)+'d ago'}
 function lock(){sessionStorage.removeItem('t');T='';$('app').style.display='none';$('gate').classList.add('on');clearInterval(timer)}
 function nav(){var n=$('nav'),tb=$('tabs');n.textContent='';tb.textContent='';var grp='';VIEWS.forEach(function(v){
- if(v[2]!==grp){if(grp==='How it is going')n.appendChild($('sblink'));grp=v[2];n.appendChild(el('div','navh',grp))}
+ if(v[2]!==grp){if(grp==='How it is going'){var sl=el('a','nav');sl.id='sblink';sl.href='https://santas-lights-scoreboard.roheeni-bhana.workers.dev/';sl.target='_blank';sl.rel='noopener';sl.innerHTML='<svg viewBox="0 0 24 24"><path d="M14 4h6v6"/><path d="M20 4l-9 9"/><path d="M18 14v5a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1V7a1 1 0 0 1 1-1h5"/></svg>';sl.appendChild(document.createTextNode('Scoreboard'));n.appendChild(sl)}grp=v[2];n.appendChild(el('div','navh',grp))}
  var b=el('button','nav'+(v[0]===view?' on':''),null,[svg(v[0]),el('span',null,v[1])]);if(v[0]==='inbox'&&pendingCount)b.appendChild(el('b',null,String(pendingCount)));b.onclick=function(){go(v[0])};n.appendChild(b);
  var t=el('button',v[0]===view?'on':'',null,[svg(v[0]),el('span',null,v[1]==='Approvals'?'Approve':v[1]==='Practice chat'?'Practice':v[1])]);t.onclick=function(){go(v[0])};tb.appendChild(t)})}
 function go(v){view=v;openId=null;studioKey=null;studioMeta=null;ST=null;nav();$('title').textContent=(VIEWS.filter(function(x){return x[0]===v})[0]||[0,'']) [1];render()}
