@@ -28,7 +28,15 @@ button,input,select,textarea{font:inherit;color:inherit}
 .btn:hover{background:var(--bg)}.btn.pri{background:var(--brand);border-color:var(--brand);color:#fff}.btn.pri:hover{filter:brightness(1.08)}
 .btn.dng{background:var(--bad);border-color:var(--bad);color:#fff}
 :root[data-theme=dark] .btn.dng,:root:not([data-theme=light]) .btn.dng{color:#1a0a0b}
-.theme{width:40px;padding:8px 0;text-align:center}.btn.sm{padding:5px 10px;font-size:13px;border-radius:8px}
+.theme{width:40px;padding:8px 0;text-align:center}
+.seg{display:inline-flex;background:var(--bg);border:1px solid var(--line);border-radius:12px;padding:3px;gap:2px}
+.seg button{border:0;background:none;padding:6px 14px;border-radius:9px;font-weight:650;color:var(--mute);cursor:pointer;font-size:13.5px}
+.seg button.on{background:var(--panel);color:var(--ink);box-shadow:var(--shadow)}
+.org{display:grid;gap:16px}.units{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:16px}
+.top-card{text-align:center;border:2px solid var(--brand)}.top-card .av{margin:0 auto 8px;width:46px;height:46px}
+.stem{width:2px;height:22px;background:var(--line);margin:-6px auto 0}
+.team{font-size:12px;font-weight:700;color:var(--mute);text-transform:uppercase;letter-spacing:.05em;margin:14px 0 2px}
+.dim{opacity:.4}.btn.sm{padding:5px 10px;font-size:13px;border-radius:8px}
 .btn[disabled]{opacity:.5;cursor:default}
 .page{padding:24px 26px 60px;max-width:1280px;width:100%;min-width:0}
 .grid{display:grid;gap:16px}.grid>*{min-width:0}.g4{grid-template-columns:repeat(4,minmax(0,1fr))}.g2{grid-template-columns:minmax(0,1.1fr) minmax(0,.9fr)}
@@ -79,7 +87,7 @@ pre{white-space:pre-wrap;word-wrap:break-word;background:var(--bg);border:1px so
 .tabs{display:none}
 @media(max-width:900px){
  .app{grid-template-columns:1fr}.side{display:none}.page{padding:16px 14px 90px}.top{padding:12px 14px;flex-wrap:wrap}
- .g4{grid-template-columns:repeat(2,minmax(0,1fr))}.g2{grid-template-columns:minmax(0,1fr)}.split{grid-template-columns:1fr;height:auto}
+ .g4{grid-template-columns:repeat(2,minmax(0,1fr))}.g2{grid-template-columns:minmax(0,1fr)}.split{grid-template-columns:1fr;height:auto}.units{grid-template-columns:minmax(0,1fr)}
  .split .thread{min-height:320px;max-height:60vh}.fun{grid-template-columns:110px 1fr 44px}
  .tabs{display:flex;position:fixed;bottom:0;left:0;right:0;background:var(--panel);border-top:1px solid var(--line);z-index:9;padding:6px 4px;justify-content:space-around}
  .tabs button{border:0;background:none;color:var(--mute);font-size:10px;font-weight:600;display:flex;flex-direction:column;align-items:center;gap:2px;padding:4px 2px;flex:1;min-width:0}
@@ -92,13 +100,16 @@ pre{white-space:pre-wrap;word-wrap:break-word;background:var(--bg);border:1px so
 <div class="app" id="app" style="display:none">
 <aside class="side"><div class="logo"><i>D</i>Dunzo Control</div><div id="nav"></div><div class="spacer"></div>
 <button class="nav" id="lock"><svg viewBox="0 0 24 24"><rect x="4" y="11" width="16" height="9" rx="2"/><path d="M8 11V8a4 4 0 0 1 8 0v3"/></svg>Lock</button></aside>
-<div class="main"><div class="top"><h1 id="title">Overview</h1><span class="pill ok" id="status"><i></i>Loading</span><span class="spacer"></span>
+<div class="main"><div class="top"><h1 id="title">Overview</h1><div class="seg" id="seg"></div><span class="pill ok" id="status"><i></i>Loading</span><span class="spacer"></span>
 <button class="btn theme" id="theme" title="Switch light or dark"></button><button class="btn" id="refresh">Refresh</button><button class="btn dng" id="panic">Pause everything</button></div>
 <div class="page" id="page"></div></div></div>
 <div class="tabs" id="tabs"></div><div class="toast" id="toast"></div>
 <script>
 var ICON={overview:'<path d="M4 13h6V4H4zM14 20h6v-9h-6zM4 20h6v-3H4zM14 8h6V4h-6z"/>',inbox:'<path d="M4 13l2-8h12l2 8v6H4z"/><path d="M4 13h5a3 3 0 0 0 6 0h5"/>',approve:'<path d="M5 12l4 4 10-10"/>',results:'<path d="M4 20V10M10 20V4M16 20v-7M22 20H2"/>',agents:'<circle cx="9" cy="8" r="3.5"/><path d="M3 20c0-3.5 2.7-6 6-6s6 2.5 6 6"/><path d="M16 5a3 3 0 0 1 0 6M18 14c2 .7 3 2.6 3 5"/>',settings:'<circle cx="12" cy="12" r="3"/><path d="M19 12a7 7 0 0 0-.1-1.2l2-1.5-2-3.4-2.3 1a7 7 0 0 0-2-1.2L14 3h-4l-.6 2.7a7 7 0 0 0-2 1.2l-2.3-1-2 3.4 2 1.5A7 7 0 0 0 5 12c0 .4 0 .8.1 1.2l-2 1.5 2 3.4 2.3-1a7 7 0 0 0 2 1.2L10 21h4l.6-2.7a7 7 0 0 0 2-1.2l2.3 1 2-3.4-2-1.5c.1-.4.1-.8.1-1.2z"/>',sim:'<path d="M4 5h16v11H9l-5 4z"/>'};
 var VIEWS=[['overview','Overview'],['inbox','Inbox'],['approve','Approvals'],['results','Results'],['agents','Agents'],['settings','Settings'],['sim','Simulator']];
+var ACC='all';try{ACC=localStorage.getItem('acc')||'all'}catch(e){}
+function q(){return ACC==='all'?'':'?account='+ACC}
+function seg(){var s=$('seg');s.textContent='';[['all','All'],['dunzo','Dunzo'],['lights','Lights']].forEach(function(x){var b=el('button',ACC===x[0]?'on':'',x[1]);b.onclick=function(){ACC=x[0];try{localStorage.setItem('acc',ACC)}catch(e){}seg();render()};s.appendChild(b)})}
 var T=sessionStorage.getItem('t')||'',view='overview',S={},timer=null,openId=null,filter='all',pendingCount=0;
 function $(i){return document.getElementById(i)}
 function el(tag,cls,txt,kids){var e=document.createElement(tag);if(cls)e.className=cls;if(txt!=null)e.textContent=txt;(kids||[]).forEach(function(k){if(k)e.appendChild(k)});return e}
@@ -117,7 +128,7 @@ function status(){var s=S.settings||{};var p=$('status'),pa=s.PAUSE_ALL==='true'
  var txt,cls;if(pa){txt='Paused';cls='bd'}else if(s.BOT_MODE==='live'){txt=sending?'Live and sending':'Live';cls='ok'}else if(s.BOT_MODE==='test'){txt='Test mode';cls='wr'}else{txt='Bot is off';cls='bl'}
  p.className='pill '+cls;p.textContent='';p.appendChild(el('i'));p.appendChild(document.createTextNode(txt));
  var b=$('panic');b.textContent=pa?'Resume':'Pause everything';b.className='btn '+(pa?'pri':'dng')}
-function load(){return api('/admin/dash/overview').then(function(o){S=o;pendingCount=o.conversations.withTeam;status();nav()})}
+function load(){return api('/admin/dash/overview'+q()).then(function(o){S=o;pendingCount=o.conversations.withTeam;status();nav()})}
 function render(){var p=$('page');p.textContent='';clearInterval(timer);load().then(function(){({overview:vOverview,inbox:vInbox,approve:vApprove,results:vResults,agents:vAgents,settings:vSettings,sim:vSim})[view](p)}).catch(function(e){p.appendChild(el('div','empty',e.message))})}
 function kpi(n,l,tone){return el('div','card kpi',null,[el('div','n',String(n)),el('div','l',l)])}
 function who(r){return (r.name||'C').charAt(0).toUpperCase()}
@@ -134,10 +145,10 @@ function vOverview(p){
  two.appendChild(left);two.appendChild(right);p.appendChild(two);
  var qc=el('div','card');qc.style.marginTop='16px';qc.appendChild(el('h3',null,'Promo queue ('+s.BATCH_CAMPAIGN+')'));
  var qg=el('div','grid g4');[['Waiting for approval',q.waiting],['Approved, to send',q.approved],['Sent',q.sent],['Held or failed',q.held+q.failed]].forEach(function(x){qg.appendChild(el('div','kpi',null,[el('div','n',String(x[1])),el('div','l',x[0])]))});qc.appendChild(qg);p.appendChild(qc);
- api('/admin/dash/inbox').then(function(d){var need=d.rows.filter(function(r){return r.status==='handed_off'||r.waiting}).slice(0,6);
+ api('/admin/dash/inbox'+q()).then(function(d){var need=d.rows.filter(function(r){return r.status==='handed_off'||r.waiting}).slice(0,6);
   if(!need.length)left.appendChild(el('div','empty','Nothing needs you right now.'));
   need.forEach(function(r){left.appendChild(rowFor(r,true))})});
- function feed(){api('/admin/dash/activity').then(function(d){right.querySelectorAll('.row').forEach(function(x){x.remove()});
+ function feed(){api('/admin/dash/activity'+q()).then(function(d){right.querySelectorAll('.row').forEach(function(x){x.remove()});
   d.rows.slice(0,10).forEach(function(m){var r=el('div','row',null,[el('div','av',m.direction==='inbound'?'C':'B'),el('div','grow',null,[el('div','nm',m.direction==='inbound'?(m.contact_name||'Customer'):'Bot'),el('div','sub',m.body||'')]),el('div','sub',ago(m.created_at))]);right.appendChild(r)})})}
  feed();timer=setInterval(function(){if(view==='overview')feed()},15000)}
 function rowFor(r,toInbox){var tone=r.status==='handed_off'?'o':(r.stage==='Approved'?'g':(r.stage==='Quote sent'?'b':''));
@@ -150,7 +161,7 @@ function vInbox(p){
  [['all','All'],['team','With the team'],['waiting','Customer waiting'],['quote','Quote sent'],['active','Active'],['closed','Closed']].forEach(function(f){var c=el('button','chip'+(filter===f[0]?' on':''),f[1]);c.onclick=function(){filter=f[0];render()};chips.appendChild(c)});
  var split=el('div','split');var list=el('div','card'),lst=el('div','list');list.appendChild(lst);var thread=el('div','card');split.appendChild(list);split.appendChild(thread);wrap.appendChild(chips);wrap.appendChild(split);p.appendChild(wrap);
  thread.appendChild(el('div','empty','Pick a conversation to read it.'));
- api('/admin/dash/inbox').then(function(d){var rows=d.rows.filter(function(r){return filter==='all'||(filter==='team'&&r.status==='handed_off')||(filter==='waiting'&&r.waiting)||(filter==='quote'&&(r.stage==='Quote sent'||r.stage==='Approved'))||(filter==='active'&&r.status==='active')||(filter==='closed'&&r.status==='closed')});
+ api('/admin/dash/inbox'+q()).then(function(d){var rows=d.rows.filter(function(r){return filter==='all'||(filter==='team'&&r.status==='handed_off')||(filter==='waiting'&&r.waiting)||(filter==='quote'&&(r.stage==='Quote sent'||r.stage==='Approved'))||(filter==='active'&&r.status==='active')||(filter==='closed'&&r.status==='closed')});
   if(!rows.length)lst.appendChild(el('div','empty','No conversations here yet.'));
   rows.forEach(function(r){var x=rowFor(r);x.onclick=function(){openId=r.contactId;openConv(thread)};lst.appendChild(x)});if(openId)openConv(thread)})}
 function openConv(box){box.textContent='';box.appendChild(el('div','empty','Loading...'));
@@ -181,17 +192,28 @@ function vApprove(p){
  api('/admin/pending?campaign='+encodeURIComponent(s.BATCH_CAMPAIGN)).then(function(d){if(!d.messages.length)l.appendChild(el('div','empty','No drafts waiting.'));
   d.messages.slice(0,40).forEach(function(m){var rj=el('button','btn sm','Skip this one');rj.onclick=function(){api('/admin/reject',{id:m.id}).then(function(){toast('Skipped');render()}).catch(function(e){toast(e.message)})};
    l.appendChild(el('div','row',null,[el('div','av',(m.contact_name||'C').charAt(0).toUpperCase()),el('div','grow',null,[el('div','nm',m.contact_name||'Customer'),el('div','sub',m.body)]),rj]))})}).catch(function(e){l.appendChild(el('div','empty',e.message))})}
-function vResults(p){var c=el('div','card');c.appendChild(el('h3',null,'Loading results'));p.appendChild(c);
+function vResults(p){if(ACC==='lights'){p.appendChild(el('div','card',null,[el('h3',null,'Santa\'s Lights results'),el('div','empty','Lights results are not tracked yet. The funnel here is for the Dunzo promo. Switch to Dunzo or All to see it.')]));return}
+ var c=el('div','card');c.appendChild(el('h3',null,'Loading results'));p.appendChild(c);
  api('/admin/stats?campaign='+encodeURIComponent((S.settings||{}).BATCH_CAMPAIGN||'pilot-2')).then(function(d){c.textContent='';c.appendChild(el('h3',null,'Campaign '+d.campaign));
   var f=d.funnel,t=d.texts,r=d.replies;var base=Math.max(1,t.sent||1);
   var rows=[['Promo texts sent',t.sent||0],['Replied',r.replied||0],['Chose home size',f.chosenHomeSize],['Confirmed address',f.confirmedAddress],['Gave email',f.gaveEmail],['Quote created',f.quotesCreated],['Quote approved',f.quotesApproved]];
   rows.forEach(function(x){var pct=Math.min(100,Math.round(x[1]/base*100));var bar=el('div','bar',null,[(function(){var i=el('i');i.style.width=pct+'%';return i})()]);c.appendChild(el('div','fun',null,[el('div',null,x[0]),bar,el('b',null,String(x[1]))]))});
   c.appendChild(el('div','sub','Reply rate '+r.replyRate+' · Approval rate of repliers '+f.approvalRateOfReplies+' · With the team '+d.outcomes.handedToTeam+' · STOP requests '+d.outcomes.stopRequests));
   var jq=d.jobberQuoteStatuses||{};c.appendChild(el('div','sub','Jobber quote statuses: '+(Object.keys(jq).length?Object.keys(jq).map(function(k){return k+' '+jq[k]}).join(', '):'none yet')))}).catch(function(e){c.textContent='';c.appendChild(el('div','empty',e.message))})}
-function vAgents(p){var c=el('div','card');c.appendChild(el('h3',null,'Your sales team'));p.appendChild(c);
- api('/admin/dash/agents').then(function(d){d.mates.forEach(function(m){c.appendChild(el('div','mate',null,[el('div','av',m.name.charAt(0)),el('div','grow',null,[el('div','nm',m.name),el('div','sub',m.does)]),el('span','tag '+(m.state==='live'?'g':'o'),m.state==='live'?'Live':'Planned')]))});
-  [['What the bot is told (instructions)',d.prompt],['What the bot knows (business knowledge)',d.knowledge]].forEach(function(x){var card=el('div','card');card.style.marginTop='16px';var btn=el('button','btn sm','Show');var pre=el('pre',null,x[1]);pre.style.display='none';
-   btn.onclick=function(){var on=pre.style.display==='none';pre.style.display=on?'block':'none';btn.textContent=on?'Hide':'Show'};card.appendChild(el('h3',null,x[0],[]));card.appendChild(btn);card.appendChild(pre);p.appendChild(card)})}).catch(function(e){c.appendChild(el('div','empty',e.message))})}
+function mateRow(m){return el('div','mate',null,[el('div','av',m.name.charAt(0)),el('div','grow',null,[el('div','nm',m.name),el('div','sub',m.does)]),el('span','tag '+(m.state==='live'?'g':'o'),m.state==='live'?'Live':'Planned')])}
+function unitCard(title,sub,list,dim){var c=el('div','card'+(dim?' dim':''),null,[el('h3',null,title),el('div','sub',sub)]);
+ ['Sales','Marketing'].forEach(function(t){var ms=list.filter(function(m){return m.team===t});if(!ms.length)return;c.appendChild(el('div','team',t));ms.forEach(function(m){c.appendChild(mateRow(m))})});return c}
+function vAgents(p){api('/admin/dash/agents').then(function(d){
+ var dir=d.mates.filter(function(m){return m.unit==='director'})[0];
+ var top=el('div','card top-card',null,[el('div','av','M'),el('div','nm',dir.name),el('span','tag o','Planned'),el('div','sub',dir.does)]);top.querySelector('.sub').style.whiteSpace='normal';
+ p.appendChild(top);p.appendChild(el('div','stem'));
+ var units=el('div','units');
+ units.appendChild(unitCard('Dunzo Gutters','Gutter and exterior cleaning, repairs and installs',d.mates.filter(function(m){return m.unit==='dunzo'}),ACC==='lights'));
+ units.appendChild(unitCard('Santa\'s Lights','Christmas and permanent lighting',d.mates.filter(function(m){return m.unit==='lights'}),ACC==='dunzo'));
+ p.appendChild(units);
+ var sh=el('div','card');sh.style.marginTop='16px';sh.appendChild(el('h3',null,'Shared by both companies'));d.mates.filter(function(m){return m.unit==='shared'}).forEach(function(m){sh.appendChild(mateRow(m))});p.appendChild(sh);
+ [['What the bot is told (instructions)',d.prompt],['What the bot knows (business knowledge)',d.knowledge]].forEach(function(x){var card=el('div','card');card.style.marginTop='16px';var btn=el('button','btn sm','Show');var pre=el('pre',null,x[1]);pre.style.display='none';
+  btn.onclick=function(){var on=pre.style.display==='none';pre.style.display=on?'block':'none';btn.textContent=on?'Hide':'Show'};card.appendChild(el('h3',null,x[0]));card.appendChild(btn);card.appendChild(pre);p.appendChild(card)})}).catch(function(e){p.appendChild(el('div','empty',e.message))})}
 function vSettings(p){api('/admin/dash/settings').then(function(d){
  if(!d.ready)p.appendChild(el('div','banner wr','These switches cannot save yet. '+(d.error||'Run supabase/006_settings.sql in the Supabase SQL editor, then reload.')));
  var groups={};d.defs.forEach(function(x){(groups[x.group]=groups[x.group]||[]).push(x)});
@@ -220,7 +242,7 @@ function theme(t){document.documentElement.setAttribute('data-theme',t);$('theme
 var saved=null;try{saved=localStorage.getItem('theme')}catch(e){}
 theme(saved||((window.matchMedia&&window.matchMedia('(prefers-color-scheme: dark)').matches)?'dark':'light'));
 $('theme').onclick=function(){var t=document.documentElement.getAttribute('data-theme')==='dark'?'light':'dark';theme(t);try{localStorage.setItem('theme',t)}catch(e){}};$('lock').onclick=lock;
-function start(){$('gate').classList.remove('on');$('app').style.display='grid';go(view)}
+function start(){$('gate').classList.remove('on');$('app').style.display='grid';seg();go(view)}
 $('enter').onclick=function(){var v=$('tok').value.trim();if(!v)return;T=v;$('gerr').textContent='';api('/admin/dash/overview').then(function(){sessionStorage.setItem('t',T);start()}).catch(function(e){$('gerr').textContent=e.message==='Wrong token'?'That token is not right.':e.message;lock()})};
 $('tok').onkeydown=function(e){if(e.key==='Enter')$('enter').onclick()};
 if(T){api('/admin/dash/overview').then(start).catch(function(){lock()})}else{lock()}

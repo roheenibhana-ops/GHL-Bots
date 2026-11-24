@@ -49,14 +49,23 @@ export function buildInbox(convs: Conv[], msgs: Msg[]): InboxRow[] {
 }
 
 const MATES = [
-  { key: "closer", name: "Promo Closer", state: "live", does: "Texts the winter cleaning offer, answers questions, handles objections, gets the address and email, creates the Jobber quote and sends the link." },
-  { key: "photos", name: "Photos and Repairs", state: "live", does: "Asks for photos on repair requests, thanks them when photos arrive, moves a New Lead to Photos Received, and alerts the team." },
-  { key: "handoff", name: "Hand off to the team", state: "live", does: "Passes anything it should not decide (windows, guards pricing, angry customers, out of area) to a person, with an alert." },
-  { key: "chaser", name: "Quote Chaser", state: "planned", does: "A fresh follow up every morning on quotes that go quiet, stopping when they reply, approve, or say no." },
-  { key: "scheduler", name: "Scheduler", state: "planned", does: "Books the job once the deposit is paid, using the Jobber calendar." },
-  { key: "after", name: "After the job", state: "planned", does: "Thank you, review request, and the 6 month rebooking reminder." },
-  { key: "lights", name: "Santa's Lights", state: "planned", does: "Christmas lighting design, take off and quotes, plus cross selling to gutter customers." },
-  { key: "big", name: "Big job booker", state: "planned", does: "Qualifies large jobs and books Clark on site with a short briefing note." },
+  { unit: "director", name: "Marketing Director", state: "planned", does: "The head of the company's marketing and sales. Sets the plan and budget, decides which campaigns run for each company, decides when to cross sell between them, reviews the numbers every week and reports to Clark. You approve anything that spends money or goes out to many people." },
+  { unit: "dunzo", team: "Sales", name: "Promo Closer", state: "live", does: "Texts the winter cleaning offer, answers questions, handles objections, gets the address and email, creates the Jobber quote and sends the link." },
+  { unit: "dunzo", team: "Sales", name: "Photos and Repairs", state: "live", does: "Asks for photos on repair requests, thanks them when photos arrive, moves a New Lead to Photos Received and alerts the team." },
+  { unit: "dunzo", team: "Sales", name: "Hand off to the team", state: "live", does: "Passes anything it should not decide (windows pricing, angry customers, out of area) to a person, with an alert." },
+  { unit: "dunzo", team: "Sales", name: "Quote Chaser", state: "planned", does: "A fresh follow up every morning on quotes that go quiet, stopping when they reply, approve, or say no." },
+  { unit: "dunzo", team: "Sales", name: "Scheduler", state: "planned", does: "Books the job once the deposit is paid, using the Jobber calendar." },
+  { unit: "dunzo", team: "Sales", name: "Big job booker", state: "planned", does: "Qualifies large jobs and books Clark on site with a short briefing note." },
+  { unit: "dunzo", team: "Marketing", name: "After the job", state: "planned", does: "Thank you, review request and the 6 month rebooking reminder." },
+  { unit: "dunzo", team: "Marketing", name: "Seasonal campaigns", state: "planned", does: "Storm season, leaf drop and spring campaigns to past customers and old leads." },
+  { unit: "lights", team: "Sales", name: "Lights Sales and Design", state: "planned", does: "Christmas lighting enquiries, design, take off, quotes and follow up." },
+  { unit: "lights", team: "Sales", name: "Permanent lighting", state: "planned", does: "Year round permanent lighting leads, scenes and pricing questions." },
+  { unit: "lights", team: "Marketing", name: "Seasonal campaigns", state: "planned", does: "Early bird and last chance Christmas campaigns, plus holiday scenes through the year." },
+  { unit: "lights", team: "Marketing", name: "Gallery and social", state: "planned", does: "Turns finished jobs into posts and gallery updates." },
+  { unit: "shared", name: "Customer memory", state: "live", does: "One record of every customer across both companies: history, notes, quotes, what they were offered." },
+  { unit: "shared", name: "Compliance", state: "live", does: "Opt outs, send hours, no double texting, quiet hours and alerts. Applies to everything every agent does." },
+  { unit: "shared", name: "Reporting", state: "live", does: "The numbers on the Overview and Results pages, and later the daily report to Clark." },
+  { unit: "shared", name: "Knowledge base", state: "live", does: "Everything from both websites that the agents are allowed to say, including approved prices and page links." },
 ];
 
 /** All the dashboard's data and actions. Returns null when the path is not a dashboard path. */
@@ -64,6 +73,8 @@ export async function handleDash(req: Request, env: Env, url: URL): Promise<Resp
   const p = url.pathname;
   if (!p.startsWith("/admin/dash/")) return null;
   const enc = encodeURIComponent;
+  const acct = url.searchParams.get("account");
+  const af = acct === "dunzo" || acct === "lights" ? "&account=eq." + acct : "";
 
   try {
     if (p === "/admin/dash/overview") {
@@ -71,9 +82,9 @@ export async function handleDash(req: Request, env: Env, url: URL): Promise<Resp
       const eff = effectiveValues(env, map);
       const dayStart = new Date(Date.now() - pacificMsSinceMidnight(new Date())).toISOString();
       const [convs, today, queue] = await Promise.all([
-        sb<Conv[]>(env, "GET", "conversations?select=contact_id,account,status,facts,updated_at&order=updated_at.desc&limit=500"),
-        sb<{ direction: string; status: string; campaign: string }[]>(env, "GET", `messages?created_at=gte.${dayStart}&status=neq.archived&select=direction,status,campaign&limit=2000`),
-        sb<{ status: string }[]>(env, "GET", `messages?campaign=eq.${enc(eff.BATCH_CAMPAIGN)}&select=status&limit=3000`),
+        sb<Conv[]>(env, "GET", "conversations?select=contact_id,account,status,facts,updated_at&order=updated_at.desc&limit=500" + af),
+        sb<{ direction: string; status: string; campaign: string }[]>(env, "GET", `messages?created_at=gte.${dayStart}&status=neq.archived&select=direction,status,campaign&limit=2000${af}`),
+        sb<{ status: string }[]>(env, "GET", `messages?campaign=eq.${enc(eff.BATCH_CAMPAIGN)}&select=status&limit=3000${af}`),
       ]);
       const byStatus: Record<string, number> = {};
       for (const c of convs) byStatus[c.status] = (byStatus[c.status] ?? 0) + 1;
@@ -96,8 +107,8 @@ export async function handleDash(req: Request, env: Env, url: URL): Promise<Resp
 
     if (p === "/admin/dash/inbox") {
       const [convs, msgs] = await Promise.all([
-        sb<Conv[]>(env, "GET", "conversations?select=contact_id,account,status,facts,updated_at&order=updated_at.desc&limit=300"),
-        sb<Msg[]>(env, "GET", "messages?status=in.(sent,received,queued_hours)&direction=in.(inbound,outbound)&order=created_at.desc&limit=900&select=contact_id,direction,status,campaign,body,created_at,contact_name"),
+        sb<Conv[]>(env, "GET", "conversations?select=contact_id,account,status,facts,updated_at&order=updated_at.desc&limit=300" + af),
+        sb<Msg[]>(env, "GET", "messages?status=in.(sent,received,queued_hours)&direction=in.(inbound,outbound)&order=created_at.desc&limit=900&select=contact_id,direction,status,campaign,body,created_at,contact_name" + af),
       ]);
       return json({ rows: buildInbox(convs, msgs) });
     }
@@ -165,7 +176,7 @@ export async function handleDash(req: Request, env: Env, url: URL): Promise<Resp
     }
 
     if (p === "/admin/dash/activity") {
-      const rows = await sb<Msg[]>(env, "GET", "messages?status=in.(sent,received)&order=created_at.desc&limit=40&select=contact_id,direction,status,campaign,body,created_at,contact_name");
+      const rows = await sb<Msg[]>(env, "GET", "messages?status=in.(sent,received)&order=created_at.desc&limit=40&select=contact_id,direction,status,campaign,body,created_at,contact_name" + af);
       return json({ rows: rows.map((m) => ({ ...m, body: (m.body ?? "").slice(0, 160) })) });
     }
 
