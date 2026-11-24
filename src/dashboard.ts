@@ -40,7 +40,9 @@ a.nav{text-decoration:none}
 .team{font-size:12px;font-weight:700;color:var(--mute);text-transform:uppercase;letter-spacing:.05em;margin:14px 0 2px}
 .dim{opacity:1}
 .mono{width:42px;height:42px;border-radius:12px;color:#fff;display:grid;place-items:center;font-weight:800;font-size:17px;flex:none;box-shadow:inset 0 -3px 0 rgba(0,0,0,.18),0 2px 6px rgba(0,0,0,.15)}
-.sst{display:inline-flex;align-items:center;gap:6px;font-size:12px;font-weight:650;color:var(--mute);white-space:nowrap}.sdot{width:9px;height:9px;border-radius:50%;background:var(--mute)}
+.sst{display:inline-flex;align-items:center;gap:7px;font-size:12.5px;font-weight:650;color:var(--mute);white-space:nowrap;margin-top:7px}
+.sysgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(290px,1fr));gap:14px;margin-top:14px;align-items:start}
+.mcard.sys{padding:16px;gap:14px;align-items:flex-start}.mcard.sys .mono{width:46px;height:46px}.sdot{width:9px;height:9px;border-radius:50%;background:var(--mute)}
 .sdot.ok{background:var(--brand);box-shadow:0 0 0 3px var(--brand2)}.sdot.bad{background:var(--bad);box-shadow:0 0 0 3px var(--bad2)}.sdot.run{background:var(--blue)}.sdot.plan{background:var(--warn)}
 .sdet{padding:10px 12px;margin-top:6px;background:var(--bg);border-radius:12px;font-size:13.5px;line-height:1.45}.mcard.sys .sub2{white-space:normal}
 .journey{display:flex;align-items:flex-start;gap:0;margin-top:18px;overflow-x:auto;padding-bottom:4px}
@@ -396,11 +398,11 @@ var SYSTEMS=[
  {name:'Claude',mono:'C',color:'#d97757',role:'The brain',checks:[],status:'running',does:'Writes every reply and every draft. Your monthly API credit pays for it.',notes:'Checked with real use, not a ping, so it costs nothing to look at.'}
 ];
 function vSystems(box,checks){box.appendChild(el('h3',null,'Connected systems'));box.appendChild(el('div','sub','The tools our agents work with, and the ones still running on their own. Green means a live check just passed.'));var g=el('div','mgrid');
- SYSTEMS.forEach(function(sy){var res=(sy.checks||[]).map(function(k){return checks?checks[k]:undefined});var bad=res.filter(function(r){return r&&r!=='ok'});var ok=res.length&&res.every(function(r){return r==='ok'});
+ g.className='sysgrid';SYSTEMS.forEach(function(sy){var res=(sy.checks||[]).map(function(k){return checks?checks[k]:undefined});var bad=res.filter(function(r){return r&&r!=='ok'});var ok=res.length&&res.every(function(r){return r==='ok'});
   var dot=el('span','sdot '+(ok?'ok':bad.length?'bad':sy.status==='planned'?'plan':'run'));var label=ok?'Connected':bad.length?'Problem':sy.status==='planned'?'Not connected yet':sy.status==='running'?'Running':'Checking';
   var mono=el('div','mono',sy.mono);mono.style.background=sy.color;
   var det=el('div','sdet');det.style.display='none';det.appendChild(el('div',null,sy.does));det.appendChild(el('div','sub',sy.notes));if(bad.length)det.appendChild(el('div','err',bad.join(' ')));
-  var c=el('div','mcard sys',null,[mono,el('div','grow',null,[el('div','nm',sy.name),el('div','sub2',sy.role)]),el('span','sst',null,[dot,document.createTextNode(label)])]);
+  var c=el('div','mcard sys',null,[mono,el('div','grow',null,[el('div','nm',sy.name),el('div','sub2',sy.role),el('span','sst',null,[dot,document.createTextNode(label)])])]);
   var wrap=el('div',null,null,[c,det]);c.onclick=function(){det.style.display=det.style.display==='none'?'block':'none'};g.appendChild(wrap)});box.appendChild(g)}
 function diffLines(a,b){var x=a.split('\n'),y=b.split('\n'),n=x.length,m=y.length,L=[],i,j;for(i=0;i<=n;i++)L.push(new Array(m+1).fill(0));
  for(i=n-1;i>=0;i--)for(j=m-1;j>=0;j--)L[i][j]=x[i]===y[j]?L[i+1][j+1]+1:Math.max(L[i+1][j],L[i][j+1]);
@@ -503,7 +505,7 @@ function drawStudio(shell){
  badges()}
 
 
-var LANECOL={live:'var(--brand)',now:'var(--bad)',next:'var(--warn)',soon:'var(--blue)',later:'var(--mute)',sell:'hsl(270 55% 55%)'};
+var LANECOL={live:'var(--brand)',now:'var(--bad)',next:'var(--warn)',soon:'var(--blue)',later:'var(--mute)'};
 var RAREA='all';
 function vRoadmap(p){api('/admin/dash/roadmap').then(function(d){
  var total=d.items.length,built=d.items.filter(function(i){return i.lane==='live'}).length,pct=Math.round(built/total*100);

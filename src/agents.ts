@@ -36,6 +36,8 @@ export async function runAgent(
     body: JSON.stringify({ model: agent.model ?? env.CLAUDE_MODEL, max_tokens: agent.maxTokens, system: agent.system, messages: history }),
   });
   if (!res.ok) throw new Error(`Claude API ${res.status}: ${(await res.text()).slice(0, 300)}`);
-  const data = (await res.json()) as { content: { type: string; text?: string }[] };
-  return data.content.filter((b) => b.type === "text").map((b) => b.text ?? "").join("").trim();
+  const data = (await res.json()) as { content: { type: string; text?: string }[]; stop_reason?: string };
+  const text = data.content.filter((b) => b.type === "text").map((b) => b.text ?? "").join("").trim();
+  if (!text) throw new Error(`Claude returned no text (stop reason: ${data.stop_reason ?? "unknown"}, blocks: ${data.content.map((b) => b.type).join(",") || "none"})`);
+  return text;
 }
