@@ -29,6 +29,8 @@ button,input,select,textarea{font:inherit;color:inherit}
 .btn.dng{background:var(--bad);border-color:var(--bad);color:#fff}
 :root[data-theme=dark] .btn.dng,:root:not([data-theme=light]) .btn.dng{color:#1a0a0b}
 .theme{width:40px;padding:8px 0;text-align:center}
+.sb-top{display:none;text-decoration:none;color:var(--ink)}
+a.nav{text-decoration:none}
 .seg{display:inline-flex;background:var(--bg);border:1px solid var(--line);border-radius:12px;padding:3px;gap:2px}
 .seg button{border:0;background:none;padding:6px 14px;border-radius:9px;font-weight:650;color:var(--mute);cursor:pointer;font-size:13.5px}
 .seg button.on{background:var(--panel);color:var(--ink);box-shadow:var(--shadow)}
@@ -90,6 +92,7 @@ pre{white-space:pre-wrap;word-wrap:break-word;background:var(--bg);border:1px so
  .app{grid-template-columns:1fr}.side{display:none}.page{padding:16px 14px 90px}.top{padding:12px 14px;flex-wrap:wrap}
  .g4{grid-template-columns:repeat(2,minmax(0,1fr))}.g2{grid-template-columns:minmax(0,1fr)}.split{grid-template-columns:1fr;height:auto}.units{grid-template-columns:minmax(0,1fr)}
  .split .thread{min-height:320px;max-height:60vh}.fun{grid-template-columns:110px 1fr 44px}
+ .sb-top{display:inline-block}
  .tabs{display:flex;position:fixed;bottom:0;left:0;right:0;background:var(--panel);border-top:1px solid var(--line);z-index:9;padding:6px 4px;justify-content:space-around}
  .tabs button{border:0;background:none;color:var(--mute);font-size:10px;font-weight:600;display:flex;flex-direction:column;align-items:center;gap:2px;padding:4px 2px;flex:1;min-width:0}
  .tabs button.on{color:var(--brand)}.tabs svg{width:22px;height:22px;stroke:currentColor;fill:none;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
@@ -99,10 +102,10 @@ pre{white-space:pre-wrap;word-wrap:break-word;background:var(--bg);border:1px so
 <div style="color:var(--mute)">Enter your admin token to open the control panel.</div>
 <input id="tok" type="password" placeholder="Admin token" autocomplete="current-password"><button class="btn pri" id="enter" style="width:100%">Open</button><div class="err" id="gerr"></div></div></div>
 <div class="app" id="app" style="display:none">
-<aside class="side"><div class="logo"><i>P</i>The Partridge Standard</div><div id="nav"></div><div class="spacer"></div>
+<aside class="side"><div class="logo"><i>P</i>The Partridge Standard</div><div id="nav"></div><a class="nav" href="https://santas-lights-scoreboard.roheeni-bhana.workers.dev/" target="_blank" rel="noopener"><svg viewBox="0 0 24 24"><path d="M14 4h6v6"/><path d="M20 4l-9 9"/><path d="M18 14v5a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1V7a1 1 0 0 1 1-1h5"/></svg>Scoreboard</a><div class="spacer"></div>
 <button class="nav" id="lock"><svg viewBox="0 0 24 24"><rect x="4" y="11" width="16" height="9" rx="2"/><path d="M8 11V8a4 4 0 0 1 8 0v3"/></svg>Lock</button></aside>
 <div class="main"><div class="top"><h1 id="title">Overview</h1><div class="seg" id="seg"></div><span class="pill ok" id="status"><i></i>Loading</span><span class="spacer"></span>
-<button class="btn theme" id="theme" title="Switch light or dark"></button><button class="btn" id="refresh">Refresh</button><button class="btn dng" id="panic">Pause everything</button></div>
+<a class="btn sb-top" href="https://santas-lights-scoreboard.roheeni-bhana.workers.dev/" target="_blank" rel="noopener">Scoreboard</a><button class="btn theme" id="theme" title="Switch light or dark"></button><button class="btn" id="refresh">Refresh</button><button class="btn dng" id="panic">Pause everything</button></div>
 <div class="page" id="page"></div></div></div>
 <div class="tabs" id="tabs"></div><div class="toast" id="toast"></div>
 <script>
