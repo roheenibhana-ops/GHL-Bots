@@ -121,3 +121,18 @@ describe("blockingNote", () => {
     expect(blockingNote([{ body: `${OUR_NOTE_PREFIX}Handed this over. Reason: customer said do not contact me again` }])).toBeNull();
   });
 });
+
+describe("blockingNote: the old agents' routine notes are not blocks", () => {
+  it("ignores a passed quarantine check and one off do not repeat notes", () => {
+    expect(blockingNote([{ body: "INTERNAL — Quote receipt confirmation SMS sent. All checks passed: no prior confirmation, no quarantine, no routing failure, no opt-out." }])).toBeNull();
+    expect(blockingNote([{ body: "No quarantine or routing failure evidence. No human active on this lead." }])).toBeNull();
+    expect(blockingNote([{ body: "INTERNAL — Quote approval thank you SMS sent. Do not send another quote approval thank you SMS to this contact." }])).toBeNull();
+    expect(blockingNote([{ body: "Do not send another proactive nurture touch to this contact within the next 3 hours." }])).toBeNull();
+  });
+  it("still blocks real instructions", () => {
+    expect(blockingNote([{ body: "QUARANTINED: wrong number, do not contact" }])).not.toBeNull();
+    expect(blockingNote([{ body: "Customer asked us to stop. Do not send any texts." }])).not.toBeNull();
+    expect(blockingNote([{ body: "Do not text this customer, Clark is handling it" }])).not.toBeNull();
+    expect(blockingNote([{ body: "Lead quarantined pending review" }])).not.toBeNull();
+  });
+});

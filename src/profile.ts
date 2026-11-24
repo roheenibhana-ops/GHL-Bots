@@ -165,7 +165,9 @@ export async function ghlOpportunities(creds: GhlCreds, contactId: string): Prom
 /** Every note our own code writes for Clark starts with this, so it is never mistaken for a customer or staff note. */
 export const OUR_NOTE_PREFIX = "INTERNAL (lead bot): ";
 
-const BLOCK = /(quarantin|do not (contact|text|message|send|follow up|reach out)|don'?t (contact|text|message)|no further (automated )?(customer )?outreach|before any further outreach|stop(ped)? (all )?automat|hold (all )?outreach|automated outreach stopped)/i;
+// A real do-not-contact instruction. Two things are deliberately NOT blocks, because the old agents write them on almost every lead:
+// "no quarantine" (a check that passed) and "do not send another <one specific message>" (a note about not repeating one text).
+const BLOCK = /((?<!\bno )(?<!\bnot )(?<!\bwithout )quarantin|do not (contact|text|message|follow up|reach out)|do not send (any |further |more |another )?(automated )?(texts?|messages?|sms|outreach)\b|don'?t (contact|text|message)|no further (automated )?(customer )?outreach|before any further outreach|stop(ped)? (all )?automat|hold (all )?outreach|automated outreach stopped)/i;
 
 /**
  * A note, from a person or from another agent, that says this customer must not be contacted automatically.
