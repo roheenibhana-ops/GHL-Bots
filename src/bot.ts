@@ -61,7 +61,7 @@ function stillNeeded(f: BotFacts): string {
 /** What the agent may say about the promo deadline for this customer. Each batch can carry its own date. */
 function deadlineRule(f: BotFacts): string {
   const d = formatDeadline(f.deadline);
-  if (!d) return "- There is no deadline on this customer's offer. Never state or invent one.";
+  if (!d) return "- No end date has been set for this customer's offer. Never state or invent a deadline, and never say the offer has no deadline or will last. If they ask how long it runs, say it is the winter promo price and you do not have an end date for it.";
   if (deadlinePassed(f.deadline as string)) return `- This customer's promo price was good through ${d}, and that date has passed. Do not offer the promo price. Say kindly that the winter promo has ended and use intent handoff so the team can price it.`;
   return `- PROMO DEADLINE for this customer: the price is good through ${d}. When they want to wait, are thinking it over, or ask how long the offer lasts: agree their timing makes sense, then tell them once, plainly and without pressure, that the price is good through ${d} and that approving the quote by then locks it in. Say nothing about when the clean would be scheduled unless they ask; if they ask, give the usual lead time answer. Mention the deadline at most once in a conversation unless they ask. Never state any other deadline and never say spots are running out.`;
 }

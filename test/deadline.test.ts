@@ -24,6 +24,6 @@ describe("promo deadlines", () => {
     const p = systemPrompt({ firstName: "Al", deadline: "2026-12-15" } as never);
     expect(p).toContain("good through December 15");
     expect(p).not.toMatch(/into January/);
-    expect(systemPrompt({ firstName: "Al" } as never)).toContain("There is no deadline");
+    expect(systemPrompt({ firstName: "Al" } as never)).toContain("No end date has been set");
   });
 });
