@@ -39,6 +39,10 @@ a.nav{text-decoration:none}
 .stem{width:2px;height:22px;background:var(--line);margin:-6px auto 0}
 .team{font-size:12px;font-weight:700;color:var(--mute);text-transform:uppercase;letter-spacing:.05em;margin:14px 0 2px}
 .dim{opacity:.4}
+.mono{width:42px;height:42px;border-radius:12px;color:#fff;display:grid;place-items:center;font-weight:800;font-size:17px;flex:none;box-shadow:inset 0 -3px 0 rgba(0,0,0,.18),0 2px 6px rgba(0,0,0,.15)}
+.sst{display:inline-flex;align-items:center;gap:6px;font-size:12px;font-weight:650;color:var(--mute);white-space:nowrap}.sdot{width:9px;height:9px;border-radius:50%;background:var(--mute)}
+.sdot.ok{background:var(--brand);box-shadow:0 0 0 3px var(--brand2)}.sdot.bad{background:var(--bad);box-shadow:0 0 0 3px var(--bad2)}.sdot.run{background:var(--blue)}.sdot.plan{background:var(--warn)}
+.sdet{padding:10px 12px;margin-top:6px;background:var(--bg);border-radius:12px;font-size:13.5px;line-height:1.45}.mcard.sys .sub2{white-space:normal}
 .journey{display:flex;align-items:flex-start;gap:0;margin-top:18px;overflow-x:auto;padding-bottom:4px}
 .jstep{text-align:center;min-width:132px;flex:1}.jdot{width:34px;height:34px;border-radius:50%;color:#fff;display:grid;place-items:center;font-weight:750;margin:0 auto 6px;box-shadow:0 2px 8px rgba(0,0,0,.15)}
 .jt{font-weight:700}.jline{height:2px;background:var(--line);width:34px;margin-top:17px;flex:none}
@@ -50,7 +54,8 @@ a.nav{text-decoration:none}
 @media(max-width:900px){.jstep{min-width:110px}}
 
 .top-card .avl{margin:0 auto 8px}
-.avl{width:54px;height:54px;border-radius:16px;display:grid;place-items:center;font-size:24px;flex:none;overflow:hidden;filter:drop-shadow(0 2px 5px rgba(0,0,0,.12))}.avl svg{display:block}
+.avl{width:64px;height:64px;border-radius:18px;display:grid;place-items:center;font-size:24px;flex:none;filter:drop-shadow(0 4px 7px rgba(0,0,0,.22));transition:transform .18s}.avl svg{display:block}
+.mcard:hover .avl,.top-card:hover .avl{transform:translateY(-3px) rotate(-4deg) scale(1.08)}
 .mgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(230px,1fr));gap:10px;margin-top:6px}
 .mcard{display:flex;gap:11px;align-items:center;padding:11px 12px;border:1px solid var(--line);border-radius:14px;background:var(--bg);cursor:pointer;transition:transform .12s,box-shadow .12s,border-color .12s}
 .mcard:hover{transform:translateY(-2px);box-shadow:var(--shadow);border-color:var(--brand)}.mcard.live{background:var(--panel)}
@@ -255,10 +260,10 @@ var P={
  ears:function(c){return '<ellipse cx="22" cy="48" rx="7" ry="12" transform="rotate(-25 22 48)" fill="'+c+'"/><ellipse cx="78" cy="48" rx="7" ry="12" transform="rotate(25 78 48)" fill="'+c+'"/><ellipse cx="22" cy="48" rx="3.4" ry="7" transform="rotate(-25 22 48)" fill="#f2b5b5" opacity=".7"/><ellipse cx="78" cy="48" rx="3.4" ry="7" transform="rotate(25 78 48)" fill="#f2b5b5" opacity=".7"/>'},
  cloud:function(){return '<path d="M30 28 Q30 16 42 17 Q46 8 58 13 Q70 12 71 24 Q80 26 76 34 L28 34 Q22 30 30 28 Z" fill="#fff" stroke="#9aa6b8" stroke-width="2"/><path d="M52 34 L45 46 L52 46 L47 58 L60 41 L53 41 L58 34 Z" fill="#ffd23f" stroke="#e0a800" stroke-width="1.4"/>'},
  beam:function(){return '<path d="M74 40 L98 24 L98 60 Z" fill="#fff3a8" opacity=".75"/>'},
- face:function(c){return '<ellipse cx="50" cy="58" rx="27" ry="26" fill="'+c+'"/>'},
- muzzle:function(){return '<ellipse cx="50" cy="68" rx="13" ry="10" fill="#ecd3b5"/>'},
- eyes:function(){return '<circle cx="41" cy="56" r="4.2" fill="#1b1b1f"/><circle cx="59" cy="56" r="4.2" fill="#1b1b1f"/><circle cx="42.4" cy="54.6" r="1.5" fill="#fff"/><circle cx="60.4" cy="54.6" r="1.5" fill="#fff"/>'},
- smile:function(){return '<path d="M42 70 Q50 77 58 70" stroke="#1b1b1f" stroke-width="2.6" fill="none" stroke-linecap="round"/><circle cx="34" cy="65" r="4" fill="#ff8a8a" opacity=".45"/><circle cx="66" cy="65" r="4" fill="#ff8a8a" opacity=".45"/>'},
+ face:function(c,id){return '<ellipse cx="50" cy="60" rx="27" ry="26" fill="#000" opacity=".18" filter="url(#bl'+id+')" transform="translate(2,4)"/><ellipse cx="50" cy="58" rx="27" ry="26" fill="url(#sk'+id+')"/><ellipse cx="41" cy="44" rx="13" ry="8" fill="#fff" opacity=".32" filter="url(#bl'+id+')"/>'},
+ muzzle:function(){return '<ellipse cx="50" cy="69.5" rx="13" ry="10" fill="#000" opacity=".12"/><ellipse cx="50" cy="68" rx="13" ry="10" fill="#f1dcc2"/><ellipse cx="46" cy="64" rx="6" ry="3" fill="#fff" opacity=".45"/>'},
+ eyes:function(){return '<ellipse cx="41" cy="56" rx="5.6" ry="6.2" fill="#fff"/><ellipse cx="59" cy="56" rx="5.6" ry="6.2" fill="#fff"/><circle cx="41.6" cy="56.6" r="4.1" fill="#2a1c14"/><circle cx="59.6" cy="56.6" r="4.1" fill="#2a1c14"/><circle cx="43" cy="54.8" r="1.7" fill="#fff"/><circle cx="61" cy="54.8" r="1.7" fill="#fff"/><circle cx="40.2" cy="58.4" r=".8" fill="#fff" opacity=".7"/><circle cx="58.2" cy="58.4" r=".8" fill="#fff" opacity=".7"/>'},
+ smile:function(id){return '<path d="M42 69.5 Q50 77.5 58 69.5" stroke="#3a2418" stroke-width="2.6" fill="none" stroke-linecap="round"/><ellipse cx="33.5" cy="65" rx="5" ry="3.6" fill="#ff7d7d" opacity=".5" filter="url(#bl'+id+')"/><ellipse cx="66.5" cy="65" rx="5" ry="3.6" fill="#ff7d7d" opacity=".5" filter="url(#bl'+id+')"/>'},
  cap:function(c){return '<path d="M25 50 Q25 24 50 24 Q75 24 75 50 Z" fill="'+c+'"/><path d="M48 50 L86 50 Q86 57 70 56 L48 56 Z" fill="'+c+'" opacity=".82"/><circle cx="50" cy="24" r="3" fill="#fff" opacity=".8"/>'},
  beanie:function(c){return '<path d="M25 48 Q25 22 50 22 Q75 22 75 48 Z" fill="'+c+'"/><rect x="23" y="44" width="54" height="9" rx="4" fill="#fff" opacity=".9"/><circle cx="50" cy="19" r="6" fill="#fff"/>'},
  santa:function(){return '<path d="M25 48 Q27 22 52 20 Q66 20 72 8 Q78 24 75 48 Z" fill="#d93a32"/><rect x="23" y="44" width="54" height="9" rx="4.5" fill="#fff"/><circle cx="73" cy="8" r="5.5" fill="#fff"/>'},
@@ -280,7 +285,7 @@ var P={
  beak:function(c){return '<path d="M43 63 L57 63 L50 76 Z" fill="'+c+'"/>'},
  brow:function(){return '<path d="M34 47 L46 51 M66 47 L54 51" stroke="#2b2b33" stroke-width="3.4" stroke-linecap="round"/>'},
  feathers:function(){return '<path d="M30 34 L24 18 L36 28 M70 34 L76 18 L64 28" stroke="#f6f2ea" stroke-width="5" stroke-linecap="round" fill="none"/>'},
- nose:function(c){return '<ellipse cx="50" cy="62" rx="6.4" ry="5" fill="'+c+'"/><ellipse cx="48.2" cy="60.6" rx="1.8" ry="1.2" fill="#fff" opacity=".6"/>'},
+ nose:function(c){return '<ellipse cx="50" cy="63.2" rx="6.6" ry="5.2" fill="#000" opacity=".2"/><ellipse cx="50" cy="62" rx="6.6" ry="5.2" fill="'+c+'"/><ellipse cx="47.8" cy="60.2" rx="2.4" ry="1.5" fill="#fff" opacity=".75"/>'},
  trunk:function(){return '<path d="M42 66 Q50 70 58 66 Q64 80 54 90 Q46 92 48 84 Q52 78 50 74 Q44 74 42 66 Z" fill="#9aa3af"/>'},
  elephant:function(){return '<ellipse cx="19" cy="56" rx="12" ry="16" fill="#b8c0cb"/><ellipse cx="81" cy="56" rx="12" ry="16" fill="#b8c0cb"/>'},
  hardhat:function(){return '<path d="M24 46 Q24 22 50 22 Q76 22 76 46 Z" fill="#ffc83a"/><rect x="20" y="44" width="60" height="7" rx="3.5" fill="#f2a900"/><rect x="45" y="20" width="10" height="10" rx="3" fill="#f2a900"/>'},
@@ -327,18 +332,31 @@ var SPEC={
  Sage:{skin:SK.fair,front:['glasses:#8a5a2b','book']}
 };
 function part(spec){var bits=spec.split(':');var f=P[bits[0]];if(!f)return '';return f(bits[1],bits[2])}
-function avatarSVG(name){var S=SPEC[name];if(!S)return null;var h=hue(name);
- var s='<svg viewBox="0 0 100 100" width="100%" height="100%" xmlns="http://www.w3.org/2000/svg"><defs><linearGradient id="g'+h+'" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="hsl('+h+' 85% 91%)"/><stop offset="1" stop-color="hsl('+((h+45)%360)+' 78% 80%)"/></linearGradient></defs><rect width="100" height="100" rx="26" fill="url(#g'+h+')"/>';
- (S.back||[]).forEach(function(b){s+=part(b)});
- if(S.deer){s+=P.antlers('#d9b27c')+P.ears(S.skin)}
+function shade(hex,f){var n=parseInt(hex.slice(1),16),r=n>>16,g=(n>>8)&255,b=n&255;function c(v){return Math.max(0,Math.min(255,Math.round(f>0?v+(255-v)*f:v*(1+f))))}return 'rgb('+c(r)+','+c(g)+','+c(b)+')'}
+function avatarSVG(name){var S=SPEC[name];if(!S)return null;var h=hue(name),id=name;
+ var s='<svg viewBox="0 0 100 100" width="100%" height="100%" xmlns="http://www.w3.org/2000/svg"><defs>'
+  +'<radialGradient id="bg'+id+'" cx="32%" cy="24%" r="95%"><stop offset="0" stop-color="hsl('+h+' 95% 93%)"/><stop offset=".55" stop-color="hsl('+((h+25)%360)+' 80% 80%)"/><stop offset="1" stop-color="hsl('+((h+50)%360)+' 62% 62%)"/></radialGradient>'
+  +'<radialGradient id="sk'+id+'" cx="36%" cy="28%" r="80%"><stop offset="0" stop-color="'+shade(S.skin,.38)+'"/><stop offset=".55" stop-color="'+S.skin+'"/><stop offset="1" stop-color="'+shade(S.skin,-.3)+'"/></radialGradient>'
+  +'<linearGradient id="gl'+id+'" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#fff" stop-opacity=".5"/><stop offset=".5" stop-color="#fff" stop-opacity="0"/></linearGradient>'
+  +'<radialGradient id="vg'+id+'" cx="50%" cy="42%" r="70%"><stop offset=".6" stop-color="#000" stop-opacity="0"/><stop offset="1" stop-color="#000" stop-opacity=".2"/></radialGradient>'
+  +'<filter id="bl'+id+'" x="-50%" y="-50%" width="200%" height="200%"><feGaussianBlur stdDeviation="2.4"/></filter>'
+  +'<filter id="ds'+id+'" x="-30%" y="-30%" width="160%" height="170%"><feDropShadow dx="0" dy="2.2" stdDeviation="1.5" flood-color="#000" flood-opacity=".32"/></filter>'
+  +'<clipPath id="cp'+id+'"><rect width="100" height="100" rx="26"/></clipPath></defs>'
+  +'<g clip-path="url(#cp'+id+')"><rect width="100" height="100" fill="url(#bg'+id+')"/><ellipse cx="50" cy="93" rx="30" ry="7" fill="#000" opacity=".22" filter="url(#bl'+id+')"/>';
+ s+='<g filter="url(#ds'+id+')">';(S.back||[]).forEach(function(b){s+=part(b)});
+ if(S.deer){s+=P.antlers('#c99a5e')+P.ears(S.skin)}
  if(S.elephant)s+=P.elephant();
- s+=P.face(S.skin);
+ s+='</g>';
+ s+=P.face(S.skin,id);
  if(S.deer)s+=P.muzzle();
  s+=P.eyes();
  if(S.deer)s+=P.nose(S.nose);
- if(!S.noMouth)s+=P.smile();
+ if(!S.noMouth)s+=P.smile(id);
+ s+='<g filter="url(#ds'+id+')">';
  if(S.deer&&S.nose==='#e63946')s+=P.scarf('#2f9e6b','#d93a32');else if(S.deer&&(S.front||[]).length===0)s+=P.scarf('#3b6fd1','#fff');
  (S.front||[]).forEach(function(b){s+=part(b)});
+ s+='</g><rect width="100" height="100" fill="url(#vg'+id+')"/><path d="M0 0 H100 V34 Q50 52 0 34 Z" fill="url(#gl'+id+')"/></g>'
+  +'<rect x=".8" y=".8" width="98.4" height="98.4" rx="25.4" fill="none" stroke="#fff" stroke-opacity=".55" stroke-width="1.6"/>';
  return s+'</svg>'}
 
 function hue(s){var h=0;for(var i=0;i<s.length;i++)h=(h*31+s.charCodeAt(i))%360;return h}
@@ -360,7 +378,26 @@ function vAgents(p){
   units.appendChild(unit('Dunzo Gutters','Gutter and exterior cleaning, repairs and installs',d.mates.filter(function(m){return m.unit==='dunzo'}),ACC==='lights'));
   units.appendChild(unit('Santa\'s Lights','Christmas and permanent lighting',d.mates.filter(function(m){return m.unit==='lights'}),ACC==='dunzo'));
   p.appendChild(units);
-  var sh=el('div','card');sh.style.marginTop='16px';sh.appendChild(el('h3',null,'Shared by both companies'));var g=el('div','mgrid');d.mates.filter(function(m){return m.unit==='shared'}).forEach(function(m){g.appendChild(mateCard(m))});sh.appendChild(g);p.appendChild(sh)}).catch(function(e){p.appendChild(el('div','empty',e.message))})}
+  var sh=el('div','card');sh.style.marginTop='16px';sh.appendChild(el('h3',null,'Shared by both companies'));var g=el('div','mgrid');d.mates.filter(function(m){return m.unit==='shared'}).forEach(function(m){g.appendChild(mateCard(m))});sh.appendChild(g);p.appendChild(sh);var sysbox=el('div','card');sysbox.style.marginTop='16px';p.appendChild(sysbox);vSystems(sysbox,null);api('/admin/dash/systems').then(function(r){sysbox.textContent='';vSystems(sysbox,r.checks)}).catch(function(){})}).catch(function(e){p.appendChild(el('div','empty',e.message))})}
+
+var SYSTEMS=[
+ {name:'Jobber',mono:'J',color:'#4aa83a',role:'Quotes, clients and jobs',checks:['jobberDunzo','jobberLights'],does:'Where quotes, clients, properties and jobs live. The bot creates the client, property and quote here and texts the customer the link. It also reads past quotes and jobs so every customer is greeted with their history.',notes:'Connected for Dunzo and Santa\'s Lights. Approvals and the Quote Sent stage still come from your Zap.'},
+ {name:'GoHighLevel',mono:'G',color:'#1d6fe5',role:'Contacts, texting and pipelines',checks:['ghlDunzo','ghlLights'],does:'The CRM and the phone line. The bot reads contacts, notes and opportunities, sends the texts, adds tags and notes, and moves photo leads between stages. Both accounts are connected.',notes:'Your existing pipelines and Zaps are left exactly as they are.'},
+ {name:'Quo',mono:'Q',color:'#6b46e5',role:'Calls and voicemail',checks:[],status:'planned',does:'Phone calls, voicemails and transcripts. Today they reach GHL through a Zap, and the bot reads them from the contact\'s notes.',notes:'Not connected directly yet. The Quo watcher is on the roadmap: a call or voicemail will pause the bot on that customer.'},
+ {name:'Old GHL bots',mono:'6',color:'#e08a1d',role:'The six Agent Studio bots',checks:[],status:'running',does:'01 Take Off, 02 Pics Received and the others you built in GHL. They keep running for the rest of your pipeline, and every one of them has been told to ignore any contact tagged winter promo.',notes:'We turn them off one by one only when each replacement is proven. Nothing is switched off yet.'},
+ {name:'Zapier',mono:'Z',color:'#ff4a00',role:'Jobber to GHL, Quo to GHL, scoreboard',checks:[],status:'running',does:'Moves information between Jobber, GHL, Quo and the scoreboard. It creates the opportunity in Quote Sent when a quote goes out, and handles the later stages.',notes:'Kept running on purpose. Zapier has no live check we can read from here, so look at it in Zapier. We are not replacing any Zap for now.'},
+ {name:'CompanyCam',mono:'CC',color:'#0a66ff',role:'Crew job photos',checks:[],status:'planned',does:'Where the crew\'s job photos live. Today a Zap links it to Jobber.',notes:'Not connected directly yet. Planned: Flash reads these photos for take offs, and Shutter and Snap turn them into before and after posts.'},
+ {name:'Meta Ads',mono:'M',color:'#0866ff',role:'Ad spend per ad',checks:[],status:'planned',does:'Facebook and Instagram ad spend. The plan is to match spend to sold jobs so you know which ads make money.',notes:'Not connected yet. It feeds the ad reporter and the scoreboard.'},
+ {name:'Supabase',mono:'S',color:'#2fa36b',role:'The memory',checks:['database'],does:'Conversations, messages, drafts, agent versions and settings all live here.',notes:'One project for this system. The scoreboard has its own.'},
+ {name:'Claude',mono:'C',color:'#d97757',role:'The brain',checks:[],status:'running',does:'Writes every reply and every draft. Your monthly API credit pays for it.',notes:'Checked with real use, not a ping, so it costs nothing to look at.'}
+];
+function vSystems(box,checks){box.appendChild(el('h3',null,'Connected systems'));box.appendChild(el('div','sub','The tools our agents work with, and the ones still running on their own. Green means a live check just passed.'));var g=el('div','mgrid');
+ SYSTEMS.forEach(function(sy){var res=(sy.checks||[]).map(function(k){return checks?checks[k]:undefined});var bad=res.filter(function(r){return r&&r!=='ok'});var ok=res.length&&res.every(function(r){return r==='ok'});
+  var dot=el('span','sdot '+(ok?'ok':bad.length?'bad':sy.status==='planned'?'plan':'run'));var label=ok?'Connected':bad.length?'Problem':sy.status==='planned'?'Not connected yet':sy.status==='running'?'Running':'Checking';
+  var mono=el('div','mono',sy.mono);mono.style.background=sy.color;
+  var det=el('div','sdet');det.style.display='none';det.appendChild(el('div',null,sy.does));det.appendChild(el('div','sub',sy.notes));if(bad.length)det.appendChild(el('div','err',bad.join(' ')));
+  var c=el('div','mcard sys',null,[mono,el('div','grow',null,[el('div','nm',sy.name),el('div','sub2',sy.role)]),el('span','sst',null,[dot,document.createTextNode(label)])]);
+  var wrap=el('div',null,null,[c,det]);c.onclick=function(){det.style.display=det.style.display==='none'?'block':'none'};g.appendChild(wrap)});box.appendChild(g)}
 function diffLines(a,b){var x=a.split('\n'),y=b.split('\n'),n=x.length,m=y.length,L=[],i,j;for(i=0;i<=n;i++)L.push(new Array(m+1).fill(0));
  for(i=n-1;i>=0;i--)for(j=m-1;j>=0;j--)L[i][j]=x[i]===y[j]?L[i+1][j+1]+1:Math.max(L[i+1][j],L[i][j+1]);
  var out=[];i=0;j=0;while(i<n&&j<m){if(x[i]===y[j]){out.push(['same',x[i]]);i++;j++}else if(L[i+1][j]>=L[i][j+1]){out.push(['del',x[i]]);i++}else{out.push(['add',y[j]]);j++}}

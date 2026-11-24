@@ -7,7 +7,8 @@ import { draftContent } from "./content";
 import { runAgent } from "./agents";
 import { systemPrompt, type BotFacts } from "./bot";
 import { sb } from "./db";
-import { addTags, credsFor, getContact, removeTags, sendSms } from "./ghl";
+import { addTags, credsFor, getContact, getPipelines, removeTags, sendSms } from "./ghl";
+import { gql } from "./jobber";
 import { BUSINESS_KNOWLEDGE } from "./knowledge";
 import { isSmsDnd } from "./safety";
 import { effectiveValues, loadSettings, SETTINGS, saveSetting, validSetting } from "./settings";
@@ -297,6 +298,18 @@ export async function handleDash(req: Request, env: Env, url: URL): Promise<Resp
       const b = (await req.json()) as { instructions?: string; dials?: Dials };
       const r = await directorReport(env, acct === "dunzo" || acct === "lights" ? acct : null, { instructions: (b.instructions ?? "").trim() || DEFAULTS.maverick, dials: b.dials ?? {} });
       return json(r);
+    }
+
+    if (p === "/admin/dash/systems") {
+      const check = async (fn: () => Promise<unknown>): Promise<string> => { try { await fn(); return "ok"; } catch (e) { return "error: " + (e as Error).message.slice(0, 90); } };
+      const [ghlDunzo, ghlLights, jobberDunzo, jobberLights, database] = await Promise.all([
+        check(() => getPipelines(credsFor(env, "dunzo"))),
+        check(() => getPipelines(credsFor(env, "lights"))),
+        check(() => gql(env, "dunzo", "{ account { name } }")),
+        check(() => gql(env, "lights", "{ account { name } }")),
+        check(() => sb(env, "GET", "settings?select=key&limit=1")),
+      ]);
+      return json({ checks: { ghlDunzo, ghlLights, jobberDunzo, jobberLights, database } });
     }
 
     if (p === "/admin/dash/roadmap") return json({ lanes: LANES, items: ROADMAP });
