@@ -5,6 +5,7 @@ import { isSmsDnd, normalizePhone } from "./safety";
 import { assess } from "./check";
 import { findClientsByPhones } from "./jobber";
 import { plainPunctuation } from "./bot";
+import { deadlineNote } from "./deadline";
 import type { Account, Env } from "./types";
 
 /** Milliseconds since midnight in Sacramento (Pacific time), including daylight saving. */
@@ -88,7 +89,7 @@ export async function runDailyBatch(env: Env): Promise<Record<string, unknown>> 
           continue;
         }
       }
-      const text = withPromoNote(plainPunctuation(m.body), env.PROMO_NOTE);
+      const text = withPromoNote(plainPunctuation(m.body), deadlineNote(env.PROMO_DEADLINE));
       await sendSms(creds, m.contact_id, text);
       if (text !== m.body) await sb(env, "PATCH", `messages?id=eq.${m.id}`, { body: text }, "return=minimal");
       await sb(env, "PATCH", `messages?id=eq.${m.id}`, { status: "sent", sent_at: new Date().toISOString() }, "return=minimal");

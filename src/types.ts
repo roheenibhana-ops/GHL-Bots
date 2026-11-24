@@ -23,8 +23,8 @@ export interface Env {
   QUIET_END_HOUR: string;
   DAILY_CAP?: string;
   START_ON?: string;
-  /** A short true sentence added to promo texts before the opt out line, like the deadline. */
-  PROMO_NOTE?: string;
+  /** The promo deadline for texts sent from now on (YYYY-MM-DD). Change it for each batch. */
+  PROMO_DEADLINE?: string;
   /** Dash, the follow up agent: off | approve (drafts wait for you) | auto. */
   DASH_MODE?: string;
   DASH_PROMO_DAYS?: string;

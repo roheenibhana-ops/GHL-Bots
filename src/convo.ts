@@ -3,6 +3,7 @@ import { sb } from "./db";
 import { addNote, addTags, credsFor, getContact, getPipelines, listOpportunities, moveOpportunity, opportunityStageId, sendSms, setDnd, setEmail, upsertByPhone } from "./ghl";
 import { isLightsReferral, propagateOptOut, referToLights } from "./lights";
 import { setStage } from "./stages";
+import { deadlineFor } from "./deadline";
 import { photoThanks, planPhotoMove } from "./photo";
 import { blockingNote, formatProfile, ghlNotes, ghlOpportunities, jobberHistory, OUR_NOTE_PREFIX } from "./profile";
 import { createGutterQuote, linkMessage } from "./quote";
@@ -141,6 +142,8 @@ export async function handleInbound(env: Env, p: InboundPayload, dryRun = false)
     opening: built.opening ?? conv?.facts?.opening,
     address: conv?.facts?.address ?? (contact.address1 && contact.postalCode ? { street1: contact.address1, city: contact.city ?? "", province: contact.state ?? "CA", postalCode: contact.postalCode } : undefined),
   };
+
+  facts.deadline = deadlineFor(facts.opening, env.PROMO_DEADLINE) ?? undefined;
 
   // An email address the customer typed is a fact we can read ourselves, without relying on the model to record it.
   if (!facts.email) {

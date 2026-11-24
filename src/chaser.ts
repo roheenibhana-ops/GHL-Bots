@@ -3,6 +3,7 @@ import { isBlackout } from "./batch";
 import { plainPunctuation, replyProblems, type BotFacts } from "./bot";
 import { sb } from "./db";
 import { credsFor, getContact, sendSms } from "./ghl";
+import { deadlineFor, deadlinePassed, formatDeadline } from "./deadline";
 import { dialsText, HOUSE_VOICE, loadAgent, type Dials } from "./playbook";
 import { inSendWindow, isSmsDnd } from "./safety";
 import { quoteStatuses } from "./stats";
@@ -59,9 +60,9 @@ export function pickTargets(o: { promos: Promo[]; convs: Conv[]; msgs: Msg[]; no
   return out;
 }
 
-const OFFER = "The offer: one time gutter cleaning, $219 for a single story home or $319 for two stories, with a 50% deposit when the quote is approved online. It includes hand cleared gutters, a downspout flush, a photo report and a 30 day no clog guarantee. Over half of Sacramento's rain falls November to February. The promo price is good through December 15: approving the quote and paying the deposit by then locks the price, and the clean can be scheduled later, into January.";
+const OFFER = "The offer: one time gutter cleaning, $219 for a single story home or $319 for two stories, with a 50% deposit when the quote is approved online. It includes hand cleared gutters, a downspout flush, a photo report and a 30 day no clog guarantee. Over half of Sacramento's rain falls November to February.";
 
-export async function writeFollowUp(env: Env, t: { kind: "promo" | "quote"; firstName?: string | null; nth: number; history: string[]; stories?: number }, override?: { instructions: string; dials: Dials }): Promise<{ text: string; problems: string[]; skip?: boolean }> {
+export async function writeFollowUp(env: Env, t: { kind: "promo" | "quote"; firstName?: string | null; nth: number; history: string[]; stories?: number; deadline?: string | null }, override?: { instructions: string; dials: Dials }): Promise<{ text: string; problems: string[]; skip?: boolean }> {
   const live = override ?? (await loadAgent(env, "dash"));
   const system = [
     "You write ONE short follow up text message for Dunzo Gutters to a customer who has gone quiet.",
@@ -69,8 +70,9 @@ export async function writeFollowUp(env: Env, t: { kind: "promo" | "quote"; firs
     "HOW YOU FOLLOW UP (set by the owner and editable):",
     live.instructions,
     dialsText(live.dials),
-    "FIXED RULES: one text, one or two short sentences, under 240 characters. Never repeat a line that is already in the conversation. Never invent urgency, deadlines, discounts or prices. The one real deadline is December 15, in the offer below, and you may mention it once, plainly, as helpful information and never as pressure. The only prices you may mention are in the offer below. No links. Never promise a day or time. Never guilt them for not replying. Make it easy to say not now. Plain text only, no quotation marks around it, no emojis.",
+    "FIXED RULES: one text, one or two short sentences, under 240 characters. Never repeat a line that is already in the conversation. Never invent urgency, deadlines, discounts or prices. If a deadline is given below you may mention it once, plainly, as helpful information and never as pressure. Never mention when a clean would be scheduled. The only prices you may mention are in the offer below. No links. Never promise a day or time. Never guilt them for not replying. Make it easy to say not now. Plain text only, no quotation marks around it, no emojis.",
     OFFER,
+    t.deadline && formatDeadline(t.deadline) && !deadlinePassed(t.deadline) ? `DEADLINE for this customer: the price is good through ${formatDeadline(t.deadline)}. Approving the quote by then locks it in.` : "There is no deadline to mention for this customer.",
   ].filter(Boolean).join("\n");
   const situation = t.kind === "promo"
     ? `SITUATION: we texted ${t.firstName || "this customer"} the offer a few days ago and they have not replied. This is the one and only follow up. Give them one new, genuinely useful reason to look at it, and ask one easy question (for example whether the home is one story or two).`
@@ -136,7 +138,8 @@ export async function runDash(env: Env): Promise<Record<string, unknown>> {
     const conv = convs.find((c) => c.contact_id === t.contactId);
     const history = msgs.filter((m) => m.contact_id === t.contactId && m.body && ["sent", "received"].includes(m.status)).slice(-12).map((m) => `${m.direction === "inbound" ? "CUSTOMER" : "US"}: ${(m.body ?? "").replace(/https?:\/\/\S+/g, "[link]").slice(0, 260)}`);
     const first = (t.name ?? conv?.facts?.firstName ?? "").split(" ")[0];
-    const w = await writeFollowUp(env, { kind: t.kind, firstName: first, nth: t.nth, history, stories: conv?.facts?.stories });
+    const opening = msgs.find((m) => m.contact_id === t.contactId && m.direction === "outbound" && m.campaign === campaign)?.body;
+    const w = await writeFollowUp(env, { kind: t.kind, firstName: first, nth: t.nth, history, stories: conv?.facts?.stories, deadline: deadlineFor(opening, env.PROMO_DEADLINE) });
     if (w.skip && conv) {
       // The customer asked for time. Hold off for a week instead of checking again every few minutes.
       await sb(env, "PATCH", `conversations?contact_id=eq.${enc(t.contactId)}`, { facts: { ...(conv.facts ?? {}), dashHoldUntil: now.getTime() + 7 * DAY } }, "return=minimal").catch(() => undefined);

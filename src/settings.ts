@@ -21,6 +21,7 @@ export const SETTINGS: SettingDef[] = [
   { key: "START_ON", group: "Promo texts", label: "Do not send before (date)", help: "Year, month, day, like 2026-11-25, in Pacific time. Promo texts wait until this date even if sending is on.", type: "text" },
   { key: "PROMO_OWNER_ID", group: "Promo texts", label: "Owner for promo leads (GHL user ID)", help: "Each contact a promo is sent to gets this GHL user as its owner, if it has no owner yet. Set to Clark.", type: "text" },
   { key: "BLACKOUT_DATES", group: "Promo texts", label: "No sending on these dates", help: "Holidays and days off, Pacific time, like 2026-11-26,2026-12-25. No promo or follow up texts go out on these dates. Customers who text us still get an answer.", type: "text" },
+  { key: "PROMO_DEADLINE", group: "Promo texts", label: "Offer deadline for the next texts", help: "A date like 2026-12-15. Each promo text sent from now on says the price is good through this date, and each customer is held to the date in their own text. Change it before each new batch.", type: "text" },
   { key: "BATCH_CAMPAIGN", group: "Promo texts", label: "Campaign name", help: "Which campaign the daily sender releases. Leave as it is unless you made a new one.", type: "text" },
   { key: "DASH_MODE", group: "Follow ups (Dash)", label: "Follow ups", help: "Off: Dash does nothing. Approve: Dash writes follow ups and they wait on the Approvals page for you. Auto: they send by themselves.", type: "select", options: ["off", "approve", "auto"] },
   { key: "DASH_PROMO_DAYS", group: "Follow ups (Dash)", label: "Days before following up a promo with no reply", help: "How many days after the promo text Dash waits before one follow up.", type: "number" },
@@ -53,6 +54,7 @@ export function mergeSettings(env: Env, map: Record<string, string>): Env {
   set("DAILY_CAP", map.DAILY_CAP);
   set("BATCH_CAMPAIGN", map.BATCH_CAMPAIGN);
   set("START_ON", map.START_ON);
+  if (map.PROMO_DEADLINE !== undefined) o.PROMO_DEADLINE = map.PROMO_DEADLINE;
   set("DASH_MODE", map.DASH_MODE);
   set("DASH_PROMO_DAYS", map.DASH_PROMO_DAYS);
   if (map.BLACKOUT_DATES !== undefined) o.BLACKOUT_DATES = map.BLACKOUT_DATES;
@@ -80,6 +82,7 @@ export function effectiveValues(env: Env, map: Record<string, string>): Record<s
     DAILY_CAP: map.DAILY_CAP ?? e.DAILY_CAP ?? "0",
     BATCH_CAMPAIGN: map.BATCH_CAMPAIGN ?? e.BATCH_CAMPAIGN ?? "pilot-2",
     START_ON: map.START_ON ?? e.START_ON ?? "",
+    PROMO_DEADLINE: map.PROMO_DEADLINE ?? e.PROMO_DEADLINE ?? "",
     DASH_MODE: map.DASH_MODE ?? e.DASH_MODE ?? "off",
     DASH_PROMO_DAYS: map.DASH_PROMO_DAYS ?? e.DASH_PROMO_DAYS ?? "3",
     BLACKOUT_DATES: map.BLACKOUT_DATES ?? e.BLACKOUT_DATES ?? "",
@@ -99,6 +102,7 @@ export function validSetting(key: string, value: string): string | null {
     const n = Number(value);
     if (!Number.isInteger(n) || n < 0 || n > (key.startsWith("WINDOW") ? 23 : 5000)) return "Out of range";
   }
+  if (key === "PROMO_DEADLINE") return value === "" || /^\d{4}-\d{2}-\d{2}$/.test(value) ? null : "Use a date like 2026-12-15";
   if (key === "BLACKOUT_DATES") return value === "" || /^\d{4}-\d{2}-\d{2}(,\s*\d{4}-\d{2}-\d{2}){0,30}$/.test(value) ? null : "Use dates like 2026-11-26, separated by commas";
   if (def.type === "text" && !/^[A-Za-z0-9_-]{1,40}$/.test(value)) return "Letters, numbers, dashes only";
   return null;

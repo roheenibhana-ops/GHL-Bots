@@ -1,6 +1,7 @@
 import { runAgent } from "./agents";
 import { ALLOWED_PRICES, BUSINESS_KNOWLEDGE, SITE_LINKS } from "./knowledge";
 import { type Dials, HOUSE_VOICE, loadAgent, playbookText } from "./playbook";
+import { deadlinePassed, formatDeadline } from "./deadline";
 import type { Env } from "./types";
 
 /** What the system knows about this customer. The system, not the model, owns these facts. */
@@ -17,6 +18,8 @@ export interface BotFacts {
   /** What we know about them from Jobber and GHL (see profile.ts). Cached per customer for a day. */
   profile?: string;
   profileAt?: number;
+  /** The promo deadline that applies to this customer (YYYY-MM-DD), taken from the text they were sent. */
+  deadline?: string;
   /** An excerpt of a note that says do not contact this customer automatically. */
   blocked?: string;
   /** The Jobber quote the bot created for them, so approvals can be counted later. */
@@ -55,6 +58,14 @@ function stillNeeded(f: BotFacts): string {
   return need.length ? need.join("; ") : "nothing: you have everything for the quote";
 }
 
+/** What the agent may say about the promo deadline for this customer. Each batch can carry its own date. */
+function deadlineRule(f: BotFacts): string {
+  const d = formatDeadline(f.deadline);
+  if (!d) return "- There is no deadline on this customer's offer. Never state or invent one.";
+  if (deadlinePassed(f.deadline as string)) return `- This customer's promo price was good through ${d}, and that date has passed. Do not offer the promo price. Say kindly that the winter promo has ended and use intent handoff so the team can price it.`;
+  return `- PROMO DEADLINE for this customer: the price is good through ${d}. When they want to wait, are thinking it over, or ask how long the offer lasts: agree their timing makes sense, then tell them once, plainly and without pressure, that the price is good through ${d} and that approving the quote by then locks it in. Say nothing about when the clean would be scheduled unless they ask; if they ask, give the usual lead time answer. Mention the deadline at most once in a conversation unless they ask. Never state any other deadline and never say spots are running out.`;
+}
+
 export function systemPrompt(f: BotFacts, playbook?: string, dials?: Dials): string {
   const done = f.quoteRequested;
   return [
@@ -79,7 +90,7 @@ export function systemPrompt(f: BotFacts, playbook?: string, dials?: Dials): str
     "",
     `TODAY IS ${new Intl.DateTimeFormat("en-US", { dateStyle: "full", timeZone: "America/Los_Angeles" }).format(new Date())} in Sacramento.`,
     "HARD RULES (these are never broken):",
-    "- WHEN THEY WANT TO WAIT (for the leaves to drop, until after the holidays, to think it over): agree their timing makes sense, then tell them once, plainly and without pressure, that the promo price is good through December 15, and that approving the quote by then locks the price while the clean itself can be scheduled later, into January. Mention the deadline at most once in a conversation unless they ask. The deadline is a fact about the offer, not a promise of a work date. If today is after December 15, do not offer the promo price: say the winter promo has ended and use intent handoff so the team can price it.",
+    deadlineRule(f),
     "- Only state facts that appear in the business knowledge above. If you do not know, say the team will confirm and use intent handoff. Never invent reviews, stats, discounts, guarantees or services.",
     "- The only prices you may say are the ones in the knowledge above. For other services (repairs, guards, seamless, roof, solar, windows, pressure washing and so on) you may give the typical range or starting price from the knowledge, always as typical and never as a firm quote, and say the team confirms the firm price after a free virtual assessment or a visit. If they want an actual quote for that job, or ask something the knowledge does not cover, say the team will confirm and use intent handoff. Never state a price that is not in the knowledge.",
     "- NEVER promise or suggest a date, day or time for the work, and never say a crew is available on a particular day. If asked, say once the quote is approved the team will be in touch with dates and times.",
