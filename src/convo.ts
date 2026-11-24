@@ -74,6 +74,8 @@ async function sendReply(env: Env, account: Account, contactId: string, text: st
 
 /** Handles one inbound reply. dryRun reads and decides but sends, tags and creates nothing. */
 export async function handleInbound(env: Env, p: InboundPayload, dryRun = false) {
+  // Never text a team alert into the customer's own thread (this happens when the alert phone is also the person testing).
+  const alert = (text: string): Promise<void> => (normalizePhone(p.phone) && normalizePhone(p.phone) === normalizePhone(env.ALERT_PHONE) ? Promise.resolve() : alertTeam(env, text));
   const log: Record<string, unknown> = {};
   if (env.BOT_MODE === "off") return { skipped: "bot is off" };
   const body = inboundText(p.body, p.attachments);
@@ -108,7 +110,7 @@ export async function handleInbound(env: Env, p: InboundPayload, dryRun = false)
   if (tags.includes("bot-paused") || tags.includes("bot-needs-human")) {
     if (!dryRun) {
       await sb(env, "POST", "messages", { account, contact_id: p.contactId, direction: "inbound", body, status: "received", campaign: "bot" }, "return=minimal");
-      await alertTeam(env, `${who} replied while the team has the conversation: ${body.slice(0, 120)}`);
+      await alert(`${who} replied while the team has the conversation: ${body.slice(0, 120)}`);
     }
     return { skipped: "a human has this conversation (bot-paused or bot-needs-human)" };
   }
@@ -125,7 +127,7 @@ export async function handleInbound(env: Env, p: InboundPayload, dryRun = false)
     const lastAlert = Number((conv.facts as { lastAlertAt?: number } | null)?.lastAlertAt ?? 0);
     // One alert per 15 minutes per customer, so a chatty customer doesn't flood the team.
     if (conv.status === "handed_off" && !dryRun && Date.now() - lastAlert > 900_000) {
-      await alertTeam(env, `${who} replied while the team has the conversation: ${body.slice(0, 120)}`);
+      await alert(`${who} replied while the team has the conversation: ${body.slice(0, 120)}`);
       await sb(env, "PATCH", `conversations?contact_id=eq.${encodeURIComponent(p.contactId)}`, { facts: { ...(conv.facts ?? {}), lastAlertAt: Date.now() } }, "return=minimal").catch(() => undefined);
     }
     return { skipped: `conversation is ${conv.status}` };
@@ -160,7 +162,7 @@ export async function handleInbound(env: Env, p: InboundPayload, dryRun = false)
   }
   // A note (from a person or another agent) says not to contact this customer automatically: stay silent and tell the team.
   if (facts.blocked) {
-    if (!dryRun) await alertTeam(env, `${who} replied but a note says not to contact them automatically ("${facts.blocked.slice(0, 80)}"). Not replying, please check.`);
+    if (!dryRun) await alert(`${who} replied but a note says not to contact them automatically ("${facts.blocked.slice(0, 80)}"). Not replying, please check.`);
     return { skipped: "a note says do not contact automatically", blockedBy: facts.blocked };
   }
 
@@ -182,14 +184,14 @@ export async function handleInbound(env: Env, p: InboundPayload, dryRun = false)
       const ph = normalizePhone(contact.phone ?? p.phone);
       const ref = ph ? await referToLights(env, { phone: ph, firstName: contact.firstName, lastName: contact.lastName, email: next.email ?? contact.email, address: next.address ? [next.address.street1, next.address.city].filter(Boolean).join(", ") : undefined, lastMessage: body }) : { referred: false, reason: "no phone number" };
       await addNote(creds, p.contactId, `${OUR_NOTE_PREFIX}Lights referral: ${ref.reason}.`);
-      await alertTeam(env, ref.referred ? `Lights lead from Dunzo: ${name}. Added to Santa's Lights, please follow up from the Lights number.` : `Lights interest from ${name} but not added: ${ref.reason}.`);
+      await alert(ref.referred ? `Lights lead from Dunzo: ${name}. Added to Santa's Lights, please follow up from the Lights number.` : `Lights interest from ${name} but not added: ${ref.reason}.`);
     } else {
-      await alertTeam(env, `Bot needs a human: ${name}. "${body.slice(0, 120)}"`);
+      await alert(`Bot needs a human: ${name}. "${body.slice(0, 120)}"`);
     }
   } else if (output.intent === "repair") {
     await addTags(creds, p.contactId, ["bot-needs-human", "needs-repair-quote"]);
     await addNote(creds, p.contactId, `${OUR_NOTE_PREFIX}Repair request. Asked for photos. Their message: "${body.slice(0, 200)}"`);
-    await alertTeam(env, `Repair enquiry: ${name}. Bot asked for photos. "${body.slice(0, 100)}"`);
+    await alert(`Repair enquiry: ${name}. Bot asked for photos. "${body.slice(0, 100)}"`);
   } else if (output.intent === "declined") {
     await addTags(creds, p.contactId, ["bot-declined"]);
     await setStage(env, account, p.contactId, "Lost", name);
@@ -225,7 +227,7 @@ export async function handleInbound(env: Env, p: InboundPayload, dryRun = false)
       } catch (e) { link = ` (Jobber quote failed: ${(e as Error).message.slice(0, 100)})`; }
     }
     await addNote(creds, p.contactId, `${OUR_NOTE_PREFIX}Quote ready: ${summary}.${link}`);
-    await alertTeam(env, `Quote ready to send: ${summary}.${link}`);
+    if (/NEEDS A HUMAN|needs a human|failed/.test(link) || !link) await alert(`Quote ready to send: ${summary}.${link}`);
   }
 
   const phone = normalizePhone(contact.phone ?? p.phone) ?? undefined;
