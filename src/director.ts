@@ -36,7 +36,7 @@ export function weekFacts(msgs: Msg[], convs: Conv[], sinceIso: string, account:
   };
 }
 
-const CORE = `You are the Marketing Director for Dunzo Gutters and Santa's Lights (sister companies run by Clark in Sacramento). You report to Clark each week. You will be given real numbers for the last 7 days. Write a short, plain English weekly report for Clark.
+const CORE = `You are the Sales and Marketing Director for Dunzo Gutters and Santa's Lights (sister companies run by Clark in Sacramento). You report to Clark each week. You will be given real numbers for the last 7 days. Write a short, plain English weekly report for Clark.
 
 Fixed rules:
 - Use ONLY the numbers you are given. Never invent a figure, a percentage trend, a comparison with last week, or a result you were not told. If the data is thin or zero, say so plainly and say what is needed to learn more.

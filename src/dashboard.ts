@@ -272,7 +272,7 @@ function vResults(p){if(ACC==='lights'){p.appendChild(el('div','card',null,[el('
   c.appendChild(el('div','sub','Reply rate '+r.replyRate+' · Approval rate of repliers '+f.approvalRateOfReplies+' · With the team '+d.outcomes.handedToTeam+' · STOP requests '+d.outcomes.stopRequests));
   var jq=d.jobberQuoteStatuses||{};c.appendChild(el('div','sub','Jobber quote statuses: '+(Object.keys(jq).length?Object.keys(jq).map(function(k){return k+' '+jq[k]}).join(', '):'none yet')))}).catch(function(e){c.textContent='';c.appendChild(el('div','empty',e.message))})}
 function vDirector(p){
- var c=el('div','card');c.appendChild(el('h3',null,'Marketing Director: weekly report'));
+ var c=el('div','card');c.appendChild(el('h3',null,'Sales and Marketing Director: weekly report'));
  c.appendChild(el('div','sub','A plain English look at the last 7 days, built from your real numbers, with three things to do next week. It reads your data and writes a report. It does not send anything to anyone.'));
  var b=el('button','btn pri','Write this week\'s report');b.style.marginTop='14px';var out=el('div');out.style.marginTop='14px';
  b.onclick=function(){b.disabled=true;b.textContent='Writing...';out.textContent='';api('/admin/dash/director'+accQ()).then(function(d){b.disabled=false;b.textContent='Write it again';

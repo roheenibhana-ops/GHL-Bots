@@ -18,7 +18,7 @@ export const ROADMAP: RoadItem[] = [
   { lane: "live", area: "Platform", emoji: "📚", title: "Full website knowledge", who: "Sage", detail: "Both websites read in full: every service, price range, FAQ, financing and 44 approved page links." },
   { lane: "live", area: "Platform", emoji: "🧭", title: "The Partridge Standard", detail: "Control panel with overview, inbox, approvals, results, settings, light and dark mode and a Dunzo and Lights toggle." },
   { lane: "live", area: "Platform", emoji: "🎛️", title: "Agent Studio", detail: "Chat builder, personality dials, drafts, version history with rollback, and a test pack that checks every change." },
-  { lane: "live", area: "Marketing", emoji: "🦅", title: "Marketing Director", who: "Maverick", detail: "Weekly plain English report from your real numbers, with three things to do next." },
+  { lane: "live", area: "Marketing", emoji: "🦅", title: "Sales and Marketing Director", who: "Maverick", detail: "Weekly plain English report from your real numbers, with three things to do next." },
   { lane: "live", area: "Sales", emoji: "🎄", title: "Lights referral", detail: "A Dunzo customer who wants Christmas or permanent lighting is added to Santa's Lights, tagged, with a note." },
   { lane: "live", area: "Marketing", emoji: "📰", title: "Marketing writers", who: "Scoop, Comet, Chirp, Vixen, Quill, Holly, Pin, North", detail: "Newsletter, social posts, SEO blog posts and Google Business posts for each company. Drafts only, with prices and links checked." },
   // ---- now

@@ -58,7 +58,7 @@ export function buildInbox(convs: Conv[], msgs: Msg[]): InboxRow[] {
 }
 
 const MATES = [
-  { unit: "director", agent: "maverick", emoji: "🦅", name: "Maverick", role: "Marketing Director", state: "live", does: "Heads the whole marketing and sales department across both companies. Reads the week's numbers, tells Clark what is working and what is not, and sets the plan: which campaigns to run, when to cross sell, what each writer should focus on. Anything that spends money or goes out to many people waits for your approval." },
+  { unit: "director", agent: "maverick", emoji: "🦅", name: "Maverick", role: "Sales and Marketing Director", state: "live", does: "Heads the whole marketing and sales department across both companies. Reads the week's numbers, tells Clark what is working and what is not, and sets the plan: which campaigns to run, when to cross sell, what each writer should focus on. Anything that spends money or goes out to many people waits for your approval." },
   { unit: "dunzo", team: "Sales", agent: "gus", emoji: "🧢", name: "Gus", role: "Promo Closer", state: "live", does: "Texts the winter cleaning offer, answers questions, works objections, gets the address and email, creates the Jobber quote and sends the link. Funny, quick and honest." },
   { unit: "dunzo", team: "Sales", emoji: "📸", name: "Flash", role: "Photos and Repairs", state: "live", does: "Asks for photos on repair requests, thanks customers when they arrive, moves a New Lead to Photos Received and alerts the team." },
   { unit: "dunzo", team: "Sales", emoji: "🤝", name: "Relay", role: "Hand off to the team", state: "live", does: "Passes anything it should not decide to a person, with an alert: windows pricing, angry customers, out of area, Lights interest." },
