@@ -49,7 +49,7 @@ Things that bite:
 
 1. Duplicate this repo into a new private repo for the client. Never share a Worker, a database or keys between clients.
 2. Create a Cloudflare Worker and a Supabase project for them. Run `supabase/schema.sql`, then the numbered files in order.
-3. Add the secrets in Cloudflare: GHL token and location id, `SUPABASE_URL`, `SUPABASE_SERVICE_KEY`, `ANTHROPIC_API_KEY`, a long random `ADMIN_TOKEN`, `WEBHOOK_SECRET`, and the Jobber app id and secret if they use Jobber.
+3. Add the secrets in Cloudflare: GHL token and location id, `SUPABASE_URL`, `SUPABASE_SERVICE_KEY`, `ANTHROPIC_API_KEY` (the client's own key from their own Claude Console account, so AI costs bill to them, with a spending limit set there), a long random `ADMIN_TOKEN`, `WEBHOOK_SECRET`, and the Jobber app id and secret if they use Jobber.
 4. Change the business details. They are still spread through the code, mainly: the account names (`dunzo`, `lights`) in `src/types.ts` and `src/ghl.ts`, business knowledge, prices and links in `src/knowledge.ts`, agent playbooks in `src/playbook.ts`, the quote step in `src/quote.ts`, the follow up offer in `src/chaser.ts`, tag rules in `src/segments.ts`, and names and colours in `src/dashboard.ts`.
 5. Point the client's GHL inbound message webhook at the Worker, then test with one contact tagged `bot-test` and `BOT_MODE` set to `test` before going live.
 
