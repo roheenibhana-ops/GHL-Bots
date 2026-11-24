@@ -218,6 +218,8 @@ export function stripQuestions(text: string): string {
  * become spaces ("single-story" becomes "single story"). Phone numbers and email addresses are left alone.
  */
 export function plainPunctuation(text: string): string {
+  // Punctuation stuck to the end of a link can break it on a phone, so it is dropped and the link stands alone.
+  text = text.replace(/(https?:\/\/[^\s]*?)[.,;:!?)]+(?=\s|$)/g, "$1");
   return text
     .split(/(\s+)/)
     .map((tok) => {

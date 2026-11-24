@@ -131,3 +131,11 @@ describe("approved page links", () => {
     expect(disallowedPrices("Seamless is typically $2,500 to $4,500 and guards $1,000 to $3,000")).toEqual([]);
   });
 });
+
+describe("links stand alone", () => {
+  it("drops punctuation stuck to the end of a link", () => {
+    expect(plainPunctuation("See https://dunzogutters.com/pricing. Then call us")).toBe("See https://dunzogutters.com/pricing Then call us");
+    expect(plainPunctuation("Try https://santaslightssacramento.com/virtual-design, it is free")).toBe("Try https://santaslightssacramento.com/virtual-design it is free");
+    expect(plainPunctuation("Here: https://dunzogutters.com/gutter-guards")).toBe("Here: https://dunzogutters.com/gutter-guards");
+  });
+});
