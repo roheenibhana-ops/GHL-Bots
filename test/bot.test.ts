@@ -34,7 +34,7 @@ describe("guardrails", () => {
     expect(disallowedPrices("It's $219 for a single story, $319 for two, with a $109.50 deposit. Regular is from $249.")).toEqual([]);
     expect(disallowedPrices("I can do it for $177 today")).toEqual(["$177"]);
     expect(disallowedPrices("Foundation damage can run $7,500 or more")).toEqual([]);
-    expect(disallowedPrices("That's $1,200")).toEqual(["$1,200"]);
+    expect(disallowedPrices("That's $1,350")).toEqual(["$1,350"]);
   });
   it("blocks promised dates and times but allows the safe wording", () => {
     for (const bad of ["We can be there tomorrow morning.", "Our crew will come out on Tuesday.", "We're available Thursday if you like.", "I can fit you in at 2pm."]) {
