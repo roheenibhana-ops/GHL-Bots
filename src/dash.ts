@@ -326,6 +326,18 @@ export async function handleDash(req: Request, env: Env, url: URL): Promise<Resp
       return json(await coachMerge(env, b.batches ?? [], Number(b.total ?? 0)));
     }
 
+    if (p === "/admin/dash/sent") {
+      const camp = url.searchParams.get("campaign") ?? effectiveValues(env, (await loadSettings(env)).map).BATCH_CAMPAIGN;
+      const rows = await sb<{ contact_id: string; contact_name: string | null; phone_e164: string | null; body: string | null; status: string; sent_at: string | null; account: string }[]>(env, "GET", `messages?campaign=eq.${enc(camp)}&status=in.(sent,failed,skipped,sending)&order=sent_at.desc.nullslast&limit=300&select=contact_id,contact_name,phone_e164,body,status,sent_at,account`);
+      const ids = rows.map((r) => r.contact_id);
+      const replied = new Set<string>();
+      if (ids.length) {
+        const inb = await sb<{ contact_id: string }[]>(env, "GET", `messages?direction=eq.inbound&contact_id=in.(${ids.slice(0, 150).map(enc).join(",")})&select=contact_id&limit=1000`);
+        inb.forEach((x) => replied.add(x.contact_id));
+      }
+      return json({ campaign: camp, rows: rows.map((r) => ({ ...r, replied: replied.has(r.contact_id) })) });
+    }
+
     if (p === "/admin/dash/roadmap") return json({ lanes: LANES, items: ROADMAP, tools: TOOLS });
 
     if (p === "/admin/dash/director") {

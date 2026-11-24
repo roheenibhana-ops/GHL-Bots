@@ -260,6 +260,11 @@ function vApprove(p){
  var ap=el('button','btn pri','Approve next');ap.style.marginTop='14px';ap.onclick=function(){api('/admin/pilot/approve-batch',{campaign:s.BATCH_CAMPAIGN,count:Number(n.value)}).then(function(r){toast('Approved '+r.approved);render()}).catch(function(e){toast(e.message)})};
  var st=el('button','btn dng','Stop, un-approve everything');st.style.cssText='margin:14px 0 0 10px';st.onclick=function(){if(confirm('Put every approved, unsent text back on hold?'))api('/admin/pilot/unapprove',{campaign:s.BATCH_CAMPAIGN}).then(function(){toast('All put back on hold');render()}).catch(function(e){toast(e.message)})};
  c.appendChild(n);c.appendChild(ap);c.appendChild(st);p.appendChild(c);
+ var sl=el('div','card');sl.style.marginTop='16px';sl.appendChild(el('h3',null,'Sent so far (newest first)'));p.appendChild(sl);
+ api('/admin/dash/sent').then(function(d){if(!d.rows.length){sl.appendChild(el('div','empty','Nothing sent yet.'));return}
+  d.rows.forEach(function(m){var when=m.sent_at?new Date(m.sent_at).toLocaleString('en-US',{timeZone:'America/Los_Angeles',month:'short',day:'numeric',hour:'numeric',minute:'2-digit'})+' Pacific':'';
+   var row=el('div','row',null,[el('div','av',(m.contact_name||'C').charAt(0).toUpperCase()),el('div','grow',null,[el('div','nm',(m.contact_name||'Customer')+'  '+(m.phone_e164||'')),el('div','sub',m.body||'')]),el('div',null,null,[el('span','tag '+(m.status==='sent'?(m.replied?'g':'b'):'r'),m.status==='sent'?(m.replied?'Replied':'Sent'):m.status),el('div','sub',when)])]);
+   row.onclick=function(){openId=m.contact_id;view='inbox';nav();$('title').textContent='Inbox';render()};sl.appendChild(row)})}).catch(function(e){sl.appendChild(el('div','empty',e.message))});
  var l=el('div','card');l.style.marginTop='16px';l.appendChild(el('h3',null,'Drafts waiting (oldest first)'));p.appendChild(l);
  api('/admin/pending?campaign='+encodeURIComponent(s.BATCH_CAMPAIGN)).then(function(d){if(!d.messages.length)l.appendChild(el('div','empty','No drafts waiting.'));
   d.messages.slice(0,40).forEach(function(m){var rj=el('button','btn sm','Skip this one');rj.onclick=function(){api('/admin/reject',{id:m.id}).then(function(){toast('Skipped');render()}).catch(function(e){toast(e.message)})};
