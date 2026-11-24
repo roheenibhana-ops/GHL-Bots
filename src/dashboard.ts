@@ -359,6 +359,7 @@ var SPEC={
  Sheriff:{skin:SK.fair,front:['sheriff']},
  Tally:{skin:SK.tan,front:['glasses:#394150','chart']},
  Sage:{skin:SK.fair,front:['glasses:#8a5a2b','book']},
+ Mentor:{skin:SK.tan,front:['glasses:#394150','star']},
  Quill:{skin:SK.deep,front:['glasses:#394150','paper']},
  Pin:{skin:SK.fair,front:['beret:#d93a32']},
  Holly:{skin:SK.tan,front:['beanie:#2f9e6b','book']},
@@ -501,7 +502,7 @@ function drawStudio(shell){
  chat.appendChild(el('div','compose',null,[inp,sendBtn]));grid.appendChild(chat);
  // ---- right: the tabs
  var right=el('div','card rightcard');var tabs=el('div','tabs2');
- [['instructions','Instructions'],['dials','Personality']].concat(m.agent==='gus'?[['coach','Coach']]:[]).concat([['test','Test'],['versions','Versions'],['rules','Safety and knowledge']]).forEach(function(t){var b=el('button',ST.tab===t[0]?'on':'',t[1]);b.onclick=function(){ST.tab=t[0];drawStudio(shell)};tabs.appendChild(b)});right.appendChild(tabs);
+ [['instructions','Instructions'],['dials','Personality']].concat(m.agent==='gus'?[['coach','Mentor']]:[]).concat([['test','Test'],['versions','Versions'],['rules','Safety and knowledge']]).forEach(function(t){var b=el('button',ST.tab===t[0]?'on':'',t[1]);b.onclick=function(){ST.tab=t[0];drawStudio(shell)};tabs.appendChild(b)});right.appendChild(tabs);
  var body=el('div','tbody');right.appendChild(body);grid.appendChild(right);shell.appendChild(grid);
  if(ST.tab==='instructions'){
   body.appendChild(el('div','sub','This is how '+m.name+' talks and sells. You can edit it by hand, or ask the builder on the left. The safety rules live in the code and cannot be edited here.'));
@@ -537,7 +538,7 @@ function drawStudio(shell){
     var cp2=el('button','btn sm','Copy');cp2.onclick=function(){try{navigator.clipboard.writeText(r.text);toast('Copied')}catch(e){toast('Select the text and copy it')}};co.appendChild(cp2)}).catch(function(e){wb2.disabled=false;wb2.textContent='Try again';co.appendChild(el('div','empty',e.message))})};body.appendChild(wb2);body.appendChild(co)}
   else{body.appendChild(el('div','sub','See how your draft changes the report. It reads your real numbers and writes a sample. Nothing is sent to anyone.'));
    var wb=el('button','btn pri','Write a sample report with this draft');wb.style.marginTop='12px';var ro=el('div');ro.style.marginTop='12px';wb.onclick=function(){wb.disabled=true;wb.textContent='Writing...';ro.textContent='';api('/admin/dash/agent-sample'+accQ(),{instructions:ST.text,dials:ST.dials}).then(function(r){wb.disabled=false;wb.textContent='Write it again';ST.ran=true;var pr=el('pre',null,r.report);pr.style.maxHeight='none';ro.appendChild(pr)}).catch(function(e){wb.disabled=false;wb.textContent='Try again';ro.appendChild(el('div','empty',e.message))})};body.appendChild(wb);body.appendChild(ro)}}
- if(ST.tab==='coach'){body.appendChild(el('div','sub','The coach reads the last two weeks of real conversations, compares the ones that went well with the ones that did not, and suggests specific changes. Nothing changes unless you draft, test and publish it.'));
+ if(ST.tab==='coach'){body.appendChild(el('div','sub','The mentor reads the last two weeks of real conversations, compares the ones that went well with the ones that did not, and suggests specific changes. Nothing changes unless you draft, test and publish it.'));
   var cb=el('button','btn pri','Review recent conversations');cb.style.marginTop='12px';var co2=el('div');co2.style.marginTop='12px';
   function showCoach(r){co2.textContent='';co2.appendChild(el('div','banner '+(r.conversations?'ok':'wr'),'Reviewed '+r.conversations+' conversation'+(r.conversations===1?'':'s')+'. '+(r.note||'')));
    co2.appendChild(el('p',null,r.summary));

@@ -66,7 +66,7 @@ export async function coachReview(env: Env, days = 14): Promise<CoachReport> {
   if (!transcripts.length) return { conversations: 0, summary: "There are no customer conversations in this period yet, so there is nothing to learn from.", working: [], notWorking: [], suggestions: [] };
   const raw = await runAgent(env, { name: "coach", system: SYSTEM, maxTokens: 1800, model: env.BOT_MODEL }, [{ role: "user", content: `Here are ${transcripts.length} conversations from the last ${days} days.\n\n${transcripts.join("\n\n")}\n\nReview them.` }]);
   const parsed = parseCoach(raw);
-  if (!parsed) throw new Error("The coach's review could not be read. Try again.");
+  if (!parsed) throw new Error("The mentor's review could not be read. Try again.");
   return { conversations: transcripts.length, ...parsed, note: transcripts.length < 8 ? "This is a small sample, so treat the findings as early signals, not proven patterns." : undefined };
 }
 
@@ -103,7 +103,7 @@ export async function coachHistory(env: Env, before?: number): Promise<CoachRepo
   if (!transcripts.length) return { conversations: 0, summary: "", working: [], notWorking: [], suggestions: [], next };
   const raw = await runAgent(env, { name: "coach", system: SYSTEM + HISTORY_NOTE, maxTokens: 1800, model: env.BOT_MODEL }, [{ role: "user", content: `Here are ${transcripts.length} conversations from the company's history.\n\n${transcripts.join("\n\n")}\n\nReview them.` }]);
   const parsed = parseCoach(raw);
-  if (!parsed) throw new Error("The coach's review could not be read. Try again.");
+  if (!parsed) throw new Error("The mentor's review could not be read. Try again.");
   return { conversations: transcripts.length, ...parsed, next };
 }
 
