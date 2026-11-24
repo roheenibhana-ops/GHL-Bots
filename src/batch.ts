@@ -79,6 +79,13 @@ export async function runDailyBatch(env: Env): Promise<Record<string, unknown>> 
     const claimed = await sb<{ id: string }[]>(env, "PATCH", `messages?id=eq.${m.id}&status=eq.approved`, { status: "sending" }, "return=representation");
     if (!claimed.length) continue;
     try {
+      // Never text the same person twice in one campaign, whatever the list says.
+      const prior = await sb<{ id: string }[]>(env, "GET", `messages?campaign=eq.${enc}&contact_id=eq.${encodeURIComponent(m.contact_id)}&status=in.(sent,sending)&id=neq.${m.id}&select=id&limit=1`);
+      if (prior.length) {
+        await sb(env, "PATCH", `messages?id=eq.${m.id}`, { status: "skipped" }, "return=minimal");
+        result.skipped++;
+        continue;
+      }
       const creds = credsFor(env, m.account);
       const c = await getContact(creds, m.contact_id);
       const tags = (c.tags ?? []).map((t) => t.toLowerCase());

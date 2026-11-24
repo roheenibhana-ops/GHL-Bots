@@ -8,7 +8,7 @@ import { coachHistory, coachMerge, coachReview } from "./coach";
 import { DASH_CAMPAIGN, writeFollowUp } from "./chaser";
 import { runAgent } from "./agents";
 import { systemPrompt, type BotFacts } from "./bot";
-import { sb } from "./db";
+import { sb, sbAll } from "./db";
 import { addTags, credsFor, getContact, getPipelines, removeTags, sendSms } from "./ghl";
 import { gql } from "./jobber";
 import { BUSINESS_KNOWLEDGE } from "./knowledge";
@@ -125,7 +125,7 @@ export async function handleDash(req: Request, env: Env, url: URL): Promise<Resp
       const [convs, today, queue] = await Promise.all([
         sb<Conv[]>(env, "GET", "conversations?select=contact_id,account,status,facts,updated_at&order=updated_at.desc&limit=500" + af),
         sb<{ direction: string; status: string; campaign: string }[]>(env, "GET", `messages?or=(created_at.gte.${dayStart},sent_at.gte.${dayStart})&status=neq.archived&select=direction,status,campaign&limit=2000${af}`),
-        sb<{ status: string }[]>(env, "GET", `messages?campaign=eq.${enc(eff.BATCH_CAMPAIGN)}&select=status&limit=3000${af}`),
+        sbAll<{ status: string }>(env, `messages?campaign=eq.${enc(eff.BATCH_CAMPAIGN)}&select=status&order=id.asc${af}`),
       ]);
       const byStatus: Record<string, number> = {};
       for (const c of convs) byStatus[c.status] = (byStatus[c.status] ?? 0) + 1;

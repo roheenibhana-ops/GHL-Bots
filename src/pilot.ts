@@ -1,4 +1,4 @@
-import { sb } from "./db";
+import { sb, sbAll } from "./db";
 import { credsFor, searchContacts } from "./ghl";
 import { dedupe } from "./safety";
 import { classify, looksLikeTestRecord, type Segment } from "./segments";
@@ -55,7 +55,7 @@ export async function createPilot(env: Env, o: PilotOptions) {
   }
   const { keep, dropped } = dedupe(all);
 
-  const already = await sb<{ contact_id: string }[]>(env, "GET", `messages?campaign=eq.${encodeURIComponent(o.campaign)}&select=contact_id`);
+  const already = await sbAll<{ contact_id: string }>(env, `messages?campaign=eq.${encodeURIComponent(o.campaign)}&select=contact_id&order=id.asc`);
   const taken = new Set(already.map((r) => r.contact_id));
 
   const buckets: Record<Segment, typeof keep> = { customer: [], lost: [], excluded: [], other: [] };
@@ -104,4 +104,29 @@ export async function createPilot(env: Env, o: PilotOptions) {
     },
     sample: rows.slice(0, o.dryRun ? 6 : 3).map((r) => ({ account: r.account, segment: r.segment, body: r.body })),
   };
+}
+
+/** Which draft rows to remove so that no contact has more than one text in a campaign. Pure. */
+export function duplicateDrafts(rows: { id: string; contact_id: string; status: string; created_at: string }[]): string[] {
+  const by = new Map<string, typeof rows>();
+  for (const r of rows) by.set(r.contact_id, [...(by.get(r.contact_id) ?? []), r]);
+  const remove: string[] = [];
+  for (const list of by.values()) {
+    if (list.length < 2) continue;
+    const fixed = list.filter((r) => r.status !== "pending_approval");
+    const drafts = list.filter((r) => r.status === "pending_approval").sort((a, b) => a.created_at.localeCompare(b.created_at) || a.id.localeCompare(b.id));
+    // Anything already sent, approved or held wins; otherwise keep the oldest draft.
+    remove.push(...(fixed.length ? drafts : drafts.slice(1)).map((r) => r.id));
+  }
+  return remove;
+}
+
+/** Removes duplicate drafts from a campaign. Only ever deletes texts that are still waiting for approval. */
+export async function dedupeCampaign(env: Env, campaign: string, apply: boolean) {
+  const rows = await sbAll<{ id: string; contact_id: string; status: string; created_at: string }>(env, `messages?campaign=eq.${encodeURIComponent(campaign)}&direction=eq.outbound&select=id,contact_id,status,created_at&order=id.asc`);
+  const remove = duplicateDrafts(rows);
+  if (apply) for (let i = 0; i < remove.length; i += 80) await sb(env, "DELETE", `messages?id=in.(${remove.slice(i, i + 80).join(",")})&status=eq.pending_approval`, undefined, "return=minimal");
+  const counts: Record<string, number> = {};
+  for (const r of rows) counts[r.status] = (counts[r.status] ?? 0) + 1;
+  return { rows: rows.length, contacts: new Set(rows.map((r) => r.contact_id)).size, duplicates: remove.length, removed: apply ? remove.length : 0, counts };
 }

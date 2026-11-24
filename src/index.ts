@@ -317,6 +317,12 @@ export default {
       } catch (e) { return json({ error: (e as Error).message }, 502); }
     }
 
+    if (url.pathname === "/admin/pilot/dedupe" && req.method === "POST") {
+      if (!isAdmin(req, env)) return json({ error: "unauthorized" }, 401);
+      const b = (await req.json().catch(() => ({}))) as { campaign?: string; apply?: boolean };
+      const { dedupeCampaign } = await import("./pilot");
+      try { return json(await dedupeCampaign(env, b.campaign ?? "pilot-2", b.apply === true)); } catch (e) { return json({ error: (e as Error).message }, 502); }
+    }
     if (url.pathname === "/admin/pilot/approve-batch" && req.method === "POST") {
       if (!isAdmin(req, env)) return json({ error: "unauthorized" }, 401);
       const b = (await req.json().catch(() => ({}))) as { campaign?: string; count?: number };
