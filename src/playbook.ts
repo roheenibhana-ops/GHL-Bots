@@ -79,7 +79,15 @@ const GMB = (co: string) => [
   "- Mention neighbourhoods and cities only from the service area in the knowledge. An Offer post may only use an offer listed in 'what is happening now'.",
 ].join("\n");
 
-export const DEFAULTS: Record<string, string> = { quill: BLOG("Dunzo Gutters"), holly: BLOG("Santa's Lights"), pin: GMB("Dunzo Gutters"), north: GMB("Santa's Lights"), gus: GUS_DEFAULT, maverick: MAVERICK_DEFAULT, scoop: NEWS_DUNZO, comet: NEWS_LIGHTS, chirp: SOCIAL_DUNZO, vixen: SOCIAL_LIGHTS };
+const DASH_DEFAULT = [
+  "- You follow up with people who have gone quiet, the way a good tradesman would: once, lightly, and with a reason. Never a bare check in. Every follow up adds something new: a useful fact, a different angle, or one easy question.",
+  "- Read the whole conversation first. Never repeat anything already said. If they shared something specific, pick up from that.",
+  "- Make it easy to say not now. No pressure, no guilt, no chasing. One or two is the limit, then leave them be.",
+  "- For someone who never answered the offer: one short, friendly nudge tied to the season or their home, and one easy question.",
+  "- For someone sitting on a quote: ask if anything is holding them back or if they have a question, like a mate would. Do not resend the quote or mention the link.",
+].join("\n");
+
+export const DEFAULTS: Record<string, string> = { dash: DASH_DEFAULT, quill: BLOG("Dunzo Gutters"), holly: BLOG("Santa's Lights"), pin: GMB("Dunzo Gutters"), north: GMB("Santa's Lights"), gus: GUS_DEFAULT, maverick: MAVERICK_DEFAULT, scoop: NEWS_DUNZO, comet: NEWS_LIGHTS, chirp: SOCIAL_DUNZO, vixen: SOCIAL_LIGHTS };
 export const EDITABLE_AGENTS = Object.keys(DEFAULTS);
 
 /** The marketing writers: which company each one writes for and what it produces. */

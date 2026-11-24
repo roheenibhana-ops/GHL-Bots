@@ -2,6 +2,7 @@ import { APP_HTML } from "./app";
 import { DASH_HTML } from "./dashboard";
 import { handleDash } from "./dash";
 import { applySettings } from "./settings";
+import { runDash } from "./chaser";
 import { propagateOptOut } from "./lights";
 import { botTurn, type BotFacts } from "./bot";
 import { SIM_HTML } from "./sim";
@@ -525,5 +526,6 @@ export default {
     await sendQueuedReplies(env).catch(() => undefined); // bot replies held overnight
     await syncApprovals(env).catch(() => undefined);
     await runDailyBatch(env).catch(() => undefined);
+    await runDash(env).catch(() => undefined);
   },
 };

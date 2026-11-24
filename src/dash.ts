@@ -5,6 +5,7 @@ import { runPack } from "./testpack";
 import { LANES, ROADMAP, TOOLS } from "./roadmap";
 import { draftContent } from "./content";
 import { coachHistory, coachMerge, coachReview } from "./coach";
+import { DASH_CAMPAIGN, writeFollowUp } from "./chaser";
 import { runAgent } from "./agents";
 import { systemPrompt, type BotFacts } from "./bot";
 import { sb } from "./db";
@@ -63,7 +64,7 @@ const MATES = [
   { unit: "dunzo", team: "Sales", agent: "gus", emoji: "🧢", name: "Gus", role: "Promo Closer", state: "live", does: "Texts the winter cleaning offer, answers questions, works objections, gets the address and email, creates the Jobber quote and sends the link. Funny, quick and honest." },
   { unit: "dunzo", team: "Sales", emoji: "📸", name: "Flash", role: "Photos and Repairs", state: "live", does: "Asks for photos on repair requests, thanks customers when they arrive, moves a New Lead to Photos Received and alerts the team." },
   { unit: "dunzo", team: "Sales", emoji: "🤝", name: "Relay", role: "Hand off to the team", state: "live", does: "Passes anything it should not decide to a person, with an alert: windows pricing, angry customers, out of area, Lights interest." },
-  { unit: "dunzo", team: "Sales", emoji: "🏃", name: "Dash", role: "Quote Chaser", state: "planned", does: "A fresh follow up every morning on quotes that go quiet, stopping the moment they reply, approve, or say no." },
+  { unit: "dunzo", team: "Sales", agent: "dash", emoji: "🏃", name: "Dash", role: "Quote Chaser", state: "live", does: "Follows up with people who have gone quiet: one nudge to anyone who never answered the offer, and up to two to anyone sitting on a quote. Every message is fresh and adds something new. Stops the moment they reply, approve, or say no. Off until you switch him on in Settings, and his messages wait for your approval at first." },
   { unit: "dunzo", team: "Sales", emoji: "📅", name: "Cal", role: "Scheduler", state: "planned", does: "Books the job once the deposit is paid, using the Jobber calendar." },
   { unit: "dunzo", team: "Sales", emoji: "🏔️", name: "Summit", role: "Big job booker", state: "planned", does: "Qualifies large jobs and books Clark on site with a short briefing note." },
   { unit: "dunzo", team: "Marketing", agent: "scoop", kind: "newsletter", emoji: "📰", name: "Scoop", role: "Weekly newsletter", state: "external", does: "The weekly Dunzo Gutters newsletter is written by your own Claude on a schedule, so Scoop is not needed for that. Still here if you ever want a one off draft." },
@@ -336,6 +337,30 @@ export async function handleDash(req: Request, env: Env, url: URL): Promise<Resp
         inb.forEach((x) => replied.add(x.contact_id));
       }
       return json({ campaign: camp, rows: rows.map((r) => ({ ...r, replied: replied.has(r.contact_id) })) });
+    }
+
+    if (p === "/admin/dash/followups") {
+      const rows = await sb<unknown[]>(env, "GET", `messages?campaign=eq.${DASH_CAMPAIGN}&status=in.(pending_approval,approved,sent,skipped,failed)&order=created_at.desc&limit=60&select=id,contact_id,contact_name,phone_e164,body,status,segment,created_at,sent_at`);
+      return json({ rows });
+    }
+    if (p === "/admin/dash/followup-action" && req.method === "POST") {
+      const b = (await req.json()) as { id?: string; action?: string; body?: string };
+      if (!b.id) return json({ error: "id needed" }, 400);
+      if (b.action === "approve") {
+        const patch: Record<string, string> = { status: "approved" };
+        if (typeof b.body === "string" && b.body.trim()) patch.body = b.body.trim().slice(0, 320);
+        await sb(env, "PATCH", `messages?id=eq.${enc(b.id)}&campaign=eq.${DASH_CAMPAIGN}&status=eq.pending_approval`, patch, "return=minimal");
+        return json({ ok: true });
+      }
+      if (b.action === "skip") { await sb(env, "PATCH", `messages?id=eq.${enc(b.id)}&campaign=eq.${DASH_CAMPAIGN}&status=in.(pending_approval,approved)`, { status: "skipped" }, "return=minimal"); return json({ ok: true }); }
+      return json({ error: "unknown action" }, 400);
+    }
+    if (p === "/admin/dash/dash-sample" && req.method === "POST") {
+      const b = (await req.json()) as { instructions?: string; dials?: Dials };
+      const o = { instructions: (b.instructions ?? "").trim() || DEFAULTS.dash, dials: b.dials ?? {} };
+      const promo = await writeFollowUp(env, { kind: "promo", firstName: "Dave", nth: 1, history: ["US: Hi Dave, it's Dunzo Gutters. Before the rains: gutter cleaning is $219 for a single story home or $319 for two stories. Reply 1 or 2 and we'll text you a quote to approve and pay online."] }, o);
+      const quote = await writeFollowUp(env, { kind: "quote", firstName: "Dave", nth: 1, stories: 1, history: ["US: Hi Dave, it's Dunzo Gutters. Before the rains: gutter cleaning is $219 for a single story home or $319 for two stories.", "CUSTOMER: 1", "US: Single story, got it. Is the job at 12 Oak Ave?", "CUSTOMER: yes, my wife says the back gutter overflows", "US: Sorted, here's your quote: [link]"] }, o);
+      return json({ promo, quote });
     }
 
     if (p === "/admin/dash/roadmap") return json({ lanes: LANES, items: ROADMAP, tools: TOOLS });
