@@ -22,6 +22,7 @@ export interface Env {
   QUIET_START_HOUR: string;
   QUIET_END_HOUR: string;
   DAILY_CAP?: string;
+  START_ON?: string;
   BATCH_CAMPAIGN?: string;
   BATCH_MAX_PER_RUN?: string;
   CLAUDE_MODEL: string;

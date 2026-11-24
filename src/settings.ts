@@ -18,6 +18,7 @@ export const SETTINGS: SettingDef[] = [
   { key: "PHOTO_MODE", group: "Bot", label: "Photo handling", help: "Off, test, or live. Moves a lead to Photos Received when they send photos.", type: "select", options: ["off", "test", "live"] },
   { key: "SENDING_ENABLED", group: "Promo texts", label: "Send approved promo texts", help: "Lets the daily sender release texts you have approved. Nothing goes out unless this is on and a daily limit is set.", type: "toggle" },
   { key: "DAILY_CAP", group: "Promo texts", label: "Promo texts per day", help: "The most promo texts sent in one day, spread across the sending window. 0 means none.", type: "number" },
+  { key: "START_ON", group: "Promo texts", label: "Do not send before (date)", help: "Year, month, day, like 2026-11-25, in Pacific time. Promo texts wait until this date even if sending is on.", type: "text" },
   { key: "BATCH_CAMPAIGN", group: "Promo texts", label: "Campaign name", help: "Which campaign the daily sender releases. Leave as it is unless you made a new one.", type: "text" },
   { key: "WINDOW_START", group: "Hours", label: "Start texting at (hour, 0 to 23)", help: "Pacific time. 8 means 8am.", type: "number" },
   { key: "WINDOW_END", group: "Hours", label: "Stop texting at (hour, 0 to 23)", help: "Pacific time. 20 means 8pm.", type: "number" },
@@ -47,6 +48,7 @@ export function mergeSettings(env: Env, map: Record<string, string>): Env {
   set("SENDING_ENABLED", map.SENDING_ENABLED);
   set("DAILY_CAP", map.DAILY_CAP);
   set("BATCH_CAMPAIGN", map.BATCH_CAMPAIGN);
+  set("START_ON", map.START_ON);
   if (map.WINDOW_START !== undefined && map.WINDOW_START !== "") { o.QUIET_END_HOUR = map.WINDOW_START; o.BOT_START_HOUR = map.WINDOW_START; }
   if (map.WINDOW_END !== undefined && map.WINDOW_END !== "") { o.QUIET_START_HOUR = map.WINDOW_END; o.BOT_END_HOUR = map.WINDOW_END; }
   if (map.PAUSE_ALL === "true") { o.BOT_MODE = "off"; o.SENDING_ENABLED = "false"; }
@@ -69,6 +71,7 @@ export function effectiveValues(env: Env, map: Record<string, string>): Record<s
     SENDING_ENABLED: map.SENDING_ENABLED ?? e.SENDING_ENABLED ?? "false",
     DAILY_CAP: map.DAILY_CAP ?? e.DAILY_CAP ?? "0",
     BATCH_CAMPAIGN: map.BATCH_CAMPAIGN ?? e.BATCH_CAMPAIGN ?? "pilot-2",
+    START_ON: map.START_ON ?? e.START_ON ?? "",
     WINDOW_START: map.WINDOW_START ?? e.BOT_START_HOUR ?? "8",
     WINDOW_END: map.WINDOW_END ?? e.BOT_END_HOUR ?? "20",
   };

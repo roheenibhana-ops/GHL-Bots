@@ -2,6 +2,7 @@ import { sb } from "./db";
 import { addTags, credsFor, getContact, sendSms } from "./ghl";
 import { setStage } from "./stages";
 import { isSmsDnd } from "./safety";
+import { plainPunctuation } from "./bot";
 import type { Account, Env } from "./types";
 
 /** Milliseconds since midnight in Sacramento (Pacific time), including daylight saving. */
@@ -35,6 +36,9 @@ export async function runDailyBatch(env: Env): Promise<Record<string, unknown>> 
   if (!(cap > 0)) return { skipped: "DAILY_CAP is not set" };
   const campaign = env.BATCH_CAMPAIGN ?? "pilot-2";
   const now = new Date();
+  // Nothing goes out before the start date (Pacific), so sending can be switched on the night before.
+  const today = new Intl.DateTimeFormat("en-CA", { timeZone: "America/Los_Angeles" }).format(now);
+  if (env.START_ON && today < env.START_ON) return { skipped: `waiting for the start date ${env.START_ON}` };
   const ms = pacificMsSinceMidnight(now);
   const dayStart = new Date(now.getTime() - ms).toISOString();
   const enc = encodeURIComponent(campaign);
@@ -58,7 +62,9 @@ export async function runDailyBatch(env: Env): Promise<Record<string, unknown>> 
         result.skipped++;
         continue;
       }
-      await sendSms(creds, m.contact_id, m.body);
+      const text = plainPunctuation(m.body);
+      await sendSms(creds, m.contact_id, text);
+      if (text !== m.body) await sb(env, "PATCH", `messages?id=eq.${m.id}`, { body: text }, "return=minimal");
       await sb(env, "PATCH", `messages?id=eq.${m.id}`, { status: "sent", sent_at: new Date().toISOString() }, "return=minimal");
       if (env.BOT_TAG) await addTags(creds, m.contact_id, [env.BOT_TAG]).catch(() => undefined);
       await setStage(env, m.account, m.contact_id, "New Lead");
