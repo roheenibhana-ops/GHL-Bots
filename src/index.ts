@@ -225,11 +225,12 @@ export default {
     // POST { campaign, apply }. Without apply=true it only reports. Held drafts can't be approved; /admin/pilot/release undoes it.
     if (url.pathname === "/admin/pilot/check" && req.method === "POST") {
       if (!isAdmin(req, env)) return json({ error: "unauthorized" }, 401);
-      const b = (await req.json()) as { campaign?: string; apply?: boolean };
+      const b = (await req.json()) as { campaign?: string; apply?: boolean; limit?: number; offset?: number };
       const campaign = b.campaign ?? "pilot-1";
+      const lim = Math.min(Math.max(Number(b.limit ?? 80), 1), 500), off = Math.max(Number(b.offset ?? 0), 0);
       try {
         const msgs = await sb<{ id: string; account: string; contact_name: string | null; phone_e164: string }[]>(
-          env, "GET", `messages?campaign=eq.${encodeURIComponent(campaign)}&status=eq.pending_approval&select=id,account,contact_name,phone_e164&limit=500`);
+          env, "GET", `messages?campaign=eq.${encodeURIComponent(campaign)}&status=eq.pending_approval&select=id,account,contact_name,phone_e164&order=created_at.asc,id.asc&limit=${lim}&offset=${off}`);
         const phones = msgs.map((m) => m.phone_e164).filter(Boolean);
         const held: { id: string; name: string | null; jobber: string; quotes: string[]; jobs: number; recentJobs: number }[] = [];
         const heldIds = new Set<string>();
