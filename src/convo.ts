@@ -1,6 +1,7 @@
 import { botTurn, type BotFacts } from "./bot";
 import { sb } from "./db";
 import { addNote, addTags, credsFor, getContact, getPipelines, listOpportunities, moveOpportunity, opportunityStageId, sendSms, setDnd, setEmail, upsertByPhone } from "./ghl";
+import { isLightsReferral, propagateOptOut, referToLights } from "./lights";
 import { setStage } from "./stages";
 import { photoThanks, planPhotoMove } from "./photo";
 import { blockingNote, formatProfile, ghlNotes, ghlOpportunities, jobberHistory, OUR_NOTE_PREFIX } from "./profile";
@@ -86,6 +87,7 @@ export async function handleInbound(env: Env, p: InboundPayload, dryRun = false)
       await setDnd(creds, p.contactId);
       await addTags(creds, p.contactId, ["bot-opted-out"]);
       await sb(env, "POST", "optouts", { account, contact_id: p.contactId }, "resolution=ignore-duplicates,return=minimal");
+      await propagateOptOut(env, account, normalizePhone(p.phone));
       await sb(env, "POST", "conversations?on_conflict=contact_id", { contact_id: p.contactId, account, status: "closed", updated_at: new Date().toISOString() }, "resolution=merge-duplicates,return=minimal");
     }
     return { optedOut: true };
@@ -176,7 +178,14 @@ export async function handleInbound(env: Env, p: InboundPayload, dryRun = false)
   if (output.intent === "handoff") {
     await addTags(creds, p.contactId, ["bot-needs-human"]);
     await addNote(creds, p.contactId, `${OUR_NOTE_PREFIX}Handed this over. Reason: ${output.data.reason ?? "unclear"}. Their last message: "${body.slice(0, 200)}"`);
-    await alertTeam(env, `Bot needs a human: ${name}. "${body.slice(0, 120)}"`);
+    if (account === "dunzo" && isLightsReferral(output.data.reason)) {
+      const ph = normalizePhone(contact.phone ?? p.phone);
+      const ref = ph ? await referToLights(env, { phone: ph, firstName: contact.firstName, lastName: contact.lastName, email: next.email ?? contact.email, address: next.address ? [next.address.street1, next.address.city].filter(Boolean).join(", ") : undefined, lastMessage: body }) : { referred: false, reason: "no phone number" };
+      await addNote(creds, p.contactId, `${OUR_NOTE_PREFIX}Lights referral: ${ref.reason}.`);
+      await alertTeam(env, ref.referred ? `Lights lead from Dunzo: ${name}. Added to Santa's Lights, please follow up from the Lights number.` : `Lights interest from ${name} but not added: ${ref.reason}.`);
+    } else {
+      await alertTeam(env, `Bot needs a human: ${name}. "${body.slice(0, 120)}"`);
+    }
   } else if (output.intent === "repair") {
     await addTags(creds, p.contactId, ["bot-needs-human", "needs-repair-quote"]);
     await addNote(creds, p.contactId, `${OUR_NOTE_PREFIX}Repair request. Asked for photos. Their message: "${body.slice(0, 200)}"`);

@@ -14,3 +14,13 @@ describe("Santa's Lights knowledge", () => {
     expect(disallowedPrices("I can do your house for $1,350")).toEqual(["$1,350"]);
   });
 });
+
+import { isLightsReferral } from "../src/lights";
+describe("lights referral detection", () => {
+  it("recognises a Lights handoff reason", () => {
+    expect(isLightsReferral("lights interest")).toBe(true);
+    expect(isLightsReferral("Wants Christmas lights quote")).toBe(true);
+    expect(isLightsReferral("angry customer")).toBe(false);
+    expect(isLightsReferral(undefined)).toBe(false);
+  });
+});

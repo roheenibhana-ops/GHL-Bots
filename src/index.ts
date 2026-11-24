@@ -2,11 +2,12 @@ import { APP_HTML } from "./app";
 import { DASH_HTML } from "./dashboard";
 import { handleDash } from "./dash";
 import { applySettings } from "./settings";
+import { propagateOptOut } from "./lights";
 import { botTurn, type BotFacts } from "./bot";
 import { SIM_HTML } from "./sim";
 import { AGENTS, runAgent } from "./agents";
 import { sb } from "./db";
-import { addNote, addTags, conversationMessages, credsFor, searchConversations, searchContacts, sendSms, setDnd, upsertByPhone } from "./ghl";
+import { addNote, addTags, conversationMessages, credsFor, getContact, searchConversations, searchContacts, sendSms, setDnd, upsertByPhone } from "./ghl";
 import { authorizeUrl, checkState, describeType, exchangeCode, describeField, findClientsByPhones, gql, listClientPhones, listMutations, listQuoteTemplates, makeState } from "./jobber";
 import { assess } from "./check";
 import { handleInbound, sendQueuedReplies, type InboundPayload } from "./convo";
@@ -175,6 +176,8 @@ export default {
         await setDnd(creds, p.contactId);
         await addTags(creds, p.contactId, ["bot-opted-out"]);
         await sb(env, "POST", "optouts", { account, contact_id: p.contactId }, "resolution=ignore-duplicates");
+        const who = await getContact(creds, p.contactId).catch(() => null);
+        await propagateOptOut(env, account, normalizePhone(who?.phone));
         return json({ ok: true, optedOut: true });
       }
 

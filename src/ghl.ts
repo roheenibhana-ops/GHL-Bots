@@ -73,6 +73,10 @@ export async function getContact(c: GhlCreds, contactId: string): Promise<GhlCon
   return r.contact;
 }
 
+export async function updateContact(c: GhlCreds, contactId: string, fields: Record<string, string>): Promise<unknown> {
+  return call(c, "PUT", `/contacts/${contactId}`, fields);
+}
+
 export async function setEmail(c: GhlCreds, contactId: string, email: string): Promise<unknown> {
   return call(c, "PUT", `/contacts/${contactId}`, { email });
 }
