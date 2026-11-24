@@ -238,7 +238,7 @@ export default {
             const a = assess(found.get(m.phone_e164) ?? [], m.phone_e164);
             // Open quotes always hold. Dunzo-sourced campaigns also hold unfinished jobs and jobs completed in the last 90 days;
             // past (older) jobs are exactly who we want to reach. A Santa's Lights contact who is already a Dunzo customer is held on any job.
-            const hold = account === "dunzo" && m.account === "lights" ? a.openQuotes > 0 || a.jobs > 0 : account === "dunzo" ? a.openQuotes > 0 || a.recentJobs > 0 : a.openQuotes > 0;
+            const hold = account === "dunzo" && m.account === "lights" ? a.openQuotes > 0 || a.jobs > 0 : account === "dunzo" ? a.openQuotes > 0 || a.recentJobs > 0 || a.cleaningQuotes > 0 : a.openQuotes > 0;
             if (a.found && hold) { held.push({ id: m.id, name: m.contact_name, jobber: account, quotes: a.quoteStatuses, jobs: a.jobs, recentJobs: a.recentJobs }); heldIds.add(m.id); }
           }
         }

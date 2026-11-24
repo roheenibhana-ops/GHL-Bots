@@ -4,7 +4,7 @@ export interface JClient {
   id: string;
   name: string;
   phones: { number: string; normalizedPhoneNumber?: string | null }[];
-  quotes: { nodes: { quoteStatus: string; sentAt?: string | null; createdAt?: string | null }[] };
+  quotes: { nodes: { quoteStatus: string; sentAt?: string | null; createdAt?: string | null; title?: string | null }[] };
   jobs: { totalCount: number; nodes?: { jobStatus: string; completedAt: string | null }[] };
 }
 
@@ -28,10 +28,20 @@ export const RECENT_JOB_DAYS = 90;
 /** Jobs that should hold a campaign message: not finished yet, or finished within the last RECENT_JOB_DAYS days. Archived jobs don't count. */
 export function recentOrActiveJobs(c: JClient, now = Date.now()): number {
   return (c.jobs.nodes ?? []).filter((j) => {
-    if (j.jobStatus === "archived") return false;
-    if (!j.completedAt) return true;
-    return now - new Date(j.completedAt).getTime() <= RECENT_JOB_DAYS * 86_400_000;
+    // Jobber marks a finished, closed job as archived, so the completion date decides, not the status.
+    if (j.completedAt) return now - new Date(j.completedAt).getTime() <= RECENT_JOB_DAYS * 86_400_000;
+    return j.jobStatus !== "archived";
   }).length;
+}
+
+/** A quote for a cleaning that already exists in Jobber: still open, or approved or turned into a job in the last RECENT_JOB_DAYS days. */
+export function isCleaningQuote(q: { quoteStatus: string; sentAt?: string | null; createdAt?: string | null; title?: string | null }, now = Date.now()): boolean {
+  if (!/clean/i.test(q.title ?? "")) return false;
+  if (q.quoteStatus === "archived") return false;
+  if (isActiveQuote(q, now)) return true;
+  const when = q.sentAt ?? q.createdAt;
+  if (!when) return true;
+  return now - new Date(when).getTime() <= RECENT_JOB_DAYS * 86_400_000;
 }
 
 export function assess(clients: JClient[], targetE164: string, now = Date.now()) {
@@ -42,6 +52,7 @@ export function assess(clients: JClient[], targetE164: string, now = Date.now())
     found: matches.length > 0,
     clients: matches.length,
     openQuotes: quotes.filter((q) => isActiveQuote(q, now)).length,
+    cleaningQuotes: quotes.filter((q) => isCleaningQuote(q, now)).length,
     staleQuotes: quotes.filter((q) => OPEN_QUOTE_STATUSES.includes(q.quoteStatus) && !isActiveQuote(q, now)).length,
     quoteStatuses: statuses,
     jobs: matches.reduce((n, c) => n + c.jobs.totalCount, 0),

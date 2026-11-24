@@ -168,7 +168,7 @@ export async function findClientsByPhones(env: Env, account: Account, phonesE164
     const decl = batch.map((_, k) => `$p${k}: String`).join(", ");
     const body = batch.map((p, k) => {
       vars[`p${k}`] = p.replace(/^\+1/, "");
-      return `c${k}: clients(searchTerm: $p${k}, searchFields: [PHONES], first: 5) { nodes { id name phones { number normalizedPhoneNumber } quotes(first: 20) { nodes { quoteStatus sentAt createdAt } } jobs(first: 10) { totalCount nodes { jobStatus completedAt } } } }`;
+      return `c${k}: clients(searchTerm: $p${k}, searchFields: [PHONES], first: 5) { nodes { id name phones { number normalizedPhoneNumber } quotes(first: 20) { nodes { quoteStatus sentAt createdAt title } } jobs(first: 10) { totalCount nodes { jobStatus completedAt } } } }`;
     }).join("\n");
     const d = await gql<Record<string, { nodes: JClient[] }>>(env, account, `query(${decl}) { ${body} }`, vars);
     batch.forEach((p, k) => out.set(p, d[`c${k}`]?.nodes ?? []));

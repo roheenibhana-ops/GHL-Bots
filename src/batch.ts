@@ -1,7 +1,9 @@
 import { sb } from "./db";
 import { addTags, credsFor, getContact, sendSms, updateContact } from "./ghl";
 import { setStage } from "./stages";
-import { isSmsDnd } from "./safety";
+import { isSmsDnd, normalizePhone } from "./safety";
+import { assess } from "./check";
+import { findClientsByPhones } from "./jobber";
 import { plainPunctuation } from "./bot";
 import type { Account, Env } from "./types";
 
@@ -48,7 +50,7 @@ export async function runDailyBatch(env: Env): Promise<Record<string, unknown>> 
   if (n === 0) return { skipped: "nothing due this run", sentToday, cap };
 
   const rows = await sb<Row[]>(env, "GET", `messages?campaign=eq.${enc}&status=eq.approved&order=created_at.asc&limit=${n}&select=id,account,contact_id,body`);
-  const result = { sent: 0, skipped: 0, failed: 0, sentToday, cap };
+  const result = { sent: 0, skipped: 0, held: 0, failed: 0, sentToday, cap };
   for (const m of rows) {
     // Claim first: only one run can ever send a given message.
     const claimed = await sb<{ id: string }[]>(env, "PATCH", `messages?id=eq.${m.id}&status=eq.approved`, { status: "sending" }, "return=representation");
@@ -61,6 +63,17 @@ export async function runDailyBatch(env: Env): Promise<Record<string, unknown>> 
         await sb(env, "PATCH", `messages?id=eq.${m.id}`, { status: "skipped" }, "return=minimal");
         result.skipped++;
         continue;
+      }
+      // Always look in Jobber right before sending: no promo to someone with an open quote, an existing cleaning quote, or a recent or unfinished job.
+      const phone = normalizePhone(c.phone);
+      if (m.account === "dunzo" && phone) {
+        const found = await findClientsByPhones(env, "dunzo", [phone]);
+        const a = assess(found.get(phone) ?? [], phone);
+        if (a.found && (a.openQuotes > 0 || a.cleaningQuotes > 0 || a.recentJobs > 0)) {
+          await sb(env, "PATCH", `messages?id=eq.${m.id}`, { status: "held" }, "return=minimal");
+          result.held++;
+          continue;
+        }
       }
       const text = plainPunctuation(m.body);
       await sendSms(creds, m.contact_id, text);

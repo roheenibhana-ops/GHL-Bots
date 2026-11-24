@@ -57,3 +57,20 @@ describe("isActiveQuote", () => {
     expect(assess([c as never], "+19165550123", now)).toMatchObject({ openQuotes: 0, staleQuotes: 1 });
   });
 });
+
+import { isCleaningQuote } from "../src/check";
+describe("recent customers and cleaning quotes hold a promo", () => {
+  const now = new Date("2026-11-24T16:00:00Z").getTime();
+  const c = (jobs: { jobStatus: string; completedAt: string | null }[]): JClient => ({ id: "1", name: "x", phones: [], quotes: { nodes: [] }, jobs: { totalCount: jobs.length, nodes: jobs } });
+  it("a job finished two weeks ago holds even though Jobber marks it archived", () => {
+    expect(recentOrActiveJobs(c([{ jobStatus: "archived", completedAt: "2026-11-09T20:00:00Z" }]), now)).toBe(1);
+    expect(recentOrActiveJobs(c([{ jobStatus: "archived", completedAt: "2026-03-01T00:00:00Z" }]), now)).toBe(0);
+  });
+  it("an existing cleaning quote holds, an old or archived one does not", () => {
+    expect(isCleaningQuote({ quoteStatus: "awaiting_response", title: "Gutter Cleaning - One time", sentAt: "2026-11-20T00:00:00Z" }, now)).toBe(true);
+    expect(isCleaningQuote({ quoteStatus: "converted", title: "Gutter cleaning", createdAt: "2026-10-30T00:00:00Z" }, now)).toBe(true);
+    expect(isCleaningQuote({ quoteStatus: "archived", title: "Gutter Cleaning", createdAt: "2026-11-20T00:00:00Z" }, now)).toBe(false);
+    expect(isCleaningQuote({ quoteStatus: "converted", title: "Gutter cleaning", createdAt: "2026-01-10T00:00:00Z" }, now)).toBe(false);
+    expect(isCleaningQuote({ quoteStatus: "awaiting_response", title: "Seamless gutters", sentAt: "2026-11-20T00:00:00Z" }, now)).toBe(false);
+  });
+});
