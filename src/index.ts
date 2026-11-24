@@ -7,7 +7,7 @@ import { botTurn, type BotFacts } from "./bot";
 import { SIM_HTML } from "./sim";
 import { AGENTS, runAgent } from "./agents";
 import { sb } from "./db";
-import { addNote, addTags, conversationMessages, credsFor, getContact, searchConversations, searchContacts, sendSms, setDnd, upsertByPhone } from "./ghl";
+import { addNote, addTags, conversationMessages, credsFor, getContact, removeTags, searchConversations, searchContacts, sendSms, setDnd, upsertByPhone } from "./ghl";
 import { authorizeUrl, checkState, describeType, exchangeCode, describeField, findClientsByPhones, gql, listClientPhones, listMutations, listQuoteTemplates, makeState } from "./jobber";
 import { assess } from "./check";
 import { handleInbound, sendQueuedReplies, type InboundPayload } from "./convo";
@@ -272,13 +272,20 @@ export default {
     // Test the Dunzo to Lights referral on a contact tagged bot-test. Adds them to the Lights account with tags and a note. Sends no text.
     if (url.pathname === "/admin/lights/test-referral" && req.method === "POST") {
       if (!isAdmin(req, env)) return json({ error: "unauthorized" }, 401);
-      const { contactId } = (await req.json()) as { contactId?: string };
+      const { contactId, cleanup } = (await req.json()) as { contactId?: string; cleanup?: boolean };
       if (!contactId) return json({ error: "contactId needed" }, 400);
       try {
         const dz = await getContact(credsFor(env, "dunzo"), contactId);
         if (!(dz.tags ?? []).some((t) => t.toLowerCase() === "bot-test")) return json({ error: "Only a contact tagged bot-test can be used for this test" }, 403);
         const ph = normalizePhone(dz.phone);
         if (!ph) return json({ error: "That contact has no valid phone" }, 400);
+        if (cleanup) {
+          const lc = credsFor(env, "lights");
+          const { contact } = await upsertByPhone(lc, ph);
+          await removeTags(lc, contact.id, ["dunzo-referral", "lights interest"]);
+          const after = await getContact(lc, contact.id);
+          return json({ cleaned: true, tagsNow: after.tags ?? [] });
+        }
         const { referToLights } = await import("./lights");
         const ref = await referToLights(env, { phone: ph, firstName: dz.firstName, lastName: dz.lastName, email: dz.email, lastMessage: "TEST: do you do christmas lights too?" });
         let lights: unknown = null;
