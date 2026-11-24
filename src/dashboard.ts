@@ -43,7 +43,8 @@ a.nav{text-decoration:none}
 .oc{display:flex;flex-direction:column;align-items:center;margin-top:12px;padding:26px 18px;overflow-x:auto}
 .onode{display:flex;gap:10px;align-items:center;padding:7px 11px 7px 7px;border:1px solid var(--line);border-radius:14px;background:var(--panel);cursor:pointer;transition:transform .12s,box-shadow .12s,border-color .12s;min-width:0}
 .onode:hover{transform:translateY(-2px);box-shadow:var(--shadow);border-color:var(--brand)}.onode:hover .avl{transform:rotate(-4deg) scale(1.08)}
-.otag{flex:none;font-size:11px;padding:2px 8px;white-space:nowrap}
+.otag{display:inline-block;font-size:10.5px;padding:1px 8px;white-space:nowrap;margin-top:4px}
+.onode.big .otag{font-size:12px}.oc-key .otag{margin-top:0}
 .onode .nm{font-size:14px;line-height:1.2}.onode .sub2{font-size:12px;line-height:1.25}.onode .sdot{flex:none}
 .onode.big{padding:12px 18px 12px 12px;border:2px solid var(--brand);box-shadow:var(--shadow)}.onode.big .nm{font-size:17px}.onode.big .sub2{font-size:13.5px}
 .oc-branch{display:grid;grid-template-columns:1fr 1fr;gap:18px;width:100%;position:relative;padding-top:24px;margin-top:24px}
@@ -398,7 +399,7 @@ function mateCard(m){var c=el('div','mcard'+(m.state==='live'?' live':''),null,[
  c.title=m.does;c.onclick=function(){studioKey=m.agent||('profile:'+m.name);studioMeta=m;render()};return c}
 var AVIEW='org';try{AVIEW=localStorage.getItem('aview')||'org'}catch(e){}
 function onode(m,big){var st=m.state==='live'?'ok':m.state==='external'?'run':'plan';
- var n=el('div','onode'+(big?' big':''),null,[avatar(m,big?58:42),el('div','grow',null,[el('div','nm',m.name),el('div','sub2',m.role)]),el('span','tag otag '+(m.state==='live'?'g':m.state==='external'?'b':'o'),m.state==='live'?'Live':m.state==='external'?'Your Claude':'Soon')]);
+ var n=el('div','onode'+(big?' big':''),null,[avatar(m,big?58:42),el('div','grow',null,[el('div','nm',m.name,[]),el('div','sub2',m.role),el('span','tag otag '+(m.state==='live'?'g':m.state==='external'?'b':'o'),m.state==='live'?'Live':m.state==='external'?'Your Claude':'Soon')])]);
  n.title=(m.state==='live'?'Live. ':m.state==='external'?'Handled by your own Claude setup. ':'Planned. ')+m.does;n.onclick=function(){studioKey=m.agent||('profile:'+m.name);studioMeta=m;render()};return n}
 function orgTeam(title,list){var col=el('div','oc-col');col.appendChild(el('div','oc-pill',title+' · '+list.length));var ul=el('div','oc-list');list.forEach(function(m){var it=el('div','oc-item');it.appendChild(onode(m));ul.appendChild(it)});col.appendChild(ul);return col}
 function orgCompany(title,sub,list){var col=el('div','oc-col');col.appendChild(el('div','oc-co',null,[el('b',null,title),el('div','sub2',sub)]));
