@@ -6,3 +6,6 @@ create table if not exists settings (
 );
 
 alter table settings enable row level security;
+
+-- Newer Supabase projects need this so the Worker (service_role) can use the table.
+grant all on table public.settings to service_role;
