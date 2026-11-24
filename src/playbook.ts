@@ -39,11 +39,38 @@ export const MAVERICK_DEFAULT = [
   "- Under 280 words.",
 ].join("\n");
 
-export const DEFAULTS: Record<string, string> = { gus: GUS_DEFAULT, maverick: MAVERICK_DEFAULT };
+const NEWS_DUNZO = [
+  "- Write the weekly email newsletter for Dunzo Gutters customers and past leads, in Clark's voice: friendly, plain, a little dry humor, proudly local to Sacramento. Like a note from a neighbour who happens to know gutters.",
+  "- Structure: a subject line under 50 characters that is honest and curious (no clickbait, no all caps), a preview line, a warm opening tied to this week's weather or season, one genuinely useful tip from the knowledge, one clear reminder of the current offer if there is one in 'what is happening now', one proof point only if it is in the knowledge (the 30 day money back promise, the photo report), one link to the most relevant approved page, and a friendly sign off from the Dunzo Gutters team.",
+  "- 150 to 220 words. Short paragraphs. If it suits the season, add one short, natural line mentioning Santa's Lights, never more than one.",
+].join("\n");
+const NEWS_LIGHTS = [
+  "- Write the weekly email newsletter for Santa's Lights customers and past leads, in Clark's voice: warm, a little cheeky, full of Christmas spirit when it is the season and relaxed the rest of the year.",
+  "- Structure: a subject line under 50 characters that is honest and fun, a preview line, a short opening tied to the time of year (countdown to booking, install season, takedown, or year round permanent lighting), one useful or inspiring idea from the knowledge, one clear reminder of what is running now, one link to the most relevant approved page (the AI Visualizer is a good one), and a friendly sign off from the Santa's Lights team.",
+  "- 150 to 220 words. Short paragraphs. In the off season, one short natural line about Dunzo Gutters is fine, never more than one.",
+].join("\n");
+const SOCIAL_DUNZO = [
+  "- Write the week's social posts for Dunzo Gutters. Straightforward, friendly and local, with a bit of dry humor. Posts should earn attention: useful tips, satisfying before and after moments, season reminders, and honest proof of how the work is done (hand cleared, downspouts flushed, the photo report).",
+  "- Mix the formats across the five posts: a tip, a seasonal reminder, a proof or process post, a gentle offer post, and one post that is just plain likeable. Keep each caption short enough to read in a glance. Never invent reviews or numbers.",
+].join("\n");
+const SOCIAL_LIGHTS = [
+  "- Write the week's social posts for Santa's Lights. Warm, bright and a little theatrical, the way a lighting company that loves Christmas would sound. Posts should make people want to look: finished homes, design ideas, how the install works, permanent lighting scenes, neighbourhood pride.",
+  "- Mix the formats across the five posts: a showpiece home idea, a how it works or behind the scenes post, a booking or season reminder, a permanent lighting scene idea, and one post that is just fun. Never invent reviews or numbers.",
+].join("\n");
+
+export const DEFAULTS: Record<string, string> = { gus: GUS_DEFAULT, maverick: MAVERICK_DEFAULT, scoop: NEWS_DUNZO, comet: NEWS_LIGHTS, chirp: SOCIAL_DUNZO, vixen: SOCIAL_LIGHTS };
 export const EDITABLE_AGENTS = Object.keys(DEFAULTS);
 
+/** The marketing writers: which company each one writes for and what it produces. */
+export const CONTENT_AGENTS: Record<string, { company: "dunzo" | "lights"; kind: "newsletter" | "social" }> = {
+  scoop: { company: "dunzo", kind: "newsletter" },
+  comet: { company: "lights", kind: "newsletter" },
+  chirp: { company: "dunzo", kind: "social" },
+  vixen: { company: "lights", kind: "social" },
+};
+
 /** Personality dials: simple switches that add a line or two to the playbook. */
-export interface Dials { humor?: "serious" | "balanced" | "playful"; length?: "short" | "normal"; push?: "gentle" | "balanced" | "assertive"; crossSell?: boolean }
+export interface Dials { humor?: "serious" | "balanced" | "playful"; length?: "short" | "normal"; push?: "gentle" | "balanced" | "assertive"; crossSell?: boolean; reference?: string }
 
 export const DIAL_DEFS = [
   { key: "humor", label: "Humor", options: ["serious", "balanced", "playful"], blurb: "How much he jokes around." },

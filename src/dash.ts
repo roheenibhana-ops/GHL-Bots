@@ -2,6 +2,7 @@ import { pacificMsSinceMidnight } from "./batch";
 import { directorReport } from "./director";
 import { clearAgentCache, DEFAULTS, DIAL_DEFS, EDITABLE_AGENTS, loadAgent, type Dials } from "./playbook";
 import { runPack } from "./testpack";
+import { draftContent } from "./content";
 import { runAgent } from "./agents";
 import { systemPrompt, type BotFacts } from "./bot";
 import { sb } from "./db";
@@ -55,19 +56,28 @@ export function buildInbox(convs: Conv[], msgs: Msg[]): InboxRow[] {
 }
 
 const MATES = [
-  { unit: "director", agent: "maverick", emoji: "🦅", name: "Maverick", role: "Marketing Director", state: "live", does: "Sees the whole picture across both companies. Reads the week's numbers, tells Clark what is working and what is not, and sets the plan: which campaigns to run, when to cross sell, what to try next. Anything that spends money or goes out to many people waits for your approval." },
+  { unit: "director", agent: "maverick", emoji: "🦅", name: "Maverick", role: "Marketing Director", state: "live", does: "Heads the whole marketing and sales department across both companies. Reads the week's numbers, tells Clark what is working and what is not, and sets the plan: which campaigns to run, when to cross sell, what each writer should focus on. Anything that spends money or goes out to many people waits for your approval." },
   { unit: "dunzo", team: "Sales", agent: "gus", emoji: "🧢", name: "Gus", role: "Promo Closer", state: "live", does: "Texts the winter cleaning offer, answers questions, works objections, gets the address and email, creates the Jobber quote and sends the link. Funny, quick and honest." },
   { unit: "dunzo", team: "Sales", emoji: "📸", name: "Flash", role: "Photos and Repairs", state: "live", does: "Asks for photos on repair requests, thanks customers when they arrive, moves a New Lead to Photos Received and alerts the team." },
   { unit: "dunzo", team: "Sales", emoji: "🤝", name: "Relay", role: "Hand off to the team", state: "live", does: "Passes anything it should not decide to a person, with an alert: windows pricing, angry customers, out of area, Lights interest." },
-  { unit: "dunzo", team: "Sales", emoji: "🏃", name: "Dash", role: "Quote Chaser", state: "planned", does: "A fresh follow up every morning on quotes that go quiet, stopping the moment they reply, approve, or say no." },
-  { unit: "dunzo", team: "Sales", emoji: "📅", name: "Cal", role: "Scheduler", state: "planned", does: "Books the job once the deposit is paid, using the Jobber calendar." },
+  { unit: "dunzo", team: "Sales", emoji: "🏃", name: "Dash", role: "Quote Chaser (both companies)", state: "planned", does: "A fresh follow up every morning on quotes that go quiet, stopping the moment they reply, approve, or say no." },
+  { unit: "dunzo", team: "Sales", emoji: "📅", name: "Cal", role: "Scheduler (both companies)", state: "planned", does: "Books the job once the deposit is paid, using the Jobber calendar." },
   { unit: "dunzo", team: "Sales", emoji: "🏔️", name: "Summit", role: "Big job booker", state: "planned", does: "Qualifies large jobs and books Clark on site with a short briefing note." },
-  { unit: "dunzo", team: "Marketing", emoji: "☀️", name: "Sunny", role: "After the job", state: "planned", does: "Thank you, review request and the 6 month rebooking reminder." },
+  { unit: "dunzo", team: "Marketing", agent: "scoop", kind: "newsletter", emoji: "📰", name: "Scoop", role: "Weekly newsletter", state: "live", does: "Writes the weekly Dunzo Gutters newsletter: a timely opening, one useful tip, the current offer, one approved link. Drafts only, you approve and send." },
+  { unit: "dunzo", team: "Marketing", agent: "chirp", kind: "social", emoji: "🐦", name: "Chirp", role: "Social posts", state: "live", does: "Writes the week's Facebook and Instagram posts for Dunzo, with photo ideas and local hashtags. Drafts only." },
+  { unit: "dunzo", team: "Marketing", emoji: "☀️", name: "Sunny", role: "Reviews and referrals", state: "planned", does: "After the job: a thank you, the review request, the referral ask, and the 6 month rebooking reminder." },
   { unit: "dunzo", team: "Marketing", emoji: "⛈️", name: "Stormy", role: "Seasonal campaigns", state: "planned", does: "Storm season, leaf drop and spring campaigns to past customers and old leads." },
-  { unit: "lights", team: "Sales", emoji: "🎄", name: "Tinsel", role: "Lights Sales and Design", state: "planned", does: "Christmas lighting enquiries, design, take off, quotes and follow up." },
-  { unit: "lights", team: "Sales", emoji: "💡", name: "Pixel", role: "Permanent lighting", state: "planned", does: "Year round permanent lighting leads, scenes and pricing questions." },
-  { unit: "lights", team: "Marketing", emoji: "❄️", name: "Frosty", role: "Seasonal campaigns", state: "planned", does: "Early bird and last chance Christmas campaigns, plus holiday scenes through the year." },
-  { unit: "lights", team: "Marketing", emoji: "📷", name: "Snap", role: "Gallery and social", state: "planned", does: "Turns finished jobs into posts and gallery updates." },
+  { unit: "dunzo", team: "Marketing", emoji: "🔦", name: "Beacon", role: "Ads and local SEO", state: "planned", does: "Google and Facebook ad ideas, blog posts and local search content for Dunzo, built from the same approved knowledge." },
+  { unit: "dunzo", team: "Marketing", emoji: "📷", name: "Snap", role: "Gallery and content", state: "planned", does: "Turns finished gutter jobs into before and after galleries, photos and video ideas." },
+  { unit: "lights", team: "Sales", emoji: "🔴", name: "Rudolph", role: "Lights Sales and Design", state: "planned", does: "The lead rep. Christmas lighting enquiries, design, take off, quotes and follow up." },
+  { unit: "lights", team: "Sales", emoji: "💨", name: "Dasher", role: "Permanent lighting", state: "planned", does: "Year round permanent lighting leads, scenes and pricing questions." },
+  { unit: "lights", team: "Sales", emoji: "💃", name: "Dancer", role: "Commercial and events", state: "planned", does: "HOA, commercial, bistro and event lighting enquiries." },
+  { unit: "lights", team: "Marketing", agent: "comet", kind: "newsletter", emoji: "☄️", name: "Comet", role: "Weekly newsletter", state: "live", does: "Writes the weekly Santa's Lights newsletter, timed to the season: booking, install, takedown, or permanent lighting. Drafts only." },
+  { unit: "lights", team: "Marketing", agent: "vixen", kind: "social", emoji: "🦊", name: "Vixen", role: "Social posts", state: "live", does: "Writes the week's Facebook and Instagram posts for Santa's Lights, with photo ideas and hashtags. Drafts only." },
+  { unit: "lights", team: "Marketing", emoji: "✨", name: "Prancer", role: "Seasonal campaigns", state: "planned", does: "Early bird and last chance Christmas campaigns, plus holiday scenes through the year." },
+  { unit: "lights", team: "Marketing", emoji: "💘", name: "Cupid", role: "Reviews and referrals", state: "planned", does: "Asks happy customers for reviews and referrals." },
+  { unit: "lights", team: "Marketing", emoji: "⚡", name: "Donner", role: "Ads and local SEO", state: "planned", does: "Google and Facebook ad ideas and local search content for Santa's Lights." },
+  { unit: "lights", team: "Marketing", emoji: "🌩️", name: "Blitzen", role: "Gallery and content", state: "planned", does: "Turns finished jobs into gallery entries, photos and video ideas." },
   { unit: "shared", emoji: "🐘", name: "Memo", role: "Customer memory", state: "live", does: "One record of every customer across both companies: history, notes, quotes, what they were offered. Never forgets." },
   { unit: "shared", emoji: "🛡️", name: "Sheriff", role: "Compliance", state: "live", does: "Opt outs, send hours, no double texting, quiet hours and alerts. Applies to everything every agent does, and nobody can talk it out of it." },
   { unit: "shared", emoji: "📊", name: "Tally", role: "Reporting", state: "live", does: "The numbers on the Overview and Results pages." },
@@ -228,7 +238,9 @@ export async function handleDash(req: Request, env: Env, url: URL): Promise<Resp
       const text = (b.instructions ?? "").trim();
       if (text.length < 40 || text.length > 24000) return json({ error: "The instructions must be between 40 and 24000 characters" }, 400);
       const [existing] = await sb<AgentRow[]>(env, "GET", `agent_versions?agent=eq.${enc(key)}&status=eq.draft&select=id&limit=1`);
-      const body = { agent: key, status: "draft", instructions: text, dials: b.dials ?? {}, note: (b.note ?? "").slice(0, 200) };
+      const dialsIn = { ...(b.dials ?? {}) } as Dials;
+      if (dialsIn.reference) dialsIn.reference = dialsIn.reference.slice(0, 12000);
+      const body = { agent: key, status: "draft", instructions: text, dials: dialsIn, note: (b.note ?? "").slice(0, 200) };
       if (existing) await sb(env, "PATCH", `agent_versions?id=eq.${existing.id}`, { ...body, created_at: new Date().toISOString() }, "return=minimal");
       else await sb(env, "POST", "agent_versions", body, "return=minimal");
       // Read it back: only say saved if the database really holds it.
@@ -267,6 +279,13 @@ export async function handleDash(req: Request, env: Env, url: URL): Promise<Resp
       const live = await loadAgent(env, "gus", true);
       const draft = { instructions: (b.instructions ?? "").trim() || live.instructions, dials: b.dials ?? {} };
       return json({ results: await runPack(env, { instructions: live.instructions, dials: live.dials }, draft) });
+    }
+
+    if (p === "/admin/dash/content-draft" && req.method === "POST") {
+      const b = (await req.json()) as { agent?: string; instructions?: string; dials?: Dials };
+      const key = b.agent ?? "";
+      const base = await loadAgent(env, key);
+      return json(await draftContent(env, key, { instructions: (b.instructions ?? "").trim() || base.instructions, dials: b.dials ?? base.dials }));
     }
 
     if (p === "/admin/dash/agent-sample" && req.method === "POST") {
