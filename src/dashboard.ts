@@ -38,7 +38,7 @@ a.nav{text-decoration:none}
 .top-card{text-align:center;border:2px solid var(--brand)}.top-card .av{margin:0 auto 8px;width:46px;height:46px}
 .stem{width:2px;height:22px;background:var(--line);margin:-6px auto 0}
 .team{font-size:12px;font-weight:700;color:var(--mute);text-transform:uppercase;letter-spacing:.05em;margin:14px 0 2px}
-.dim{opacity:.4}
+.dim{opacity:1}
 .mono{width:42px;height:42px;border-radius:12px;color:#fff;display:grid;place-items:center;font-weight:800;font-size:17px;flex:none;box-shadow:inset 0 -3px 0 rgba(0,0,0,.18),0 2px 6px rgba(0,0,0,.15)}
 .sst{display:inline-flex;align-items:center;gap:6px;font-size:12px;font-weight:650;color:var(--mute);white-space:nowrap}.sdot{width:9px;height:9px;border-radius:50%;background:var(--mute)}
 .sdot.ok{background:var(--brand);box-shadow:0 0 0 3px var(--brand2)}.sdot.bad{background:var(--bad);box-shadow:0 0 0 3px var(--bad2)}.sdot.run{background:var(--blue)}.sdot.plan{background:var(--warn)}
@@ -57,7 +57,7 @@ a.nav{text-decoration:none}
 .avl{width:64px;height:64px;border-radius:18px;display:grid;place-items:center;font-size:24px;flex:none;filter:drop-shadow(0 4px 7px rgba(0,0,0,.22));transition:transform .18s}.avl svg{display:block}
 .mcard:hover .avl,.top-card:hover .avl{transform:translateY(-3px) rotate(-4deg) scale(1.08)}
 .mgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(230px,1fr));gap:10px;margin-top:6px}
-.mcard{display:flex;gap:11px;align-items:center;padding:11px 12px;border:1px solid var(--line);border-radius:14px;background:var(--bg);cursor:pointer;transition:transform .12s,box-shadow .12s,border-color .12s}
+.mcard{display:flex;gap:11px;align-items:center;padding:11px 12px;border:1px solid var(--line);border-radius:14px;background:var(--panel);cursor:pointer;transition:transform .12s,box-shadow .12s,border-color .12s}
 .mcard:hover{transform:translateY(-2px);box-shadow:var(--shadow);border-color:var(--brand)}.mcard.live{background:var(--panel)}
 .sub2{color:var(--mute);font-size:13px}.hov{transition:box-shadow .12s}.hov:hover{box-shadow:0 8px 26px rgba(0,0,0,.1)}
 .prof{display:flex;gap:16px;align-items:flex-start}.prof .acts{display:flex;gap:8px;flex:none}.studio-head .prof{align-items:center}
