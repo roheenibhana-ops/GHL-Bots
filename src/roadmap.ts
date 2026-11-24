@@ -28,6 +28,7 @@ export const ROADMAP: RoadItem[] = [
   { lane: "now", area: "Safety", emoji: "📞", title: "Quo watcher", detail: "A call or voicemail pauses the bot on that customer so it never texts someone Clark is already talking to." },
   { lane: "now", area: "Sales", emoji: "🚀", title: "First 20 promo leads", detail: "You read the drafts, approve a small batch, and watch the conversations on the day." },
   // ---- next
+  { lane: "next", area: "Platform", emoji: "❓", title: "Common questions builder", who: "Sage", detail: "Sorts what customers actually ask the agents each week, spots questions with no good answer, and proposes new knowledge for you to approve. Idea from the customer support plugin in your skills guide." },
   { lane: "next", area: "Platform", emoji: "🎙️", title: "Voice learner", detail: "From your boards: learns Clark from every Quo call and GHL conversation, so every agent writes and sells like him. Feeds every studio." },
   { lane: "next", area: "Marketing", emoji: "📍", title: "Google Business posting and review replies", who: "Pin, North", detail: "The quick win from your boards. Pin and North already write the posts. Next: publish them to Google, reply to every review, and add Q and A." },
   { lane: "next", area: "Sales", emoji: "🏃", title: "Morning quote follow ups", who: "Dash", detail: "A fresh message each morning, 8am to 8pm, seven days a week, to quotes that go quiet. Stops on a reply." },
@@ -36,6 +37,9 @@ export const ROADMAP: RoadItem[] = [
   { lane: "next", area: "Platform", emoji: "📬", title: "Daily report to Clark", detail: "A short summary each morning: what happened, who needs a person, what is cold." },
   { lane: "next", area: "Platform", emoji: "⚡", title: "Prompt caching", detail: "Cuts the cost of every bot reply, worth doing before the big lead run." },
   // ---- soon
+  { lane: "soon", area: "Platform", emoji: "🧩", title: "Playbooks as Claude skills", detail: "Export each company's voice, knowledge, approved prices and links as a Claude skill, so your own scheduled Claude (blogs, newsletters) writes from the same source Clark edits in the studio. Uses the skill creator approach from your guide." },
+  { lane: "soon", area: "Platform", emoji: "📄", title: "Reports you can download", who: "Maverick, Tally", detail: "The weekly report and the numbers as a PDF or an Excel file, ready to send to Clark or keep for the year end review." },
+  { lane: "soon", area: "Sales", emoji: "🗒️", title: "Call prep and follow up drafts", who: "Summit", detail: "Before a site visit, a one page brief on the customer. After a call, a drafted follow up for Clark to send. Idea from the sales plugin in your skills guide." },
   { lane: "soon", area: "Sales", emoji: "📝", title: "Call summariser", detail: "Turns Quo calls into GHL notes and next steps. This is what replaces the Quo Zap." },
   { lane: "soon", area: "Sales", emoji: "📐", title: "Take off from photos", who: "Flash", detail: "Reads CompanyCam and customer photos to measure rooflines, runs and downspouts, so quotes go out faster." },
   { lane: "soon", area: "Sales", emoji: "🔄", title: "Retention and plans", detail: "Rebooks past customers: annual and pre rain cleanings for Dunzo, the 3 year plan and permanent lighting for Lights. Existing customers are your biggest channel." },
@@ -46,6 +50,8 @@ export const ROADMAP: RoadItem[] = [
   { lane: "soon", area: "Sales", emoji: "🏔️", title: "Big job booker", who: "Summit", detail: "Qualifies large jobs and books Clark on site with a briefing note on the customer." },
   { lane: "soon", area: "Marketing", emoji: "⛈️", title: "Seasonal campaigns", who: "Stormy, Frosty", detail: "Storm, leaf drop, early bird and last chance campaigns to past customers and old leads." },
   // ---- later
+  { lane: "later", area: "Sales", emoji: "📑", title: "Proposals for big jobs", who: "Summit", detail: "A proper written proposal as a Word or PDF file for seamless installs, guards, permanent lighting and commercial work." },
+  { lane: "later", area: "Marketing", emoji: "🪧", title: "Flyers, door hangers and postcards", detail: "Print ready designs for neighbour targeting and yard signs, in each company's look. Idea from the poster and graphic design skill in your guide." },
   { lane: "later", area: "Marketing", emoji: "🔎", title: "SEO reporting", who: "Quill, Holly", detail: "Your Claude setup writes and publishes the blogs. Quill and Holly become the SEO analysts Clark can ask where SEO is at: linked to Google Search Console for rankings, clicks and which posts work, plus what was published each week and which customer questions have no post yet." },
   { lane: "later", area: "Marketing", emoji: "🏘️", title: "Neighbour targeting", detail: "Every finished job triggers door hangers, postcards and geo ads to the homes around it, plus a yard sign and area tracker showing which streets sell." },
   { lane: "later", area: "Marketing", emoji: "📊", title: "Ad reporter and ad variants", detail: "Daily cost per sold job by ad from Meta Ads, and winning ideas turned into new hooks, copy and video cuts." },
