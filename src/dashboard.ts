@@ -18,6 +18,7 @@ button,input,select,textarea{font:inherit;color:inherit}
 .nav svg{width:19px;height:19px;stroke:currentColor;fill:none;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round;flex:none}
 .nav b{margin-left:auto;background:var(--bad);color:#fff;border-radius:99px;font-size:11px;padding:1px 7px}
 .spacer{flex:1}
+.navh{font-size:11px;font-weight:750;text-transform:uppercase;letter-spacing:.07em;color:var(--mute);opacity:.75;padding:14px 12px 4px}.navh:first-child{padding-top:2px}
 .main{min-width:0;display:flex;flex-direction:column;overflow-x:hidden}
 .top{display:flex;align-items:center;gap:12px;padding:14px 26px;border-bottom:1px solid var(--line);background:var(--panel);position:sticky;top:0;z-index:5}
 .top h1{margin:0;font-size:19px;letter-spacing:-.01em}
@@ -164,7 +165,7 @@ pre{white-space:pre-wrap;word-wrap:break-word;background:var(--bg);border:1px so
 <div style="color:var(--mute)">Enter your admin token to open the control panel.</div>
 <input id="tok" type="password" placeholder="Admin token" autocomplete="current-password"><button class="btn pri" id="enter" style="width:100%">Open</button><div class="err" id="gerr"></div></div></div>
 <div class="app" id="app" style="display:none">
-<aside class="side"><div class="logo"><i>P</i>The Partridge Standard</div><div id="nav"></div><a class="nav" href="https://santas-lights-scoreboard.roheeni-bhana.workers.dev/" target="_blank" rel="noopener"><svg viewBox="0 0 24 24"><path d="M14 4h6v6"/><path d="M20 4l-9 9"/><path d="M18 14v5a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1V7a1 1 0 0 1 1-1h5"/></svg>Scoreboard</a><div class="spacer"></div>
+<aside class="side"><div class="logo"><i>P</i>The Partridge Standard</div><div id="nav"></div><a class="nav" id="sblink" href="https://santas-lights-scoreboard.roheeni-bhana.workers.dev/" target="_blank" rel="noopener"><svg viewBox="0 0 24 24"><path d="M14 4h6v6"/><path d="M20 4l-9 9"/><path d="M18 14v5a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1V7a1 1 0 0 1 1-1h5"/></svg>Scoreboard</a><div class="spacer"></div>
 <button class="nav" id="lock"><svg viewBox="0 0 24 24"><rect x="4" y="11" width="16" height="9" rx="2"/><path d="M8 11V8a4 4 0 0 1 8 0v3"/></svg>Lock</button></aside>
 <div class="main"><div class="top"><h1 id="title">Overview</h1><div class="seg" id="seg"></div><span class="pill ok" id="status"><i></i>Loading</span><span class="spacer"></span>
 <a class="btn sb-top" href="https://santas-lights-scoreboard.roheeni-bhana.workers.dev/" target="_blank" rel="noopener">Scoreboard</a><button class="btn theme" id="theme" title="Switch light or dark"></button><button class="btn" id="refresh">Refresh</button><button class="btn dng" id="panic">Pause everything</button></div>
@@ -172,7 +173,7 @@ pre{white-space:pre-wrap;word-wrap:break-word;background:var(--bg);border:1px so
 <div class="tabs" id="tabs"></div><div class="toast" id="toast"></div>
 <script>
 var ICON={overview:'<path d="M4 13h6V4H4zM14 20h6v-9h-6zM4 20h6v-3H4zM14 8h6V4h-6z"/>',inbox:'<path d="M4 13l2-8h12l2 8v6H4z"/><path d="M4 13h5a3 3 0 0 0 6 0h5"/>',approve:'<path d="M5 12l4 4 10-10"/>',results:'<path d="M4 20V10M10 20V4M16 20v-7M22 20H2"/>',roadmap:'<path d="M5 19c4-1 3-6 7-7s3-6 7-7"/><circle cx="5" cy="19" r="1.6"/><circle cx="19" cy="5" r="1.6"/>',director:'<path d="M12 3l2.6 5.3 5.9.9-4.3 4.1 1 5.8L12 16.3 6.8 19.1l1-5.8L3.5 9.2l5.9-.9z"/>',agents:'<circle cx="9" cy="8" r="3.5"/><path d="M3 20c0-3.5 2.7-6 6-6s6 2.5 6 6"/><path d="M16 5a3 3 0 0 1 0 6M18 14c2 .7 3 2.6 3 5"/>',settings:'<circle cx="12" cy="12" r="3"/><path d="M19 12a7 7 0 0 0-.1-1.2l2-1.5-2-3.4-2.3 1a7 7 0 0 0-2-1.2L14 3h-4l-.6 2.7a7 7 0 0 0-2 1.2l-2.3-1-2 3.4 2 1.5A7 7 0 0 0 5 12c0 .4 0 .8.1 1.2l-2 1.5 2 3.4 2.3-1a7 7 0 0 0 2 1.2L10 21h4l.6-2.7a7 7 0 0 0 2-1.2l2.3 1 2-3.4-2-1.5c.1-.4.1-.8.1-1.2z"/>',sim:'<path d="M4 5h16v11H9l-5 4z"/>'};
-var VIEWS=[['overview','Overview'],['inbox','Inbox'],['approve','Approvals'],['results','Results'],['director','Director'],['roadmap','Roadmap'],['agents','Agents'],['settings','Settings'],['sim','Simulator']];
+var VIEWS=[['overview','Overview','Every day'],['inbox','Inbox','Every day'],['approve','Approvals','Every day'],['results','Results','How it is going'],['director','Director','How it is going'],['agents','Agents','The team'],['sim','Practice chat','The team'],['roadmap','Roadmap','Plan and setup'],['settings','Settings','Plan and setup']];
 var ACC='all';try{ACC=localStorage.getItem('acc')||'all'}catch(e){}
 function accQ(){return ACC==='all'?'':'?account='+ACC}
 function seg(){var s=$('seg');s.textContent='';[['all','All'],['dunzo','Dunzo'],['lights','Lights']].forEach(function(x){var b=el('button',ACC===x[0]?'on':'',x[1]);b.onclick=function(){ACC=x[0];try{localStorage.setItem('acc',ACC)}catch(e){}seg();render()};s.appendChild(b)})}
@@ -185,9 +186,10 @@ function api(path,body){var o={headers:{'Authorization':'Bearer '+T,'Content-Typ
  return fetch(path,o).then(function(r){return r.json().then(function(j){if(r.status===401){lock();throw new Error('Wrong token')}if(!r.ok)throw new Error(j.error||('Error '+r.status));return j})})}
 function ago(iso){var s=(Date.now()-new Date(iso).getTime())/1000;if(s<60)return 'just now';if(s<3600)return Math.floor(s/60)+'m ago';if(s<86400)return Math.floor(s/3600)+'h ago';return Math.floor(s/86400)+'d ago'}
 function lock(){sessionStorage.removeItem('t');T='';$('app').style.display='none';$('gate').classList.add('on');clearInterval(timer)}
-function nav(){var n=$('nav'),tb=$('tabs');n.textContent='';tb.textContent='';VIEWS.forEach(function(v){
+function nav(){var n=$('nav'),tb=$('tabs');n.textContent='';tb.textContent='';var grp='';VIEWS.forEach(function(v){
+ if(v[2]!==grp){if(grp==='How it is going')n.appendChild($('sblink'));grp=v[2];n.appendChild(el('div','navh',grp))}
  var b=el('button','nav'+(v[0]===view?' on':''),null,[svg(v[0]),el('span',null,v[1])]);if(v[0]==='inbox'&&pendingCount)b.appendChild(el('b',null,String(pendingCount)));b.onclick=function(){go(v[0])};n.appendChild(b);
- var t=el('button',v[0]===view?'on':'',null,[svg(v[0]),el('span',null,v[1]==='Approvals'?'Approve':v[1]==='Simulator'?'Practice':v[1])]);t.onclick=function(){go(v[0])};tb.appendChild(t)})}
+ var t=el('button',v[0]===view?'on':'',null,[svg(v[0]),el('span',null,v[1]==='Approvals'?'Approve':v[1]==='Practice chat'?'Practice':v[1])]);t.onclick=function(){go(v[0])};tb.appendChild(t)})}
 function go(v){view=v;openId=null;studioKey=null;studioMeta=null;ST=null;nav();$('title').textContent=(VIEWS.filter(function(x){return x[0]===v})[0]||[0,'']) [1];render()}
 function status(){var s=S.settings||{};var p=$('status'),pa=s.PAUSE_ALL==='true';
  var sending=s.SENDING_ENABLED==='true'&&Number(s.DAILY_CAP)>0;
