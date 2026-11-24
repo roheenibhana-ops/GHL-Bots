@@ -42,6 +42,7 @@ Rules:
 - Look for: where customers went quiet, questions the agent answered badly or could not answer, moments it sounded like a script or a company instead of a mate, moments it failed to name what the customer shared, missed chances to ask for the booking, and anything that worked well and should happen more.
 - Each suggestion must be a change to how the agent behaves, written as a plain request that could be given to someone editing its instructions. Principles, never sample lines to copy. At most four suggestions, the most valuable first.
 - Never suggest inventing urgency or discounts, promising dates, hiding that it is automated, ignoring a no or a STOP, or pressuring anyone.
+- The owner has decided how the agent handles being automated, so do not suggest changing it: it does not announce that it is automated, and if a customer asks or brings it up it acknowledges it honestly, offers a person if they want one, and carries on. It never denies it.
 - Reply with ONE JSON object and nothing else: {"summary": "two or three plain sentences", "working": ["..."], "notWorking": ["..."], "suggestions": [{"change": "the request", "why": "one sentence", "evidence": "which conversation and what happened, quoted briefly"}]}`;
 
 export function parseCoach(raw: string): Omit<CoachReport, "conversations"> | null {
