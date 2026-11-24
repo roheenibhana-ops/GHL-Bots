@@ -14,7 +14,7 @@ const NEVER_TEXT_TAGS = ["bot-paused", "bot-needs-human", "bot-opted-out", "bot-
 
 type Promo = { contact_id: string; account: Account; contact_name: string | null; phone_e164: string | null; timezone: string | null; sent_at: string | null };
 type Msg = { contact_id: string; direction: "inbound" | "outbound"; campaign: string; status: string; body: string | null; created_at: string; sent_at?: string | null };
-type Conv = { contact_id: string; account: Account; status: string; facts: (BotFacts & { approvedAt?: string }) | null };
+type Conv = { contact_id: string; account: Account; status: string; facts: (BotFacts & { approvedAt?: string; dashHoldUntil?: number }) | null };
 
 export interface Target { kind: "promo" | "quote"; contactId: string; account: Account; name: string | null; phone: string | null; timezone: string | null; nth: number }
 
@@ -44,6 +44,7 @@ export function pickTargets(o: { promos: Promo[]; convs: Conv[]; msgs: Msg[]; no
   for (const c of o.convs) {
     const f = c.facts ?? {};
     if (c.status !== "active" || !f.quoteId || f.approvedAt) continue;
+    if (f.dashHoldUntil && f.dashHoldUntil > o.now) continue; // they asked for time: leave them be
     const ms = (by.get(c.contact_id) ?? []).filter((m) => ["sent", "received"].includes(m.status)).sort((a, b) => when(a) - when(b));
     const last = ms[ms.length - 1];
     if (!last || last.direction !== "outbound") continue; // the customer spoke last: Gus answers, not Dash
@@ -60,7 +61,7 @@ export function pickTargets(o: { promos: Promo[]; convs: Conv[]; msgs: Msg[]; no
 
 const OFFER = "The offer: one time gutter cleaning, $219 for a single story home or $319 for two stories, with a 50% deposit when the quote is approved online. It includes hand cleared gutters, a downspout flush, a photo report and a 30 day no clog guarantee. Over half of Sacramento's rain falls November to February.";
 
-export async function writeFollowUp(env: Env, t: { kind: "promo" | "quote"; firstName?: string | null; nth: number; history: string[]; stories?: number }, override?: { instructions: string; dials: Dials }): Promise<{ text: string; problems: string[] }> {
+export async function writeFollowUp(env: Env, t: { kind: "promo" | "quote"; firstName?: string | null; nth: number; history: string[]; stories?: number }, override?: { instructions: string; dials: Dials }): Promise<{ text: string; problems: string[]; skip?: boolean }> {
   const live = override ?? (await loadAgent(env, "dash"));
   const system = [
     "You write ONE short follow up text message for Dunzo Gutters to a customer who has gone quiet.",
@@ -73,9 +74,10 @@ export async function writeFollowUp(env: Env, t: { kind: "promo" | "quote"; firs
   ].filter(Boolean).join("\n");
   const situation = t.kind === "promo"
     ? `SITUATION: we texted ${t.firstName || "this customer"} the offer a few days ago and they have not replied. This is the one and only follow up. Give them one new, genuinely useful reason to look at it, and ask one easy question (for example whether the home is one story or two).`
-    : `SITUATION: ${t.firstName || "this customer"} asked for a quote${t.stories ? ` for a ${t.stories} story home` : ""}, we texted them the quote link, and they have gone quiet. This is follow up number ${t.nth}. Do not resend or mention a link. Check in like a mate would, add something new, and make it easy to ask a question or say not now.`;
+    : `SITUATION: ${t.firstName || "this customer"} asked for a quote${t.stories ? ` for a ${t.stories} story home` : ""}, we texted them the quote link, and they have gone quiet. This is follow up number ${t.nth}. Do not resend or mention a link. Check in like a mate would, add something new, and make it easy to ask a question or say not now. IMPORTANT: if the customer's last messages say they want to wait, will get back to us, are thinking it over, or gave a reason and a rough time (for example waiting for the leaves to drop), do NOT nudge them: reply with only the single word SKIP.`;
   const convo = t.history.length ? "THE CONVERSATION SO FAR:\n" + t.history.join("\n") : "There has been no conversation beyond our first text.";
   const raw = await runAgent(env, { name: "dash", system, maxTokens: 300, model: env.BOT_MODEL }, [{ role: "user", content: `${situation}\n\n${convo}\n\nWrite the follow up text.` }]);
+  if (/^\W*skip\W*$/i.test(raw)) return { text: "", problems: [], skip: true };
   const text = plainPunctuation(raw.replace(/^["'\s]+|["'\s]+$/g, ""));
   const problems = replyProblems(text);
   if (text.length > 300) problems.push("it is too long");
@@ -135,6 +137,12 @@ export async function runDash(env: Env): Promise<Record<string, unknown>> {
     const history = msgs.filter((m) => m.contact_id === t.contactId && m.body && ["sent", "received"].includes(m.status)).slice(-12).map((m) => `${m.direction === "inbound" ? "CUSTOMER" : "US"}: ${(m.body ?? "").replace(/https?:\/\/\S+/g, "[link]").slice(0, 260)}`);
     const first = (t.name ?? conv?.facts?.firstName ?? "").split(" ")[0];
     const w = await writeFollowUp(env, { kind: t.kind, firstName: first, nth: t.nth, history, stories: conv?.facts?.stories });
+    if (w.skip && conv) {
+      // The customer asked for time. Hold off for a week instead of checking again every few minutes.
+      await sb(env, "PATCH", `conversations?contact_id=eq.${enc(t.contactId)}`, { facts: { ...(conv.facts ?? {}), dashHoldUntil: now.getTime() + 7 * DAY } }, "return=minimal").catch(() => undefined);
+      result.skipped++;
+      continue;
+    }
     if (w.problems.length || !w.text) { result.skipped++; continue; }
     const body = t.kind === "promo" ? `${w.text} Reply STOP to opt out.` : w.text;
     const src = promos.find((p) => p.contact_id === t.contactId);

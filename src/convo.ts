@@ -230,6 +230,13 @@ export async function handleInbound(env: Env, p: InboundPayload, dryRun = false)
     if (/NEEDS A HUMAN|needs a human|failed/.test(link) || !link) await alert(`Quote ready to send: ${summary}.${link}`);
   }
 
+  // A customer asking about a regular plan is a bigger sale: tell the team once, and keep the conversation going.
+  if (output.intent !== "handoff" && /recurring plan/i.test(output.data.reason ?? "") && !tags.includes("wants-recurring-plan")) {
+    await addTags(creds, p.contactId, ["wants-recurring-plan"]).catch(() => undefined);
+    await addNote(creds, p.contactId, `${OUR_NOTE_PREFIX}Asked about a recurring plan. Their message: "${body.slice(0, 200)}". The bot carried on with the cleaning quote. Worth a follow up on a twice a year plan.`).catch(() => undefined);
+    await alert(`Recurring plan interest: ${name}. "${body.slice(0, 120)}"`);
+  }
+
   const phone = normalizePhone(contact.phone ?? p.phone) ?? undefined;
   const testPerson = tags.includes("bot-test");
   // One clear text when the quote link goes out, not a chatty reply plus the link repeating the same thing. If the quote could not be made, never promise it.

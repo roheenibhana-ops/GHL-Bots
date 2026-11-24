@@ -245,7 +245,7 @@ function openConv(box){box.textContent='';box.appendChild(el('div','empty','Load
   var a2=el('button','btn sm','Mark handled');a2.onclick=function(){api('/admin/dash/contact-action',{contactId:openId,action:'handled'}).then(function(){toast('Marked handled');render()}).catch(function(e){toast(e.message)})};
   head.appendChild(a1);head.appendChild(a2);box.appendChild(head);
   var th=el('div','thread');d.messages.forEach(function(m){var out=m.direction==='outbound';var cls='b '+(out?(m.campaign==='human'?'hum':'out'):'in');th.appendChild(el('div',cls,m.body||''));
-   th.appendChild(el('div','meta'+(out?' r':''),(out?(m.campaign==='human'?'You':(m.campaign==='bot'?'Bot':'Promo')):'Customer')+' · '+ago(m.created_at)+(m.status==='failed'?' · failed':'')))});
+   th.appendChild(el('div','meta'+(out?' r':''),(out?(m.campaign==='human'?'You':(m.campaign==='bot'?'Bot':'Promo')):'Customer')+' · '+ago(m.sent_at||m.created_at)+(m.status==='failed'?' · failed':'')))});
   if(d.background)th.appendChild(el('div','meta','Background the bot has: '+d.background.slice(0,400)));
   box.appendChild(th);setTimeout(function(){th.scrollTop=th.scrollHeight},30);
   var ta=el('textarea');ta.placeholder='Reply as the team (pauses the bot for this customer)';var send=el('button','btn pri','Send');

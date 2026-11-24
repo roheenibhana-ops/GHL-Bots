@@ -157,7 +157,7 @@ export async function handleDash(req: Request, env: Env, url: URL): Promise<Resp
     if (p === "/admin/dash/conversation") {
       const id = url.searchParams.get("contactId") ?? "";
       const [msgs, [conv]] = await Promise.all([
-        sb<Msg[]>(env, "GET", `messages?contact_id=eq.${enc(id)}&status=in.(sent,received,queued_hours,pending_approval,failed)&order=created_at.asc&limit=120&select=contact_id,direction,status,campaign,body,created_at`),
+        sb<Msg[]>(env, "GET", `messages?contact_id=eq.${enc(id)}&status=in.(sent,received,queued_hours,pending_approval,failed)&order=created_at.asc&limit=120&select=contact_id,direction,status,campaign,body,created_at,sent_at`),
         sb<Conv[]>(env, "GET", `conversations?contact_id=eq.${enc(id)}&select=contact_id,account,status,facts,updated_at&limit=1`),
       ]);
       const account: Account = conv?.account ?? "dunzo";
