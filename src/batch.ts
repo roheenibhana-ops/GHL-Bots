@@ -126,7 +126,7 @@ export async function approveBatch(env: Env, campaign: string, count: number): P
   const enc = encodeURIComponent(campaign);
   const rows = await sb<{ id: string }[]>(env, "GET", `messages?campaign=eq.${enc}&status=eq.pending_approval&order=created_at.asc&limit=${Math.max(0, Math.min(count, 1000))}&select=id`);
   if (!rows.length) return 0;
-  await sb(env, "PATCH", `messages?id=in.(${rows.map((r) => r.id).join(",")})&status=eq.pending_approval`, { status: "approved" }, "return=minimal");
+  for (let i = 0; i < rows.length; i += 100) await sb(env, "PATCH", `messages?id=in.(${rows.slice(i, i + 100).map((r) => r.id).join(",")})&status=eq.pending_approval`, { status: "approved" }, "return=minimal");
   return rows.length;
 }
 
