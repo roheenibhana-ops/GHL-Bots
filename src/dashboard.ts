@@ -39,6 +39,7 @@ a.nav{text-decoration:none}
 .stem{width:2px;height:22px;background:var(--line);margin:-6px auto 0}
 .team{font-size:12px;font-weight:700;color:var(--mute);text-transform:uppercase;letter-spacing:.05em;margin:14px 0 2px}
 .dim{opacity:.4}
+.top-card .avl{margin:0 auto 8px}
 .avl{width:42px;height:42px;border-radius:14px;display:grid;place-items:center;font-size:22px;flex:none;box-shadow:inset 0 0 0 1px rgba(0,0,0,.05)}
 .mgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(210px,1fr));gap:10px;margin-top:6px}
 .mcard{display:flex;gap:11px;align-items:center;padding:11px 12px;border:1px solid var(--line);border-radius:14px;background:var(--bg);cursor:pointer;transition:transform .12s,box-shadow .12s,border-color .12s}
