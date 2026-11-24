@@ -109,8 +109,8 @@ pre{white-space:pre-wrap;word-wrap:break-word;background:var(--bg);border:1px so
 <div class="page" id="page"></div></div></div>
 <div class="tabs" id="tabs"></div><div class="toast" id="toast"></div>
 <script>
-var ICON={overview:'<path d="M4 13h6V4H4zM14 20h6v-9h-6zM4 20h6v-3H4zM14 8h6V4h-6z"/>',inbox:'<path d="M4 13l2-8h12l2 8v6H4z"/><path d="M4 13h5a3 3 0 0 0 6 0h5"/>',approve:'<path d="M5 12l4 4 10-10"/>',results:'<path d="M4 20V10M10 20V4M16 20v-7M22 20H2"/>',agents:'<circle cx="9" cy="8" r="3.5"/><path d="M3 20c0-3.5 2.7-6 6-6s6 2.5 6 6"/><path d="M16 5a3 3 0 0 1 0 6M18 14c2 .7 3 2.6 3 5"/>',settings:'<circle cx="12" cy="12" r="3"/><path d="M19 12a7 7 0 0 0-.1-1.2l2-1.5-2-3.4-2.3 1a7 7 0 0 0-2-1.2L14 3h-4l-.6 2.7a7 7 0 0 0-2 1.2l-2.3-1-2 3.4 2 1.5A7 7 0 0 0 5 12c0 .4 0 .8.1 1.2l-2 1.5 2 3.4 2.3-1a7 7 0 0 0 2 1.2L10 21h4l.6-2.7a7 7 0 0 0 2-1.2l2.3 1 2-3.4-2-1.5c.1-.4.1-.8.1-1.2z"/>',sim:'<path d="M4 5h16v11H9l-5 4z"/>'};
-var VIEWS=[['overview','Overview'],['inbox','Inbox'],['approve','Approvals'],['results','Results'],['agents','Agents'],['settings','Settings'],['sim','Simulator']];
+var ICON={overview:'<path d="M4 13h6V4H4zM14 20h6v-9h-6zM4 20h6v-3H4zM14 8h6V4h-6z"/>',inbox:'<path d="M4 13l2-8h12l2 8v6H4z"/><path d="M4 13h5a3 3 0 0 0 6 0h5"/>',approve:'<path d="M5 12l4 4 10-10"/>',results:'<path d="M4 20V10M10 20V4M16 20v-7M22 20H2"/>',director:'<path d="M12 3l2.6 5.3 5.9.9-4.3 4.1 1 5.8L12 16.3 6.8 19.1l1-5.8L3.5 9.2l5.9-.9z"/>',agents:'<circle cx="9" cy="8" r="3.5"/><path d="M3 20c0-3.5 2.7-6 6-6s6 2.5 6 6"/><path d="M16 5a3 3 0 0 1 0 6M18 14c2 .7 3 2.6 3 5"/>',settings:'<circle cx="12" cy="12" r="3"/><path d="M19 12a7 7 0 0 0-.1-1.2l2-1.5-2-3.4-2.3 1a7 7 0 0 0-2-1.2L14 3h-4l-.6 2.7a7 7 0 0 0-2 1.2l-2.3-1-2 3.4 2 1.5A7 7 0 0 0 5 12c0 .4 0 .8.1 1.2l-2 1.5 2 3.4 2.3-1a7 7 0 0 0 2 1.2L10 21h4l.6-2.7a7 7 0 0 0 2-1.2l2.3 1 2-3.4-2-1.5c.1-.4.1-.8.1-1.2z"/>',sim:'<path d="M4 5h16v11H9l-5 4z"/>'};
+var VIEWS=[['overview','Overview'],['inbox','Inbox'],['approve','Approvals'],['results','Results'],['director','Director'],['agents','Agents'],['settings','Settings'],['sim','Simulator']];
 var ACC='all';try{ACC=localStorage.getItem('acc')||'all'}catch(e){}
 function accQ(){return ACC==='all'?'':'?account='+ACC}
 function seg(){var s=$('seg');s.textContent='';[['all','All'],['dunzo','Dunzo'],['lights','Lights']].forEach(function(x){var b=el('button',ACC===x[0]?'on':'',x[1]);b.onclick=function(){ACC=x[0];try{localStorage.setItem('acc',ACC)}catch(e){}seg();render()};s.appendChild(b)})}
@@ -133,7 +133,8 @@ function status(){var s=S.settings||{};var p=$('status'),pa=s.PAUSE_ALL==='true'
  p.className='pill '+cls;p.textContent='';p.appendChild(el('i'));p.appendChild(document.createTextNode(txt));
  var b=$('panic');b.textContent=pa?'Resume':'Pause everything';b.className='btn '+(pa?'pri':'dng')}
 function load(){return api('/admin/dash/overview'+accQ()).then(function(o){S=o;pendingCount=o.conversations.withTeam;status();nav()})}
-function render(){var p=$('page');p.textContent='';clearInterval(timer);load().then(function(){({overview:vOverview,inbox:vInbox,approve:vApprove,results:vResults,agents:vAgents,settings:vSettings,sim:vSim})[view](p)}).catch(function(e){p.appendChild(el('div','empty',e.message))})}
+function render(){var p=$('page');p.textContent='';clearInterval(timer);
+ if(T.length<20){var w=el('div','banner wr','Your admin token is short. This page shows real customer conversations, so please change ADMIN_TOKEN in Cloudflare to a long random one (at least 20 characters).');p.appendChild(w)}load().then(function(){({overview:vOverview,inbox:vInbox,approve:vApprove,results:vResults,director:vDirector,agents:vAgents,settings:vSettings,sim:vSim})[view](p)}).catch(function(e){p.appendChild(el('div','empty',e.message))})}
 function kpi(n,l,tone){return el('div','card kpi',null,[el('div','n',String(n)),el('div','l',l)])}
 function who(r){return (r.name||'C').charAt(0).toUpperCase()}
 function vOverview(p){
@@ -204,6 +205,14 @@ function vResults(p){if(ACC==='lights'){p.appendChild(el('div','card',null,[el('
   rows.forEach(function(x){var pct=Math.min(100,Math.round(x[1]/base*100));var bar=el('div','bar',null,[(function(){var i=el('i');i.style.width=pct+'%';return i})()]);c.appendChild(el('div','fun',null,[el('div',null,x[0]),bar,el('b',null,String(x[1]))]))});
   c.appendChild(el('div','sub','Reply rate '+r.replyRate+' · Approval rate of repliers '+f.approvalRateOfReplies+' · With the team '+d.outcomes.handedToTeam+' · STOP requests '+d.outcomes.stopRequests));
   var jq=d.jobberQuoteStatuses||{};c.appendChild(el('div','sub','Jobber quote statuses: '+(Object.keys(jq).length?Object.keys(jq).map(function(k){return k+' '+jq[k]}).join(', '):'none yet')))}).catch(function(e){c.textContent='';c.appendChild(el('div','empty',e.message))})}
+function vDirector(p){
+ var c=el('div','card');c.appendChild(el('h3',null,'Marketing Director: weekly report'));
+ c.appendChild(el('div','sub','A plain English look at the last 7 days, built from your real numbers, with three things to do next week. It reads your data and writes a report. It does not send anything to anyone.'));
+ var b=el('button','btn pri','Write this week\'s report');b.style.marginTop='14px';var out=el('div');out.style.marginTop='14px';
+ b.onclick=function(){b.disabled=true;b.textContent='Writing...';out.textContent='';api('/admin/dash/director'+accQ()).then(function(d){b.disabled=false;b.textContent='Write it again';
+  var box=el('pre',null,d.report);box.style.maxHeight='none';box.style.fontSize='14.5px';box.style.lineHeight='1.55';out.appendChild(box);
+  var det=el('details');det.style.marginTop='12px';det.appendChild(el('summary',null,'The numbers behind it'));det.appendChild(el('pre',null,JSON.stringify(d.facts,null,2)));out.appendChild(det)}).catch(function(e){b.disabled=false;b.textContent='Try again';out.appendChild(el('div','empty',e.message))})};
+ c.appendChild(b);c.appendChild(out);p.appendChild(c)}
 function mateRow(m){return el('div','mate',null,[el('div','av',m.name.charAt(0)),el('div','grow',null,[el('div','nm',m.name),el('div','sub',m.does)]),el('span','tag '+(m.state==='live'?'g':'o'),m.state==='live'?'Live':'Planned')])}
 function unitCard(title,sub,list,dim){var c=el('div','card'+(dim?' dim':''),null,[el('h3',null,title),el('div','sub',sub)]);
  ['Sales','Marketing'].forEach(function(t){var ms=list.filter(function(m){return m.team===t});if(!ms.length)return;c.appendChild(el('div','team',t));ms.forEach(function(m){c.appendChild(mateRow(m))})});return c}

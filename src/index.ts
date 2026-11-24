@@ -269,6 +269,24 @@ export default {
       } catch (e) { return json({ error: (e as Error).message }, 502); }
     }
 
+    // Test the Dunzo to Lights referral on a contact tagged bot-test. Adds them to the Lights account with tags and a note. Sends no text.
+    if (url.pathname === "/admin/lights/test-referral" && req.method === "POST") {
+      if (!isAdmin(req, env)) return json({ error: "unauthorized" }, 401);
+      const { contactId } = (await req.json()) as { contactId?: string };
+      if (!contactId) return json({ error: "contactId needed" }, 400);
+      try {
+        const dz = await getContact(credsFor(env, "dunzo"), contactId);
+        if (!(dz.tags ?? []).some((t) => t.toLowerCase() === "bot-test")) return json({ error: "Only a contact tagged bot-test can be used for this test" }, 403);
+        const ph = normalizePhone(dz.phone);
+        if (!ph) return json({ error: "That contact has no valid phone" }, 400);
+        const { referToLights } = await import("./lights");
+        const ref = await referToLights(env, { phone: ph, firstName: dz.firstName, lastName: dz.lastName, email: dz.email, lastMessage: "TEST: do you do christmas lights too?" });
+        let lights: unknown = null;
+        if (ref.contactId) { const c = await getContact(credsFor(env, "lights"), ref.contactId); lights = { id: c.id, name: [c.firstName, c.lastName].filter(Boolean).join(" "), tags: c.tags ?? [] }; }
+        return json({ ...ref, lightsContact: lights });
+      } catch (e) { return json({ error: (e as Error).message }, 502); }
+    }
+
     // Read only: one contact's recent messages and conversation state.
     if (url.pathname === "/admin/convo") {
       if (!isAdmin(req, env)) return json({ error: "unauthorized" }, 401);

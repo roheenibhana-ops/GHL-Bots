@@ -1,4 +1,5 @@
 import { pacificMsSinceMidnight } from "./batch";
+import { directorReport } from "./director";
 import { systemPrompt, type BotFacts } from "./bot";
 import { sb } from "./db";
 import { addTags, credsFor, getContact, removeTags, sendSms } from "./ghl";
@@ -178,6 +179,11 @@ export async function handleDash(req: Request, env: Env, url: URL): Promise<Resp
     if (p === "/admin/dash/activity") {
       const rows = await sb<Msg[]>(env, "GET", "messages?status=in.(sent,received)&order=created_at.desc&limit=40&select=contact_id,direction,status,campaign,body,created_at,contact_name" + af);
       return json({ rows: rows.map((m) => ({ ...m, body: (m.body ?? "").slice(0, 160) })) });
+    }
+
+    if (p === "/admin/dash/director") {
+      const r = await directorReport(env, acct === "dunzo" || acct === "lights" ? acct : null);
+      return json(r);
     }
 
     if (p === "/admin/dash/agents") {
