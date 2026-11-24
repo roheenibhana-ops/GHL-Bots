@@ -369,7 +369,7 @@ function hue(s){var h=0;for(var i=0;i<s.length;i++)h=(h*31+s.charCodeAt(i))%360;
 function avatar(m,size){var a=el('div','avl');var sv=avatarSVG(m.name);
  if(sv){a.innerHTML=sv;a.style.background='none';a.style.boxShadow='none'}else{a.textContent=m.emoji||'?';var h=hue(m.name);a.style.background='linear-gradient(135deg,hsl('+h+' 85% 88%),hsl('+((h+40)%360)+' 80% 80%))'}
  if(size){a.style.width=size+'px';a.style.height=size+'px';a.style.fontSize=Math.round(size*.52)+'px'}return a}
-function mateCard(m){var c=el('div','mcard'+(m.state==='live'?' live':''),null,[avatar(m),el('div','grow',null,[el('div','nm',m.name),el('div','sub2',m.role)]),el('span','tag '+(m.state==='live'?'g':''),m.state==='live'?'Live':'Soon')]);
+function mateCard(m){var c=el('div','mcard'+(m.state==='live'?' live':''),null,[avatar(m),el('div','grow',null,[el('div','nm',m.name),el('div','sub2',m.role)]),el('span','tag '+(m.state==='live'?'g':m.state==='external'?'b':''),m.state==='live'?'Live':m.state==='external'?'Your Claude':'Soon')]);
  c.title=m.does;c.onclick=function(){studioKey=m.agent||('profile:'+m.name);studioMeta=m;render()};return c}
 function vAgents(p){
  if(studioKey){return vStudio(p)}
