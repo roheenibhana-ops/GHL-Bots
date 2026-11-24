@@ -471,7 +471,7 @@ export default {
           campaign: b.campaign ?? "pilot-1",
           size: Math.min(Math.max(b.size ?? 100, 2), 500),
           template: b.template ?? "",
-          pagesPerAccount: Math.min(b.pages ?? 8, 20),
+          pagesPerAccount: Math.min(b.pages ?? 8, 40),
           dryRun: b.dryRun === true,
         }));
       } catch (e) {
