@@ -39,6 +39,16 @@ a.nav{text-decoration:none}
 .stem{width:2px;height:22px;background:var(--line);margin:-6px auto 0}
 .team{font-size:12px;font-weight:700;color:var(--mute);text-transform:uppercase;letter-spacing:.05em;margin:14px 0 2px}
 .dim{opacity:.4}
+.journey{display:flex;align-items:flex-start;gap:0;margin-top:18px;overflow-x:auto;padding-bottom:4px}
+.jstep{text-align:center;min-width:132px;flex:1}.jdot{width:34px;height:34px;border-radius:50%;color:#fff;display:grid;place-items:center;font-weight:750;margin:0 auto 6px;box-shadow:0 2px 8px rgba(0,0,0,.15)}
+.jt{font-weight:700}.jline{height:2px;background:var(--line);width:34px;margin-top:17px;flex:none}
+.lanes{display:grid;grid-template-columns:repeat(auto-fit,minmax(255px,1fr));gap:14px;margin-top:14px;align-items:start}
+.lane{background:var(--panel);border:1px solid var(--line);border-radius:16px;overflow:hidden;box-shadow:var(--shadow)}
+.lhead{display:flex;justify-content:space-between;align-items:center;padding:12px 14px 4px}.lb{padding:0 14px 8px;font-size:12.5px}
+.rcard{padding:11px 14px;border-top:1px solid var(--line);cursor:pointer;transition:background .1s}.rcard:hover{background:var(--bg)}
+.rtop{display:flex;gap:10px;align-items:center}.remo{font-size:22px}.rdet{margin-top:8px;color:var(--mute);font-size:13.5px;line-height:1.45}
+@media(max-width:900px){.jstep{min-width:110px}}
+
 .top-card .avl{margin:0 auto 8px}
 .avl{width:42px;height:42px;border-radius:14px;display:grid;place-items:center;font-size:22px;flex:none;box-shadow:inset 0 0 0 1px rgba(0,0,0,.05)}
 .mgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(210px,1fr));gap:10px;margin-top:6px}
@@ -132,8 +142,8 @@ pre{white-space:pre-wrap;word-wrap:break-word;background:var(--bg);border:1px so
 <div class="page" id="page"></div></div></div>
 <div class="tabs" id="tabs"></div><div class="toast" id="toast"></div>
 <script>
-var ICON={overview:'<path d="M4 13h6V4H4zM14 20h6v-9h-6zM4 20h6v-3H4zM14 8h6V4h-6z"/>',inbox:'<path d="M4 13l2-8h12l2 8v6H4z"/><path d="M4 13h5a3 3 0 0 0 6 0h5"/>',approve:'<path d="M5 12l4 4 10-10"/>',results:'<path d="M4 20V10M10 20V4M16 20v-7M22 20H2"/>',director:'<path d="M12 3l2.6 5.3 5.9.9-4.3 4.1 1 5.8L12 16.3 6.8 19.1l1-5.8L3.5 9.2l5.9-.9z"/>',agents:'<circle cx="9" cy="8" r="3.5"/><path d="M3 20c0-3.5 2.7-6 6-6s6 2.5 6 6"/><path d="M16 5a3 3 0 0 1 0 6M18 14c2 .7 3 2.6 3 5"/>',settings:'<circle cx="12" cy="12" r="3"/><path d="M19 12a7 7 0 0 0-.1-1.2l2-1.5-2-3.4-2.3 1a7 7 0 0 0-2-1.2L14 3h-4l-.6 2.7a7 7 0 0 0-2 1.2l-2.3-1-2 3.4 2 1.5A7 7 0 0 0 5 12c0 .4 0 .8.1 1.2l-2 1.5 2 3.4 2.3-1a7 7 0 0 0 2 1.2L10 21h4l.6-2.7a7 7 0 0 0 2-1.2l2.3 1 2-3.4-2-1.5c.1-.4.1-.8.1-1.2z"/>',sim:'<path d="M4 5h16v11H9l-5 4z"/>'};
-var VIEWS=[['overview','Overview'],['inbox','Inbox'],['approve','Approvals'],['results','Results'],['director','Director'],['agents','Agents'],['settings','Settings'],['sim','Simulator']];
+var ICON={overview:'<path d="M4 13h6V4H4zM14 20h6v-9h-6zM4 20h6v-3H4zM14 8h6V4h-6z"/>',inbox:'<path d="M4 13l2-8h12l2 8v6H4z"/><path d="M4 13h5a3 3 0 0 0 6 0h5"/>',approve:'<path d="M5 12l4 4 10-10"/>',results:'<path d="M4 20V10M10 20V4M16 20v-7M22 20H2"/>',roadmap:'<path d="M5 19c4-1 3-6 7-7s3-6 7-7"/><circle cx="5" cy="19" r="1.6"/><circle cx="19" cy="5" r="1.6"/>',director:'<path d="M12 3l2.6 5.3 5.9.9-4.3 4.1 1 5.8L12 16.3 6.8 19.1l1-5.8L3.5 9.2l5.9-.9z"/>',agents:'<circle cx="9" cy="8" r="3.5"/><path d="M3 20c0-3.5 2.7-6 6-6s6 2.5 6 6"/><path d="M16 5a3 3 0 0 1 0 6M18 14c2 .7 3 2.6 3 5"/>',settings:'<circle cx="12" cy="12" r="3"/><path d="M19 12a7 7 0 0 0-.1-1.2l2-1.5-2-3.4-2.3 1a7 7 0 0 0-2-1.2L14 3h-4l-.6 2.7a7 7 0 0 0-2 1.2l-2.3-1-2 3.4 2 1.5A7 7 0 0 0 5 12c0 .4 0 .8.1 1.2l-2 1.5 2 3.4 2.3-1a7 7 0 0 0 2 1.2L10 21h4l.6-2.7a7 7 0 0 0 2-1.2l2.3 1 2-3.4-2-1.5c.1-.4.1-.8.1-1.2z"/>',sim:'<path d="M4 5h16v11H9l-5 4z"/>'};
+var VIEWS=[['overview','Overview'],['inbox','Inbox'],['approve','Approvals'],['results','Results'],['director','Director'],['roadmap','Roadmap'],['agents','Agents'],['settings','Settings'],['sim','Simulator']];
 var ACC='all';try{ACC=localStorage.getItem('acc')||'all'}catch(e){}
 function accQ(){return ACC==='all'?'':'?account='+ACC}
 function seg(){var s=$('seg');s.textContent='';[['all','All'],['dunzo','Dunzo'],['lights','Lights']].forEach(function(x){var b=el('button',ACC===x[0]?'on':'',x[1]);b.onclick=function(){ACC=x[0];try{localStorage.setItem('acc',ACC)}catch(e){}seg();render()};s.appendChild(b)})}
@@ -157,7 +167,7 @@ function status(){var s=S.settings||{};var p=$('status'),pa=s.PAUSE_ALL==='true'
  var b=$('panic');b.textContent=pa?'Resume':'Pause everything';b.className='btn '+(pa?'pri':'dng')}
 function load(){return api('/admin/dash/overview'+accQ()).then(function(o){S=o;pendingCount=o.conversations.withTeam;status();nav()})}
 function render(){var p=$('page');p.textContent='';clearInterval(timer);
- if(T.length<20){var w=el('div','banner wr','Your admin token is short. This page shows real customer conversations, so please change ADMIN_TOKEN in Cloudflare to a long random one (at least 20 characters).');p.appendChild(w)}load().then(function(){({overview:vOverview,inbox:vInbox,approve:vApprove,results:vResults,director:vDirector,agents:vAgents,settings:vSettings,sim:vSim})[view](p)}).catch(function(e){p.appendChild(el('div','empty',e.message))})}
+ if(T.length<20){var w=el('div','banner wr','Your admin token is short. This page shows real customer conversations, so please change ADMIN_TOKEN in Cloudflare to a long random one (at least 20 characters).');p.appendChild(w)}load().then(function(){({overview:vOverview,inbox:vInbox,approve:vApprove,results:vResults,director:vDirector,roadmap:vRoadmap,agents:vAgents,settings:vSettings,sim:vSim})[view](p)}).catch(function(e){p.appendChild(el('div','empty',e.message))})}
 function kpi(n,l,tone){return el('div','card kpi',null,[el('div','n',String(n)),el('div','l',l)])}
 function who(r){return (r.name||'C').charAt(0).toUpperCase()}
 function vOverview(p){
@@ -356,6 +366,24 @@ function drawStudio(shell){
   var kb=el('button','btn sm','Show what '+m.name+' knows');var kp=el('pre');kp.style.display='none';kb.style.marginTop='14px';kb.onclick=function(){if(kp.style.display==='none'){api('/admin/dash/agents').then(function(r){kp.textContent=r.knowledge;kp.style.display='block';kb.textContent='Hide'})}else{kp.style.display='none';kb.textContent='Show what '+m.name+' knows'}};body.appendChild(kb);body.appendChild(kp)}
  badges()}
 
+
+var LANECOL={live:'var(--brand)',now:'var(--bad)',next:'var(--warn)',soon:'var(--blue)',later:'var(--mute)',sell:'hsl(270 55% 55%)'};
+var RAREA='all';
+function vRoadmap(p){api('/admin/dash/roadmap').then(function(d){
+ var total=d.items.length,built=d.items.filter(function(i){return i.lane==='live'}).length,pct=Math.round(built/total*100);
+ var hero=el('div','card');hero.appendChild(el('h3',null,'The road so far'));
+ var line=el('div','fun');line.style.gridTemplateColumns='1fr auto';var bar=el('div','bar');var fill=el('i');fill.style.width=pct+'%';bar.appendChild(fill);line.appendChild(bar);line.appendChild(el('b',null,built+' of '+total+' built'));hero.appendChild(line);
+ var j=el('div','journey');d.lanes.forEach(function(l,ix){var n=d.items.filter(function(i){return i.lane===l.key}).length;var st=el('div','jstep',null,[(function(){var o=el('div','jdot',String(n));o.style.background=LANECOL[l.key];return o})(),el('div','jt',l.title),el('div','sub',l.blurb)]);j.appendChild(st);if(ix<d.lanes.length-1)j.appendChild(el('div','jline'))});hero.appendChild(j);p.appendChild(hero);
+ var chips=el('div','chips');chips.style.marginTop='16px';['all','Sales','Marketing','Platform','Safety'].forEach(function(a){var c=el('button','chip'+(RAREA===a?' on':''),a==='all'?'Everything':a);c.onclick=function(){RAREA=a;render()};chips.appendChild(c)});p.appendChild(chips);
+ var lanes=el('div','lanes');
+ d.lanes.forEach(function(l){var items=d.items.filter(function(i){return i.lane===l.key&&(RAREA==='all'||i.area===RAREA)});
+  var col=el('div','lane');var hd=el('div','lhead',null,[el('b',null,l.title),el('span','tag',String(items.length))]);hd.style.borderTop='4px solid '+LANECOL[l.key];col.appendChild(hd);col.appendChild(el('div','sub lb',l.blurb));
+  if(!items.length)col.appendChild(el('div','empty','Nothing here for this filter.'));
+  items.forEach(function(i){var det=el('div','rdet',i.detail);det.style.display='none';
+   var card=el('div','rcard',null,[el('div','rtop',null,[el('span','remo',i.emoji),el('div','grow',null,[el('div','nm',i.title),i.who?el('div','sub2',i.who):null]),el('span','tag',i.area)]),det]);
+   card.onclick=function(){det.style.display=det.style.display==='none'?'block':'none'};col.appendChild(card)});
+  lanes.appendChild(col)});
+ p.appendChild(lanes)}).catch(function(e){p.appendChild(el('div','empty',e.message))})}
 function vSettings(p){api('/admin/dash/settings').then(function(d){
  if(!d.ready)p.appendChild(el('div','banner wr','These switches cannot save yet. '+(d.error||'Run supabase/006_settings.sql in the Supabase SQL editor, then reload.')));
  var groups={};d.defs.forEach(function(x){(groups[x.group]=groups[x.group]||[]).push(x)});

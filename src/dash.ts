@@ -2,6 +2,7 @@ import { pacificMsSinceMidnight } from "./batch";
 import { directorReport } from "./director";
 import { clearAgentCache, DEFAULTS, DIAL_DEFS, EDITABLE_AGENTS, loadAgent, type Dials } from "./playbook";
 import { runPack } from "./testpack";
+import { LANES, ROADMAP } from "./roadmap";
 import { draftContent } from "./content";
 import { runAgent } from "./agents";
 import { systemPrompt, type BotFacts } from "./bot";
@@ -293,6 +294,8 @@ export async function handleDash(req: Request, env: Env, url: URL): Promise<Resp
       const r = await directorReport(env, acct === "dunzo" || acct === "lights" ? acct : null, { instructions: (b.instructions ?? "").trim() || DEFAULTS.maverick, dials: b.dials ?? {} });
       return json(r);
     }
+
+    if (p === "/admin/dash/roadmap") return json({ lanes: LANES, items: ROADMAP });
 
     if (p === "/admin/dash/director") {
       const r = await directorReport(env, acct === "dunzo" || acct === "lights" ? acct : null);
