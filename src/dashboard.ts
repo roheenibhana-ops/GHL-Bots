@@ -109,7 +109,7 @@ pre{white-space:pre-wrap;word-wrap:break-word;background:var(--bg);border:1px so
 var ICON={overview:'<path d="M4 13h6V4H4zM14 20h6v-9h-6zM4 20h6v-3H4zM14 8h6V4h-6z"/>',inbox:'<path d="M4 13l2-8h12l2 8v6H4z"/><path d="M4 13h5a3 3 0 0 0 6 0h5"/>',approve:'<path d="M5 12l4 4 10-10"/>',results:'<path d="M4 20V10M10 20V4M16 20v-7M22 20H2"/>',agents:'<circle cx="9" cy="8" r="3.5"/><path d="M3 20c0-3.5 2.7-6 6-6s6 2.5 6 6"/><path d="M16 5a3 3 0 0 1 0 6M18 14c2 .7 3 2.6 3 5"/>',settings:'<circle cx="12" cy="12" r="3"/><path d="M19 12a7 7 0 0 0-.1-1.2l2-1.5-2-3.4-2.3 1a7 7 0 0 0-2-1.2L14 3h-4l-.6 2.7a7 7 0 0 0-2 1.2l-2.3-1-2 3.4 2 1.5A7 7 0 0 0 5 12c0 .4 0 .8.1 1.2l-2 1.5 2 3.4 2.3-1a7 7 0 0 0 2 1.2L10 21h4l.6-2.7a7 7 0 0 0 2-1.2l2.3 1 2-3.4-2-1.5c.1-.4.1-.8.1-1.2z"/>',sim:'<path d="M4 5h16v11H9l-5 4z"/>'};
 var VIEWS=[['overview','Overview'],['inbox','Inbox'],['approve','Approvals'],['results','Results'],['agents','Agents'],['settings','Settings'],['sim','Simulator']];
 var ACC='all';try{ACC=localStorage.getItem('acc')||'all'}catch(e){}
-function q(){return ACC==='all'?'':'?account='+ACC}
+function accQ(){return ACC==='all'?'':'?account='+ACC}
 function seg(){var s=$('seg');s.textContent='';[['all','All'],['dunzo','Dunzo'],['lights','Lights']].forEach(function(x){var b=el('button',ACC===x[0]?'on':'',x[1]);b.onclick=function(){ACC=x[0];try{localStorage.setItem('acc',ACC)}catch(e){}seg();render()};s.appendChild(b)})}
 var T=sessionStorage.getItem('t')||'',view='overview',S={},timer=null,openId=null,filter='all',pendingCount=0;
 function $(i){return document.getElementById(i)}
@@ -129,7 +129,7 @@ function status(){var s=S.settings||{};var p=$('status'),pa=s.PAUSE_ALL==='true'
  var txt,cls;if(pa){txt='Paused';cls='bd'}else if(s.BOT_MODE==='live'){txt=sending?'Live and sending':'Live';cls='ok'}else if(s.BOT_MODE==='test'){txt='Test mode';cls='wr'}else{txt='Bot is off';cls='bl'}
  p.className='pill '+cls;p.textContent='';p.appendChild(el('i'));p.appendChild(document.createTextNode(txt));
  var b=$('panic');b.textContent=pa?'Resume':'Pause everything';b.className='btn '+(pa?'pri':'dng')}
-function load(){return api('/admin/dash/overview'+q()).then(function(o){S=o;pendingCount=o.conversations.withTeam;status();nav()})}
+function load(){return api('/admin/dash/overview'+accQ()).then(function(o){S=o;pendingCount=o.conversations.withTeam;status();nav()})}
 function render(){var p=$('page');p.textContent='';clearInterval(timer);load().then(function(){({overview:vOverview,inbox:vInbox,approve:vApprove,results:vResults,agents:vAgents,settings:vSettings,sim:vSim})[view](p)}).catch(function(e){p.appendChild(el('div','empty',e.message))})}
 function kpi(n,l,tone){return el('div','card kpi',null,[el('div','n',String(n)),el('div','l',l)])}
 function who(r){return (r.name||'C').charAt(0).toUpperCase()}
@@ -146,10 +146,10 @@ function vOverview(p){
  two.appendChild(left);two.appendChild(right);p.appendChild(two);
  var qc=el('div','card');qc.style.marginTop='16px';qc.appendChild(el('h3',null,'Promo queue ('+s.BATCH_CAMPAIGN+')'));
  var qg=el('div','grid g4');[['Waiting for approval',q.waiting],['Approved, to send',q.approved],['Sent',q.sent],['Held or failed',q.held+q.failed]].forEach(function(x){qg.appendChild(el('div','kpi',null,[el('div','n',String(x[1])),el('div','l',x[0])]))});qc.appendChild(qg);p.appendChild(qc);
- api('/admin/dash/inbox'+q()).then(function(d){var need=d.rows.filter(function(r){return r.status==='handed_off'||r.waiting}).slice(0,6);
+ api('/admin/dash/inbox'+accQ()).then(function(d){var need=d.rows.filter(function(r){return r.status==='handed_off'||r.waiting}).slice(0,6);
   if(!need.length)left.appendChild(el('div','empty','Nothing needs you right now.'));
   need.forEach(function(r){left.appendChild(rowFor(r,true))})});
- function feed(){api('/admin/dash/activity'+q()).then(function(d){right.querySelectorAll('.row').forEach(function(x){x.remove()});
+ function feed(){api('/admin/dash/activity'+accQ()).then(function(d){right.querySelectorAll('.row').forEach(function(x){x.remove()});
   d.rows.slice(0,10).forEach(function(m){var r=el('div','row',null,[el('div','av',m.direction==='inbound'?'C':'B'),el('div','grow',null,[el('div','nm',m.direction==='inbound'?(m.contact_name||'Customer'):'Bot'),el('div','sub',m.body||'')]),el('div','sub',ago(m.created_at))]);right.appendChild(r)})})}
  feed();timer=setInterval(function(){if(view==='overview')feed()},15000)}
 function rowFor(r,toInbox){var tone=r.status==='handed_off'?'o':(r.stage==='Approved'?'g':(r.stage==='Quote sent'?'b':''));
@@ -162,7 +162,7 @@ function vInbox(p){
  [['all','All'],['team','With the team'],['waiting','Customer waiting'],['quote','Quote sent'],['active','Active'],['closed','Closed']].forEach(function(f){var c=el('button','chip'+(filter===f[0]?' on':''),f[1]);c.onclick=function(){filter=f[0];render()};chips.appendChild(c)});
  var split=el('div','split');var list=el('div','card'),lst=el('div','list');list.appendChild(lst);var thread=el('div','card');split.appendChild(list);split.appendChild(thread);wrap.appendChild(chips);wrap.appendChild(split);p.appendChild(wrap);
  thread.appendChild(el('div','empty','Pick a conversation to read it.'));
- api('/admin/dash/inbox'+q()).then(function(d){var rows=d.rows.filter(function(r){return filter==='all'||(filter==='team'&&r.status==='handed_off')||(filter==='waiting'&&r.waiting)||(filter==='quote'&&(r.stage==='Quote sent'||r.stage==='Approved'))||(filter==='active'&&r.status==='active')||(filter==='closed'&&r.status==='closed')});
+ api('/admin/dash/inbox'+accQ()).then(function(d){var rows=d.rows.filter(function(r){return filter==='all'||(filter==='team'&&r.status==='handed_off')||(filter==='waiting'&&r.waiting)||(filter==='quote'&&(r.stage==='Quote sent'||r.stage==='Approved'))||(filter==='active'&&r.status==='active')||(filter==='closed'&&r.status==='closed')});
   if(!rows.length)lst.appendChild(el('div','empty','No conversations here yet.'));
   rows.forEach(function(r){var x=rowFor(r);x.onclick=function(){openId=r.contactId;openConv(thread)};lst.appendChild(x)});if(openId)openConv(thread)})}
 function openConv(box){box.textContent='';box.appendChild(el('div','empty','Loading...'));
