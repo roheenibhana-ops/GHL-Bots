@@ -25,19 +25,35 @@ export const AGENTS: Record<string, AgentConfig> = {
   },
 };
 
+type ClaudeReply = { content: { type: string; text?: string }[]; stop_reason?: string };
+
+async function callClaude(env: Env, agent: AgentConfig, history: { role: "user" | "assistant"; content: string }[], maxTokens: number, noThinking: boolean): Promise<Response> {
+  return fetch("https://api.anthropic.com/v1/messages", {
+    method: "POST",
+    headers: { "x-api-key": env.ANTHROPIC_API_KEY, "anthropic-version": "2023-06-01", "content-type": "application/json" },
+    body: JSON.stringify({ model: agent.model ?? env.CLAUDE_MODEL, max_tokens: maxTokens, system: agent.system, messages: history, ...(noThinking ? { thinking: { type: "disabled" } } : {}) }),
+  });
+}
+
+/**
+ * One call to Claude. The model may think before it writes, and that thinking counts against the word budget, so:
+ * first try with thinking switched off; if the API refuses that setting, or the answer still comes back empty,
+ * try once more with a much larger budget so the thinking cannot crowd out the answer.
+ */
 export async function runAgent(
   env: Env,
   agent: AgentConfig,
   history: { role: "user" | "assistant"; content: string }[],
 ): Promise<string> {
-  const res = await fetch("https://api.anthropic.com/v1/messages", {
-    method: "POST",
-    headers: { "x-api-key": env.ANTHROPIC_API_KEY, "anthropic-version": "2023-06-01", "content-type": "application/json" },
-    body: JSON.stringify({ model: agent.model ?? env.CLAUDE_MODEL, max_tokens: agent.maxTokens, system: agent.system, messages: history }),
-  });
-  if (!res.ok) throw new Error(`Claude API ${res.status}: ${(await res.text()).slice(0, 300)}`);
-  const data = (await res.json()) as { content: { type: string; text?: string }[]; stop_reason?: string };
-  const text = data.content.filter((b) => b.type === "text").map((b) => b.text ?? "").join("").trim();
+  const textOf = (d: ClaudeReply) => d.content.filter((b) => b.type === "text").map((b) => b.text ?? "").join("").trim();
+  let res = await callClaude(env, agent, history, agent.maxTokens, true);
+  let data: ClaudeReply | null = res.ok ? ((await res.json()) as ClaudeReply) : null;
+  if (!data || !textOf(data)) {
+    res = await callClaude(env, agent, history, agent.maxTokens + 6000, false);
+    if (!res.ok) throw new Error(`Claude API ${res.status}: ${(await res.text()).slice(0, 300)}`);
+    data = (await res.json()) as ClaudeReply;
+  }
+  const text = textOf(data);
   if (!text) throw new Error(`Claude returned no text (stop reason: ${data.stop_reason ?? "unknown"}, blocks: ${data.content.map((b) => b.type).join(",") || "none"})`);
   return text;
 }
