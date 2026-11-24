@@ -4,9 +4,25 @@ export const DASH_HTML = String.raw`<!doctype html>
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>The Partridge Standard</title>
 <style>
-:root{--bg:#f4f5f7;--panel:#fff;--ink:#14171c;--mute:#6a7280;--line:#e5e8ee;--brand:#0b7a4b;--brand2:#e8f5ee;--warn:#b45309;--warn2:#fef3e2;--bad:#c0262d;--bad2:#fdecee;--blue:#1d5fd1;--blue2:#e8f0fd;--me:#e6efff;--shadow:0 1px 2px rgba(16,24,40,.06),0 4px 14px rgba(16,24,40,.05)}
-@media(prefers-color-scheme:dark){:root:not([data-theme=light]){--bg:#0e1116;--panel:#171b22;--ink:#eef1f6;--mute:#9aa3b2;--line:#262c36;--brand:#34c57f;--brand2:#12281d;--warn:#f0a84a;--warn2:#2c2111;--bad:#ff7076;--bad2:#2e1618;--blue:#6ea2ff;--blue2:#16233b;--me:#1a2a47;--shadow:none}}
-:root[data-theme=dark]{--bg:#0e1116;--panel:#171b22;--ink:#eef1f6;--mute:#9aa3b2;--line:#262c36;--brand:#34c57f;--brand2:#12281d;--warn:#f0a84a;--warn2:#2c2111;--bad:#ff7076;--bad2:#2e1618;--blue:#6ea2ff;--blue2:#16233b;--me:#1a2a47;--shadow:none}
+:root{--bg:#f4f5f7;--panel:#fff;--ink:#14171c;--mute:#6a7280;--line:#e5e8ee;--brand:#0b7a4b;--brand2:#e8f5ee;--warn:#b45309;--warn2:#fef3e2;--bad:#c0262d;--bad2:#fdecee;--blue:#1d5fd1;--blue2:#e8f0fd;--me:#e6efff;--vio:#6d3fd6;--vio2:#f0eafd;--shadow:0 1px 2px rgba(16,24,40,.06),0 4px 14px rgba(16,24,40,.05)}
+@media(prefers-color-scheme:dark){:root:not([data-theme=light]){--bg:#0e1116;--panel:#171b22;--ink:#eef1f6;--mute:#9aa3b2;--line:#262c36;--brand:#34c57f;--brand2:#12281d;--warn:#f0a84a;--warn2:#2c2111;--bad:#ff7076;--bad2:#2e1618;--blue:#6ea2ff;--blue2:#16233b;--me:#1a2a47;--vio:#b79cff;--vio2:#221a3a;--shadow:none}}
+:root[data-theme=dark]{--bg:#0e1116;--panel:#171b22;--ink:#eef1f6;--mute:#9aa3b2;--line:#262c36;--brand:#34c57f;--brand2:#12281d;--warn:#f0a84a;--warn2:#2c2111;--bad:#ff7076;--bad2:#2e1618;--blue:#6ea2ff;--blue2:#16233b;--me:#1a2a47;--vio:#b79cff;--vio2:#221a3a;--shadow:none}
+.plan-h{display:flex;justify-content:space-between;align-items:flex-end;gap:12px;flex-wrap:wrap;margin-bottom:12px}
+.plan-h h3{margin:0}.plan-h .sub{color:var(--mute);font-size:13px;margin-top:4px}
+.plan-big{font-size:26px;font-weight:700;font-variant-numeric:tabular-nums}.plan-big small{font-size:13px;font-weight:500;color:var(--mute);margin-left:6px}
+.pbar{display:flex;height:12px;border-radius:99px;overflow:hidden;background:var(--line);gap:2px}
+.pbar i{display:block;height:100%;transition:width .6s}.pbar .s{background:var(--brand)}.pbar .a{background:var(--vio)}.pbar .w{background:var(--blue)}.pbar .h{background:var(--warn)}
+.pleg{display:flex;gap:16px;flex-wrap:wrap;margin:10px 0 16px;font-size:13px;color:var(--mute)}.pleg b{color:var(--ink);font-variant-numeric:tabular-nums}
+.pleg span:before{content:'';display:inline-block;width:9px;height:9px;border-radius:3px;margin-right:6px;background:var(--c)}
+.pdays{display:grid;grid-template-columns:repeat(auto-fill,minmax(132px,1fr));gap:10px}
+.pday{border-radius:14px;padding:12px;border:1px solid transparent;background:var(--b);color:var(--c);position:relative;min-width:0}
+.pday.done{--c:var(--brand);--b:var(--brand2)}.pday.today{--c:var(--blue);--b:var(--blue2);border-color:var(--blue)}.pday.next{--c:var(--vio);--b:var(--vio2)}.pday.off{--c:var(--warn);--b:var(--warn2)}
+.pday .d{font-size:12px;font-weight:600;display:flex;justify-content:space-between;gap:6px;white-space:nowrap}
+.pday .d em{font-style:normal;font-weight:700;text-transform:uppercase;font-size:10px;letter-spacing:.04em}
+.pday .n{font-size:24px;font-weight:700;margin:6px 0 2px;color:var(--ink);font-variant-numeric:tabular-nums}.pday .n small{font-size:13px;font-weight:500;color:var(--mute)}
+.pday .m{height:6px;border-radius:99px;background:color-mix(in srgb,var(--c) 22%,transparent);overflow:hidden}.pday .m i{display:block;height:100%;background:var(--c);border-radius:99px;transition:width .6s}
+.pday.today .d em:before{content:'';display:inline-block;width:7px;height:7px;border-radius:50%;background:var(--blue);margin-right:5px;animation:pp 1.6s infinite}
+@keyframes pp{0%,100%{opacity:1}50%{opacity:.25}}
 *{box-sizing:border-box}html,body{margin:0;background:var(--bg);color:var(--ink);font:15px/1.45 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif}
 button,input,select,textarea{font:inherit;color:inherit}
 .app{display:grid;grid-template-columns:232px 1fr;min-height:100vh}
@@ -215,6 +231,7 @@ function vOverview(p){
  var two=el('div','grid g2');two.style.marginTop='16px';
  var left=el('div','card',null,[el('h3',null,'Needs you')]);var right=el('div','card',null,[el('h3',null,'Live activity')]);
  two.appendChild(left);two.appendChild(right);p.appendChild(two);
+ var pc=el('div','card');pc.style.marginTop='16px';p.appendChild(pc);
  var qc=el('div','card');qc.style.marginTop='16px';qc.appendChild(el('h3',null,'Promo queue ('+s.BATCH_CAMPAIGN+')'));
  var qg=el('div','grid g4');[['Waiting for approval',q.waiting],['Approved, to send',q.approved],['Sent',q.sent],['Held or failed',q.held+q.failed]].forEach(function(x){qg.appendChild(el('div','kpi',null,[el('div','n',String(x[1])),el('div','l',x[0])]))});qc.appendChild(qg);p.appendChild(qc);
  api('/admin/dash/inbox'+accQ()).then(function(d){var need=d.rows.filter(function(r){return r.status==='handed_off'||r.waiting}).slice(0,6);
@@ -222,7 +239,18 @@ function vOverview(p){
   need.forEach(function(r){left.appendChild(rowFor(r,true))})});
  function feed(){api('/admin/dash/activity'+accQ()).then(function(d){right.querySelectorAll('.row').forEach(function(x){x.remove()});
   d.rows.slice(0,10).forEach(function(m){var r=el('div','row',null,[el('div','av',m.direction==='inbound'?'C':'B'),el('div','grow',null,[el('div','nm',m.direction==='inbound'?(m.contact_name||'Customer'):'Bot'),el('div','sub',m.body||'')]),el('div','sub',ago(m.created_at))]);right.appendChild(r)})})}
- feed();timer=setInterval(function(){if(view==='overview')feed()},15000)}
+ function plan(){api('/admin/dash/plan').then(function(d){pc.textContent='';var t=d.totals,done=t.sent,all=t.sent+t.toSend+t.waiting+t.held;
+  var sub=!d.sending?'Sending is switched off, so nothing more is scheduled.':(d.finishLabel?'On track to finish '+d.finishLabel+'.':'Nothing left to send.');
+  if(d.deadlineLabel)sub+=' Price good through '+d.deadlineLabel.replace(/^[A-Za-z]+, /,'')+'.';
+  var hd=el('div','plan-h',null,[el('div',null,null,[el('h3',null,'Send plan'),el('div','sub',sub)]),el('div','plan-big',String(done),[el('small',null,'of '+(t.sent+t.toSend)+' sent')])]);pc.appendChild(hd);
+  if(d.late)pc.appendChild(el('div','banner wr','At this pace the last texts go out after the deadline. Raise the daily limit or move the deadline in Settings.'));
+  var bar=el('div','pbar');[['s',t.sent],['a',t.toSend],['w',t.waiting],['h',t.held]].forEach(function(x){if(!x[1])return;var i=el('i',x[0]);i.style.width=(x[1]/Math.max(1,all)*100)+'%';bar.appendChild(i)});pc.appendChild(bar);
+  var lg=el('div','pleg');[['Sent',t.sent,'var(--brand)'],['Scheduled',t.toSend,'var(--vio)'],['Waiting for approval',t.waiting,'var(--blue)'],['Held back',t.held,'var(--warn)']].forEach(function(x){var sp=el('span',null,x[0]+' ',[el('b',null,String(x[1]))]);sp.style.setProperty('--c',x[2]);lg.appendChild(sp)});pc.appendChild(lg);
+  var g=el('div','pdays');d.days.forEach(function(y){var off=y.state==='off';var tag=y.state==='done'?'Done':y.state==='today'?'Today':off?'Day off':'Coming';
+   var n=el('div','n',off?'0':String(y.state==='next'?y.planned:y.sent));if(y.state!=='next'&&!off)n.appendChild(el('small',null,' / '+y.planned));
+   var m=el('div','m',null,[el('i')]);m.firstChild.style.width=(y.planned?Math.min(100,y.sent/y.planned*100):0)+'%';
+   g.appendChild(el('div','pday '+y.state,null,[el('div','d',y.label,[el('em',null,tag)]),n,m]))});pc.appendChild(g)}).catch(function(){})}
+ plan();feed();timer=setInterval(function(){if(view==='overview'){feed();plan()}},15000)}
 function rowFor(r,toInbox){var tone=r.status==='handed_off'?'o':(r.stage==='Approved'?'g':(r.stage==='Quote sent'?'b':''));
  var row=el('div','row',null,[el('div','av',who(r)),el('div','grow',null,[el('div','nm',r.name,[]),el('div','sub',(r.lastFrom==='inbound'?'Customer: ':'Bot: ')+r.last)]),
   el('div',null,null,[el('span','tag '+tone,r.status==='handed_off'?'With the team':r.stage),el('div','sub',ago(r.lastAt))]) ]);

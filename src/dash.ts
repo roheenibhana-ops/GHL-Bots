@@ -216,6 +216,20 @@ export async function handleDash(req: Request, env: Env, url: URL): Promise<Resp
       return json({ ready, error, defs: SETTINGS, values: effectiveValues(env, map) });
     }
 
+    if (p === "/admin/dash/plan") {
+      const { map } = await loadSettings(env);
+      const eff = effectiveValues(env, map);
+      const { buildPlan, pacificDate } = await import("./plan");
+      const rows = await sbAll<{ status: string; sent_at: string | null }>(env, `messages?campaign=eq.${enc(eff.BATCH_CAMPAIGN)}&direction=eq.outbound&select=status,sent_at&order=id.asc`);
+      const now = new Date();
+      const hour = pacificMsSinceMidnight(now) / 3_600_000;
+      return json({ campaign: eff.BATCH_CAMPAIGN, ...buildPlan({
+        rows, today: pacificDate(now), windowOpen: hour < Number(eff.WINDOW_END),
+        cap: Number(eff.DAILY_CAP), capDates: eff.DAILY_CAP_DATES, blackout: eff.BLACKOUT_DATES, startOn: eff.START_ON, deadline: eff.PROMO_DEADLINE,
+        sending: eff.PAUSE_ALL !== "true" && eff.SENDING_ENABLED === "true",
+      }) });
+    }
+
     if (p === "/admin/dash/activity") {
       const rows = await sb<Msg[]>(env, "GET", "messages?status=in.(sent,received)&order=created_at.desc&limit=40&select=contact_id,direction,status,campaign,body,created_at,sent_at,contact_name" + af);
       return json({ rows: rows.map((m) => ({ ...m, body: (m.body ?? "").slice(0, 160) })) });
