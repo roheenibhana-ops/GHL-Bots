@@ -1,5 +1,6 @@
 import { runAgent } from "./agents";
 import { sb } from "./db";
+import { conversationMessages, credsFor, searchConversations } from "./ghl";
 import type { BotFacts } from "./bot";
 import type { Env } from "./types";
 
@@ -49,7 +50,7 @@ export function parseCoach(raw: string): Omit<CoachReport, "conversations"> | nu
   try {
     const j = JSON.parse(m[0]) as Partial<CoachReport>;
     const arr = (v: unknown) => (Array.isArray(v) ? v.filter((x) => typeof x === "string").slice(0, 8) : []);
-    const sug = (Array.isArray(j.suggestions) ? j.suggestions : []).filter((s) => s && typeof s.change === "string").slice(0, 4).map((s) => ({ change: String(s.change).slice(0, 600), why: String(s.why ?? "").slice(0, 300), evidence: String(s.evidence ?? "").slice(0, 400) }));
+    const sug = (Array.isArray(j.suggestions) ? j.suggestions : []).filter((s) => s && typeof s.change === "string").slice(0, 5).map((s) => ({ change: String(s.change).slice(0, 600), why: String(s.why ?? "").slice(0, 300), evidence: String(s.evidence ?? "").slice(0, 400) }));
     return { summary: String(j.summary ?? "").slice(0, 900), working: arr(j.working), notWorking: arr(j.notWorking), suggestions: sug };
   } catch { return null; }
 }
@@ -66,4 +67,50 @@ export async function coachReview(env: Env, days = 14): Promise<CoachReport> {
   const parsed = parseCoach(raw);
   if (!parsed) throw new Error("The coach's review could not be read. Try again.");
   return { conversations: transcripts.length, ...parsed, note: transcripts.length < 8 ? "This is a small sample, so treat the findings as early signals, not proven patterns." : undefined };
+}
+
+// ---------- Head start: learn from the conversations already in GHL ----------
+
+const HISTORY_NOTE = `
+These transcripts come from the company's existing conversation history, before the new agent took over. TEAM lines are real people at the company (the owner Clark and his staff). OLD BOT lines are an older automated system. CUSTOMER lines are customers.
+Learn from the people: what Clark and the team do that moves a customer forward or wins the job, how they handle price, timing, worries and silence, and what customers most often ask. Also note where the old bot let customers down, so the new agent avoids it. Every suggestion must be a change for the NEW agent.`;
+
+/** One page of GHL history as transcripts. Names, numbers, emails and links are removed before anything is read. */
+export async function historyPage(env: Env, before?: number): Promise<{ transcripts: string[]; next?: number }> {
+  const creds = credsFor(env, "dunzo");
+  const convs = await searchConversations(creds, 24, before);
+  const out: string[] = [];
+  for (const c of convs) {
+    const msgs = (await conversationMessages(creds, c.id, 50)).reverse().filter((m) => m.body);
+    const first = (c.fullName ?? "").split(" ")[0];
+    const clean = (t: string) => {
+      let x = t.replace(/https?:\/\/\S+/g, "[link]").replace(/\S+@\S+/g, "[email]").replace(/[A-Za-z0-9._+-]+%40[A-Za-z0-9.-]+/g, "[email]").replace(/\+?\d[\d\s().-]{8,}\d/g, "[phone]");
+      if (first && first.length > 1) x = x.split(first).join("[name]");
+      return x.replace(/\s+/g, " ").slice(0, 300);
+    };
+    const real = msgs.filter((m) => m.direction === "inbound" && !/You reached Santa/i.test(m.body ?? ""));
+    if (real.length < 2) continue;
+    const lines = msgs.filter((m) => !/^Opportunity (created|updated)/i.test(m.body ?? "")).slice(-22).map((m) => `${m.direction === "inbound" ? "CUSTOMER" : m.userId ? "TEAM" : "OLD BOT"}: ${clean(m.body ?? "")}`);
+    const won = msgs.some((m) => /thank you for approving/i.test(m.body ?? ""));
+    out.push(`--- Conversation ${out.length + 1} (outcome: ${won ? "WON: quote approved" : "unknown"})\n${lines.join("\n")}`);
+  }
+  return { transcripts: out, next: convs.length ? convs[convs.length - 1].lastMessageDate : undefined };
+}
+
+export async function coachHistory(env: Env, before?: number): Promise<CoachReport & { next?: number }> {
+  const { transcripts, next } = await historyPage(env, before);
+  if (!transcripts.length) return { conversations: 0, summary: "", working: [], notWorking: [], suggestions: [], next };
+  const raw = await runAgent(env, { name: "coach", system: SYSTEM + HISTORY_NOTE, maxTokens: 1800, model: env.BOT_MODEL }, [{ role: "user", content: `Here are ${transcripts.length} conversations from the company's history.\n\n${transcripts.join("\n\n")}\n\nReview them.` }]);
+  const parsed = parseCoach(raw);
+  if (!parsed) throw new Error("The coach's review could not be read. Try again.");
+  return { conversations: transcripts.length, ...parsed, next };
+}
+
+/** Boils several batch reviews down into one short list of the most valuable changes. */
+export async function coachMerge(env: Env, batches: { summary: string; working: string[]; notWorking: string[]; suggestions: { change: string; why: string; evidence: string }[] }[], total: number): Promise<CoachReport> {
+  const system = SYSTEM.replace("reviewing real text conversations", "combining several reviews of real text conversations") + "\nYou are given several batch reviews of the same company's conversations. Merge them: keep what shows up more than once or is clearly most valuable, drop repeats, and keep real evidence from the batches. At most five suggestions.";
+  const raw = await runAgent(env, { name: "coach", system, maxTokens: 2000, model: env.BOT_MODEL }, [{ role: "user", content: "Batch reviews:\n" + JSON.stringify(batches).slice(0, 60000) + "\n\nMerge them into one review." }]);
+  const parsed = parseCoach(raw.replace(/"suggestions"/, '"suggestions"'));
+  if (!parsed) throw new Error("The combined review could not be read. Try again.");
+  return { conversations: total, ...parsed };
 }

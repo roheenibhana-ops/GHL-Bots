@@ -22,7 +22,7 @@ describe("coach", () => {
   });
   it("reads the coach's reply and caps the suggestions", () => {
     const r = parseCoach('Sure. {"summary":"ok","working":["a"],"notWorking":[],"suggestions":[{"change":"c1","why":"w","evidence":"e"},{"change":"c2"},{"change":"c3"},{"change":"c4"},{"change":"c5"}]}');
-    expect(r?.suggestions).toHaveLength(4);
+    expect(r?.suggestions).toHaveLength(5);
     expect(parseCoach("no json here")).toBeNull();
   });
 });

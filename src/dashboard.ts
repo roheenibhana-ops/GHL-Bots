@@ -547,7 +547,14 @@ function drawStudio(shell){
     co2.appendChild(el('div','pk',null,[el('div','nm',sg.change),el('div','sub',sg.why),sg.evidence?el('div','tnote',sg.evidence):null,(function(){var w=el('div');w.style.marginTop='10px';w.appendChild(b);return w})()]))})}
   if(ST.coach)showCoach(ST.coach);
   cb.onclick=function(){cb.disabled=true;cb.textContent='Reading conversations...';co2.textContent='';api('/admin/dash/agent-coach').then(function(r){cb.disabled=false;cb.textContent='Review again';ST.coach=r;showCoach(r)}).catch(function(e){cb.disabled=false;cb.textContent='Try again';co2.appendChild(el('div','empty',e.message))})};
-  body.appendChild(cb);body.appendChild(co2)}
+  var hb=el('button','btn','Head start: learn from your GHL history');hb.style.cssText='margin:12px 0 0 10px';
+  hb.onclick=function(){hb.disabled=true;cb.disabled=true;co2.textContent='';var batches=[],total=0,page=0,PAGES=5;
+   function step(before){page++;hb.textContent='Reading your GHL history, part '+page+' of '+PAGES+'...';
+    api('/admin/dash/agent-coach-history'+(before?'?before='+before:'')).then(function(r){if(r.conversations){batches.push({summary:r.summary,working:r.working,notWorking:r.notWorking,suggestions:r.suggestions});total+=r.conversations}
+     if(page<PAGES&&r.next){step(r.next)}else finish()}).catch(function(e){if(batches.length)finish();else{hb.disabled=false;cb.disabled=false;hb.textContent='Try the head start again';co2.appendChild(el('div','empty',e.message))}})}
+   function finish(){hb.textContent='Putting it together...';api('/admin/dash/agent-coach-merge',{batches:batches,total:total}).then(function(r){hb.disabled=false;cb.disabled=false;hb.textContent='Run the head start again';r.note='From your GHL history: Clark, the team and the old bots.';ST.coach=r;showCoach(r)}).catch(function(e){hb.disabled=false;cb.disabled=false;hb.textContent='Try the head start again';co2.appendChild(el('div','empty',e.message))})}
+   step(0)};
+  body.appendChild(cb);body.appendChild(hb);body.appendChild(co2)}
  if(ST.tab==='versions'){body.appendChild(el('div','sub','Every published version is kept. Make any of them live again with one click.'));
   var cur=el('div','row2',null,[el('div','grow',null,[el('b',null,'Built-in default'),el('div','sub','The original instructions that came with '+m.name+'.')]),(function(){var b=el('button','btn sm','Use as draft');b.onclick=function(){ST.text=d.defaultInstructions;ST.dials={};ST.dirty=true;ST.tab='instructions';drawStudio(shell)};return b})()]);body.appendChild(cur);
   if(!d.versions.length)body.appendChild(el('div','empty','No versions published yet.'));

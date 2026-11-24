@@ -4,7 +4,7 @@ import { clearAgentCache, DEFAULTS, DIAL_DEFS, EDITABLE_AGENTS, loadAgent, type 
 import { runPack } from "./testpack";
 import { LANES, ROADMAP, TOOLS } from "./roadmap";
 import { draftContent } from "./content";
-import { coachReview } from "./coach";
+import { coachHistory, coachMerge, coachReview } from "./coach";
 import { runAgent } from "./agents";
 import { systemPrompt, type BotFacts } from "./bot";
 import { sb } from "./db";
@@ -319,6 +319,11 @@ export async function handleDash(req: Request, env: Env, url: URL): Promise<Resp
     }
 
     if (p === "/admin/dash/agent-coach") return json(await coachReview(env));
+    if (p === "/admin/dash/agent-coach-history") return json(await coachHistory(env, Number(url.searchParams.get("before") ?? 0) || undefined));
+    if (p === "/admin/dash/agent-coach-merge" && req.method === "POST") {
+      const b = (await req.json()) as { batches?: never[]; total?: number };
+      return json(await coachMerge(env, b.batches ?? [], Number(b.total ?? 0)));
+    }
 
     if (p === "/admin/dash/roadmap") return json({ lanes: LANES, items: ROADMAP, tools: TOOLS });
 
