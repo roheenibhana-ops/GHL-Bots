@@ -35,16 +35,16 @@ export const ROADMAP: RoadItem[] = [
   { lane: "next", area: "Platform", emoji: "📬", title: "Daily report to Clark", detail: "A short summary each morning: what happened, who needs a person, what is cold." },
   { lane: "next", area: "Platform", emoji: "⚡", title: "Prompt caching", detail: "Cuts the cost of every bot reply, worth doing before the big lead run." },
   // ---- soon
-  { lane: "soon", area: "Sales", emoji: "🔴", title: "Lights sales team", who: "Rudolph, Dasher, Dancer", detail: "Design, take off and quotes for Santa's Lights, texting from the Lights number, plus permanent and commercial lighting." },
+  { lane: "soon", area: "Sales", emoji: "🔴", title: "Lights sales team", who: "Tinsel, Pixel, Rudolph, Dasher, Dancer, Prancer, Blitzen", detail: "The Santa's Lights team: greeting, design, take off, quotes, follow ups, install planning and service calls, texting from the Lights number." },
   { lane: "soon", area: "Marketing", emoji: "🗓️", title: "Content calendar and approvals", detail: "Every newsletter and post lands in a queue where you approve, edit and schedule." },
   { lane: "soon", area: "Marketing", emoji: "✉️", title: "Send the newsletter", detail: "Approved newsletters go out through GHL email, one click from the queue." },
   { lane: "soon", area: "Sales", emoji: "🏔️", title: "Big job booker", who: "Summit", detail: "Qualifies large jobs and books Clark on site with a briefing note on the customer." },
-  { lane: "soon", area: "Marketing", emoji: "⛈️", title: "Seasonal campaigns", who: "Stormy, Prancer", detail: "Storm, leaf drop, early bird and last chance campaigns to past customers and old leads." },
+  { lane: "soon", area: "Marketing", emoji: "⛈️", title: "Seasonal campaigns", who: "Stormy, Frosty", detail: "Storm, leaf drop, early bird and last chance campaigns to past customers and old leads." },
   // ---- later
-  { lane: "later", area: "Marketing", emoji: "🎬", title: "Video to posts", who: "Chirp, Vixen, Blitzen", detail: "Feed it a video. It writes the captions and hashtags, picks the best clips, schedules it, and posts it after your approval." },
+  { lane: "later", area: "Marketing", emoji: "🎬", title: "Video to posts", who: "Chirp, Vixen, Snap, Shutter", detail: "Feed it a video. It writes the captions and hashtags, picks the best clips, schedules it, and posts it after your approval." },
   { lane: "later", area: "Platform", emoji: "🔌", title: "Replace the Zaps, one at a time", detail: "Jobber to GHL, Quo to GHL, and the scoreboard feed move into our own system. Paused on purpose until the bots are proven." },
   { lane: "later", area: "Marketing", emoji: "📣", title: "Ads and local SEO", who: "Beacon, Donner", detail: "Ad ideas, blog posts and local search content built from the same approved knowledge." },
-  { lane: "later", area: "Marketing", emoji: "🖼️", title: "Gallery and job content", who: "Snap, Blitzen", detail: "Finished jobs turned into before and after galleries and short video ideas." },
+  { lane: "later", area: "Marketing", emoji: "🖼️", title: "Gallery and job content", who: "Snap, Shutter", detail: "Finished jobs turned into before and after galleries and short video ideas." },
   { lane: "later", area: "Platform", emoji: "📈", title: "Scoreboard connection", detail: "The Santa's Lights scoreboard and this system share data, and Maverick reads it for the weekly plan." },
   { lane: "later", area: "Marketing", emoji: "🧠", title: "Maverick plans the month", detail: "A full monthly plan across both companies, with every spend and mass send waiting for your approval." },
   // ---- sell it
