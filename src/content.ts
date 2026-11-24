@@ -34,6 +34,8 @@ export function seasonNote(now: Date, company: "dunzo" | "lights"): string {
 }
 
 const KINDS: Record<string, string> = {
+  blog: "Write this week's blog post.",
+  gmb: "Write this week's three Google Business Profile posts.",
   newsletter: "Write this week's email newsletter. Output: a subject line, a preview line, then the body, ready to paste into an email.",
   social: "Write five social media posts for this week, a mix of Facebook and Instagram. For each post give: the platform, the caption, a suggested photo or video idea that uses real job photos or the gallery, and 3 to 5 local hashtags.",
 };
@@ -63,6 +65,6 @@ export async function draftContent(env: Env, agentKey: string, override?: { inst
     "BUSINESS KNOWLEDGE (the only facts you may use):",
     BUSINESS_KNOWLEDGE,
   ].filter((x) => x !== "").join("\n");
-  const text = await runAgent(env, { name: agentKey, system, maxTokens: 1400, model: env.BOT_MODEL }, [{ role: "user", content: KINDS[def.kind] }]);
+  const text = await runAgent(env, { name: agentKey, system, maxTokens: def.kind === "blog" ? 2400 : 1400, model: env.BOT_MODEL }, [{ role: "user", content: KINDS[def.kind] }]);
   return { text, problems: contentProblems(text), agent: agentKey };
 }

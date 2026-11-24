@@ -58,11 +58,26 @@ const SOCIAL_LIGHTS = [
   "- Mix the formats across the five posts: a showpiece home idea, a how it works or behind the scenes post, a booking or season reminder, a permanent lighting scene idea, and one post that is just fun. Never invent reviews or numbers.",
 ].join("\n");
 
-export const DEFAULTS: Record<string, string> = { gus: GUS_DEFAULT, maverick: MAVERICK_DEFAULT, scoop: NEWS_DUNZO, comet: NEWS_LIGHTS, chirp: SOCIAL_DUNZO, vixen: SOCIAL_LIGHTS };
+const BLOG = (co: string) => [
+  `- Write one blog post for ${co} that a Sacramento homeowner would actually search for and read. Pick one specific topic that fits the season and is not already covered by the blog links in the knowledge, and say which search phrase it targets.`,
+  "- Output: the target search phrase, an SEO title under 60 characters, a meta description under 155 characters, then the post with clear subheadings. 500 to 700 words. Plain, helpful and local, in Clark's voice, never keyword stuffed.",
+  "- Answer the question early, use real details from the knowledge, link to one or two approved pages where they help, and end with a simple next step. Never invent statistics, prices or customer stories.",
+].join("\n");
+const GMB = (co: string) => [
+  `- Write three Google Business Profile posts for ${co} for this week. Each is 60 to 120 words, local and specific, because these show up when people search nearby.`,
+  "- For each post give: the post type (Update or Offer), the text, a photo idea using real job photos, and the button to use (Call now, Learn more or Book) with an approved link where a link is needed.",
+  "- Mention neighbourhoods and cities only from the service area in the knowledge. An Offer post may only use an offer listed in 'what is happening now'.",
+].join("\n");
+
+export const DEFAULTS: Record<string, string> = { quill: BLOG("Dunzo Gutters"), holly: BLOG("Santa's Lights"), pin: GMB("Dunzo Gutters"), north: GMB("Santa's Lights"), gus: GUS_DEFAULT, maverick: MAVERICK_DEFAULT, scoop: NEWS_DUNZO, comet: NEWS_LIGHTS, chirp: SOCIAL_DUNZO, vixen: SOCIAL_LIGHTS };
 export const EDITABLE_AGENTS = Object.keys(DEFAULTS);
 
 /** The marketing writers: which company each one writes for and what it produces. */
-export const CONTENT_AGENTS: Record<string, { company: "dunzo" | "lights"; kind: "newsletter" | "social" }> = {
+export const CONTENT_AGENTS: Record<string, { company: "dunzo" | "lights"; kind: "newsletter" | "social" | "blog" | "gmb" }> = {
+  quill: { company: "dunzo", kind: "blog" },
+  holly: { company: "lights", kind: "blog" },
+  pin: { company: "dunzo", kind: "gmb" },
+  north: { company: "lights", kind: "gmb" },
   scoop: { company: "dunzo", kind: "newsletter" },
   comet: { company: "lights", kind: "newsletter" },
   chirp: { company: "dunzo", kind: "social" },

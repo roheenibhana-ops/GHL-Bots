@@ -329,7 +329,11 @@ var SPEC={
  Memo:{skin:SK.grey,elephant:true,front:['trunk']},
  Sheriff:{skin:SK.fair,front:['sheriff']},
  Tally:{skin:SK.tan,front:['glasses:#394150','chart']},
- Sage:{skin:SK.fair,front:['glasses:#8a5a2b','book']}
+ Sage:{skin:SK.fair,front:['glasses:#8a5a2b','book']},
+ Quill:{skin:SK.deep,front:['glasses:#394150','paper']},
+ Pin:{skin:SK.fair,front:['beret:#d93a32']},
+ Holly:{skin:SK.tan,front:['beanie:#2f9e6b','book']},
+ North:{skin:SK.ice,front:['star']}
 };
 function part(spec){var bits=spec.split(':');var f=P[bits[0]];if(!f)return '';return f(bits[1],bits[2])}
 function shade(hex,f){var n=parseInt(hex.slice(1),16),r=n>>16,g=(n>>8)&255,b=n&255;function c(v){return Math.max(0,Math.min(255,Math.round(f>0?v+(255-v)*f:v*(1+f))))}return 'rgb('+c(r)+','+c(g)+','+c(b)+')'}
@@ -439,7 +443,7 @@ function drawStudio(shell){
  say('bot','Hi, I am the builder for '+m.name+'. Describe how you want '+(m.agent==='gus'?'him':'them')+' to change in plain words, and I will show you exactly what I would change before anything is saved.');
  ST.chat.forEach(function(c){say(c.kind,c.txt)});
  chat.appendChild(log);
- var chips=el('div','chips');(m.agent==='gus'?['Make him funnier','Be more direct about closing','Shorter replies','Go softer on price pushback','Sound more like a local tradesman']:m.kind==='newsletter'?['Make it punchier','Open with something local','Shorter please','More of my voice','Lead with a tip']:m.kind==='social'?['Funnier captions','More before and after posts','Add a video idea to each','Shorter captions','More local hashtags']:['Make it shorter','Focus more on cross selling','Be blunter about what is not working','Add a section on Lights']).forEach(function(t){var c=el('button','chip',t);c.onclick=function(){inp.value=t;sendBtn.click()};chips.appendChild(c)});chat.appendChild(chips);
+ var chips=el('div','chips');(m.agent==='gus'?['Make him funnier','Be more direct about closing','Shorter replies','Go softer on price pushback','Sound more like a local tradesman']:m.kind==='newsletter'?['Make it punchier','Open with something local','Shorter please','More of my voice','Lead with a tip']:m.kind==='blog'?['Pick a different topic','More local detail','Shorter post','Stronger title']:m.kind==='gmb'?['More local','Add an offer post','Shorter posts','Different photo ideas']:m.kind==='social'?['Funnier captions','More before and after posts','Add a video idea to each','Shorter captions','More local hashtags']:['Make it shorter','Focus more on cross selling','Be blunter about what is not working','Add a section on Lights']).forEach(function(t){var c=el('button','chip',t);c.onclick=function(){inp.value=t;sendBtn.click()};chips.appendChild(c)});chat.appendChild(chips);
  var inp=el('textarea');inp.placeholder='For example: be a bit more casual, and never mention the guards price';var sendBtn=el('button','btn pri','Ask');
  sendBtn.onclick=function(){var v=inp.value.trim();if(!v)return;inp.value='';ST.chat.push({kind:'me',txt:v});say('me',v);var w=el('div','bb bot','Working on it...');log.appendChild(w);sendBtn.disabled=true;
   api('/admin/dash/agent-edit',{agent:m.agent,request:v,instructions:ST.text}).then(function(r){w.remove();sendBtn.disabled=false;var card=el('div','bb bot');card.appendChild(el('div',null,r.summary));card.appendChild(diffView(ST.text,r.instructions));
@@ -480,7 +484,7 @@ function drawStudio(shell){
    run.onclick=function(){run.disabled=true;run.textContent='Running... about 30 seconds';res.textContent='';api('/admin/dash/agent-testpack',{agent:'gus',instructions:ST.text,dials:ST.dials}).then(function(r){run.disabled=false;run.textContent='Run it again';ST.ran=true;ST.pack=r.results;showPack(r.results)}).catch(function(e){run.disabled=false;run.textContent='Run the test pack';res.appendChild(el('div','empty',e.message))})};
    body.appendChild(run);body.appendChild(res)}
   else if(m.kind){body.appendChild(el('div','sub','Write this week\'s copy with your draft. It uses the real knowledge base, the season and what is running now. Prices and links are checked before you see it. Nothing is sent or posted.'));
-   var wb2=el('button','btn pri',m.kind==='newsletter'?'Write this week\'s newsletter':'Write this week\'s five posts');wb2.style.marginTop='12px';var co=el('div');co.style.marginTop='12px';
+   var wb2=el('button','btn pri',m.kind==='newsletter'?'Write this week\'s newsletter':m.kind==='blog'?'Write this week\'s blog post':m.kind==='gmb'?'Write this week\'s Google posts':'Write this week\'s five posts');wb2.style.marginTop='12px';var co=el('div');co.style.marginTop='12px';
    wb2.onclick=function(){wb2.disabled=true;wb2.textContent='Writing...';co.textContent='';api('/admin/dash/content-draft',{agent:m.agent,instructions:ST.text,dials:ST.dials}).then(function(r){wb2.disabled=false;wb2.textContent='Write another version';ST.ran=true;
     co.appendChild(el('div','banner '+(r.problems.length?'bd':'ok'),r.problems.length?'Checks failed: '+r.problems.join(' '):'Checks passed: only real prices and approved links.'));var pr=el('pre',null,r.text);pr.style.maxHeight='none';pr.style.fontSize='14px';pr.style.lineHeight='1.55';co.appendChild(pr);
     var cp2=el('button','btn sm','Copy');cp2.onclick=function(){try{navigator.clipboard.writeText(r.text);toast('Copied')}catch(e){toast('Select the text and copy it')}};co.appendChild(cp2)}).catch(function(e){wb2.disabled=false;wb2.textContent='Try again';co.appendChild(el('div','empty',e.message))})};body.appendChild(wb2);body.appendChild(co)}

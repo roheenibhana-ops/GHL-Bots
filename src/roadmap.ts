@@ -21,7 +21,7 @@ export const ROADMAP: RoadItem[] = [
   { lane: "live", area: "Platform", emoji: "🎛️", title: "Agent Studio", detail: "Chat builder, personality dials, drafts, version history with rollback, and a test pack that checks every change." },
   { lane: "live", area: "Marketing", emoji: "🦅", title: "Marketing Director", who: "Maverick", detail: "Weekly plain English report from your real numbers, with three things to do next." },
   { lane: "live", area: "Sales", emoji: "🎄", title: "Lights referral", detail: "A Dunzo customer who wants Christmas or permanent lighting is added to Santa's Lights, tagged, with a note." },
-  { lane: "live", area: "Marketing", emoji: "📰", title: "Newsletter and social writers", who: "Scoop, Comet, Chirp, Vixen", detail: "Weekly newsletter and five social posts for each company. Drafts only, with prices and links checked." },
+  { lane: "live", area: "Marketing", emoji: "📰", title: "Marketing writers", who: "Scoop, Comet, Chirp, Vixen, Quill, Holly, Pin, North", detail: "Newsletter, social posts, SEO blog posts and Google Business posts for each company. Drafts only, with prices and links checked." },
   // ---- now
   { lane: "now", area: "Platform", emoji: "✅", title: "Clark's final live check", detail: "One full run on his phone with everything built since the last test: objection, STOP, photo, Lights question." },
   { lane: "now", area: "Safety", emoji: "🔐", title: "Lock down access", detail: "Long admin token, and move the alert phone off Clark's own number." },
@@ -30,7 +30,7 @@ export const ROADMAP: RoadItem[] = [
   { lane: "now", area: "Sales", emoji: "🚀", title: "First 20 promo leads", detail: "You read the drafts, approve a small batch, and watch the conversations on the day." },
   // ---- next
   { lane: "next", area: "Platform", emoji: "🎙️", title: "Voice learner", detail: "From your boards: learns Clark from every Quo call and GHL conversation, so every agent writes and sells like him. Feeds every studio." },
-  { lane: "next", area: "Marketing", emoji: "📍", title: "Google Business agent", detail: "The quick win from your boards: posts job photos, replies to every review, adds Q and A. Runs on its own, so it can go live early." },
+  { lane: "next", area: "Marketing", emoji: "📍", title: "Google Business posting and review replies", who: "Pin, North", detail: "The quick win from your boards. Pin and North already write the posts. Next: publish them to Google, reply to every review, and add Q and A." },
   { lane: "next", area: "Sales", emoji: "🏃", title: "Morning quote follow ups", who: "Dash", detail: "A fresh message each morning, 8am to 8pm, seven days a week, to quotes that go quiet. Stops on a reply." },
   { lane: "next", area: "Sales", emoji: "📅", title: "Deposit to scheduled job", who: "Cal", detail: "Moves a lead to Job Scheduled or Unscheduled when the deposit lands, then tags dunzo-won when the job closes." },
   { lane: "next", area: "Marketing", emoji: "☀️", title: "After the job", who: "Sunny", detail: "Thank you, review request, referral ask and the 6 month gutter reminder." },
@@ -54,7 +54,7 @@ export const ROADMAP: RoadItem[] = [
   { lane: "later", area: "Marketing", emoji: "🎓", title: "Marketing team coaching", detail: "Copy that sells, content that converts, and reading the numbers: kill or scale ads on sold jobs, not clicks." },
   { lane: "later", area: "Marketing", emoji: "🎬", title: "Video to posts", who: "Chirp, Vixen, Snap, Shutter", detail: "Feed it a video. It writes the captions and hashtags, picks the best clips, schedules it, and posts it after your approval." },
   { lane: "later", area: "Platform", emoji: "🔌", title: "Replace the Zaps, one at a time", detail: "Jobber to GHL, Quo to GHL, CompanyCam to Jobber, and the scoreboard feed move into our own system. Paused on purpose until the bots are proven." },
-  { lane: "later", area: "Marketing", emoji: "📣", title: "Ads and local SEO", who: "Beacon, Donner", detail: "Ad ideas, blog posts and local search content built from the same approved knowledge." },
+  { lane: "later", area: "Marketing", emoji: "📣", title: "Ads", who: "Beacon, Donner", detail: "Ad ideas and copy for Google and Facebook, built from the same approved knowledge and judged on sold jobs." },
   { lane: "later", area: "Marketing", emoji: "🖼️", title: "Gallery and job content", who: "Snap, Shutter", detail: "Finished jobs turned into before and after galleries and short video ideas." },
   { lane: "later", area: "Platform", emoji: "📈", title: "Scoreboard connection", detail: "The Santa's Lights scoreboard and this system share data, and Maverick reads it for the weekly plan." },
   { lane: "later", area: "Marketing", emoji: "🧠", title: "Maverick plans the month", detail: "A full monthly plan across both companies, with every spend and mass send waiting for your approval." },
