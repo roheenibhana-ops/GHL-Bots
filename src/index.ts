@@ -262,7 +262,7 @@ export default {
         for (const c of convs) {
           const msgs = (await conversationMessages(creds, c.id, 60)).reverse();
           const first = (c.fullName ?? "").split(" ")[0];
-          const clean = (t: string) => t.replace(/\+?\d[\d\s().-]{8,}\d/g, "[phone]").replace(/\S+@\S+/g, "[email]").split(first && first.length > 1 ? first : "\u0000").join("[name]");
+          const clean = (t: string) => t.replace(/\+?\d[\d\s().-]{8,}\d/g, "[phone]").replace(/\S+@\S+/g, "[email]").replace(/[A-Za-z0-9._+-]+%40[A-Za-z0-9.-]+/g, "[email]").split(first && first.length > 1 ? first : "\u0000").join("[name]");
           out.push({ last: c.lastMessageDate, msgs: msgs.filter((m) => m.body && /sms|call|activity/i.test(m.messageType ?? "SMS") || m.body).map((m) => `${m.direction === "inbound" ? "CUSTOMER" : (m.source === "workflow" || m.source === "bulk_actions" ? "AUTO" : m.userId ? "TEAM" : "BOT/AUTO")}: ${clean(m.body ?? "")}`) });
         }
         return json({ account, count: out.length, oldest: convs.at(-1)?.lastMessageDate, conversations: out });
