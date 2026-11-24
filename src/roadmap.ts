@@ -21,6 +21,8 @@ export const ROADMAP: RoadItem[] = [
   { lane: "live", area: "Marketing", emoji: "🦅", title: "Sales and Marketing Director", who: "Maverick", detail: "Weekly plain English report from your real numbers, with three things to do next." },
   { lane: "live", area: "Sales", emoji: "🎄", title: "Lights referral", detail: "A Dunzo customer who wants Christmas or permanent lighting is added to Santa's Lights, tagged, with a note." },
   { lane: "live", area: "Marketing", emoji: "📰", title: "Marketing writers", who: "Scoop, Comet, Chirp, Vixen, Quill, Holly, Pin, North", detail: "Newsletter, social posts, SEO blog posts and Google Business posts for each company. Drafts only, with prices and links checked." },
+  { lane: "live", area: "Platform", emoji: "🏋️", title: "The coach", detail: "Reads the last two weeks of real conversations, compares what won with what lost, and suggests specific changes to an agent. You draft, test and publish them in the studio, so the agents get better every week without ever changing themselves." },
+  { lane: "live", area: "Platform", emoji: "🗣️", title: "The house voice", detail: "Every agent that talks to customers talks like a mate: names what the customer shared, takes their side, and offers a call to anyone who finds texting hard. A customer cannot tell which agent picked up." },
   // ---- now
   { lane: "now", area: "Platform", emoji: "✅", title: "Clark's final live check", detail: "One full run on his phone with everything built since the last test: objection, STOP, photo, Lights question." },
   { lane: "now", area: "Safety", emoji: "🔐", title: "Lock down access", detail: "Long admin token, and move the alert phone off Clark's own number." },
@@ -28,6 +30,8 @@ export const ROADMAP: RoadItem[] = [
   { lane: "now", area: "Safety", emoji: "📞", title: "Quo watcher", detail: "A call or voicemail pauses the bot on that customer so it never texts someone Clark is already talking to." },
   { lane: "now", area: "Sales", emoji: "🚀", title: "First 20 promo leads", detail: "You read the drafts, approve a small batch, and watch the conversations on the day." },
   // ---- next
+  { lane: "next", area: "Platform", emoji: "📈", title: "Learning from results", detail: "Ties each conversation to how it ended (approved, lost, went quiet) so the coach can tell which approaches actually win jobs, and the weekly report shows whether each change made things better or worse." },
+  { lane: "next", area: "Platform", emoji: "🔔", title: "Weekly coaching nudge", detail: "The coach runs by itself each week and tells you when it has found something worth changing, instead of waiting for you to press the button." },
   { lane: "next", area: "Platform", emoji: "❓", title: "Common questions builder", who: "Sage", detail: "Sorts what customers actually ask the agents each week, spots questions with no good answer, and proposes new knowledge for you to approve. Idea from the customer support plugin in your skills guide." },
   { lane: "next", area: "Platform", emoji: "🎙️", title: "Voice learner", detail: "From your boards: learns Clark from every Quo call and GHL conversation, so every agent writes and sells like him. Feeds every studio." },
   { lane: "next", area: "Marketing", emoji: "📍", title: "Google Business posting and review replies", who: "Pin, North", detail: "The quick win from your boards. Pin and North already write the posts. Next: publish them to Google, reply to every review, and add Q and A." },

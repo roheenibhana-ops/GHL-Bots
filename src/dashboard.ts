@@ -101,7 +101,7 @@ textarea.big{width:100%;min-height:380px;margin-top:12px;border:1px solid var(--
 .seg2{display:inline-flex;background:var(--bg);border:1px solid var(--line);border-radius:11px;padding:3px;gap:2px}.seg2 button{border:0;background:none;padding:6px 13px;border-radius:8px;font-weight:650;color:var(--mute);cursor:pointer;text-transform:capitalize}.seg2 button.on{background:var(--brand);color:#fff}
 .diff{margin-top:10px;border:1px solid var(--line);border-radius:10px;overflow:hidden;font-size:12.5px}.dl{padding:6px 10px;white-space:pre-wrap;word-wrap:break-word}.dl.add{background:var(--brand2);color:var(--brand)}.dl.del{background:var(--bad2);color:var(--bad)}.dl.same{color:var(--mute);background:var(--bg)}
 .row2{display:flex;gap:12px;align-items:center;padding:12px 0;border-bottom:1px solid var(--line)}.row2:last-child{border:0}
-.pk{border:1px solid var(--line);border-radius:12px;padding:12px;margin-bottom:10px}.pk .two{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:8px}.pk .col{background:var(--bg);border-radius:10px;padding:10px}.pk .nm .tag{margin-left:8px}
+.pk{border:1px solid var(--line);border-radius:12px;padding:12px;margin-bottom:10px}.pk .two{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:8px}.pk .col{background:var(--bg);border-radius:10px;padding:10px}.pk .nm .tag{margin-left:8px}.pk .nm{white-space:normal}.pk .sub{white-space:normal}
 .lock{width:30px;text-align:center}
 @media(max-width:900px){.studio{grid-template-columns:minmax(0,1fr)}.chatcard{height:auto;min-height:380px}.bchat{max-height:300px}.prof{flex-wrap:wrap}.pk .two{grid-template-columns:1fr}}
 .btn.sm{padding:5px 10px;font-size:13px;border-radius:8px}
@@ -501,7 +501,7 @@ function drawStudio(shell){
  chat.appendChild(el('div','compose',null,[inp,sendBtn]));grid.appendChild(chat);
  // ---- right: the tabs
  var right=el('div','card rightcard');var tabs=el('div','tabs2');
- [['instructions','Instructions'],['dials','Personality'],['test','Test'],['versions','Versions'],['rules','Safety and knowledge']].forEach(function(t){var b=el('button',ST.tab===t[0]?'on':'',t[1]);b.onclick=function(){ST.tab=t[0];drawStudio(shell)};tabs.appendChild(b)});right.appendChild(tabs);
+ [['instructions','Instructions'],['dials','Personality']].concat(m.agent==='gus'?[['coach','Coach']]:[]).concat([['test','Test'],['versions','Versions'],['rules','Safety and knowledge']]).forEach(function(t){var b=el('button',ST.tab===t[0]?'on':'',t[1]);b.onclick=function(){ST.tab=t[0];drawStudio(shell)};tabs.appendChild(b)});right.appendChild(tabs);
  var body=el('div','tbody');right.appendChild(body);grid.appendChild(right);shell.appendChild(grid);
  if(ST.tab==='instructions'){
   body.appendChild(el('div','sub','This is how '+m.name+' talks and sells. You can edit it by hand, or ask the builder on the left. The safety rules live in the code and cannot be edited here.'));
@@ -537,6 +537,17 @@ function drawStudio(shell){
     var cp2=el('button','btn sm','Copy');cp2.onclick=function(){try{navigator.clipboard.writeText(r.text);toast('Copied')}catch(e){toast('Select the text and copy it')}};co.appendChild(cp2)}).catch(function(e){wb2.disabled=false;wb2.textContent='Try again';co.appendChild(el('div','empty',e.message))})};body.appendChild(wb2);body.appendChild(co)}
   else{body.appendChild(el('div','sub','See how your draft changes the report. It reads your real numbers and writes a sample. Nothing is sent to anyone.'));
    var wb=el('button','btn pri','Write a sample report with this draft');wb.style.marginTop='12px';var ro=el('div');ro.style.marginTop='12px';wb.onclick=function(){wb.disabled=true;wb.textContent='Writing...';ro.textContent='';api('/admin/dash/agent-sample'+accQ(),{instructions:ST.text,dials:ST.dials}).then(function(r){wb.disabled=false;wb.textContent='Write it again';ST.ran=true;var pr=el('pre',null,r.report);pr.style.maxHeight='none';ro.appendChild(pr)}).catch(function(e){wb.disabled=false;wb.textContent='Try again';ro.appendChild(el('div','empty',e.message))})};body.appendChild(wb);body.appendChild(ro)}}
+ if(ST.tab==='coach'){body.appendChild(el('div','sub','The coach reads the last two weeks of real conversations, compares the ones that went well with the ones that did not, and suggests specific changes. Nothing changes unless you draft, test and publish it.'));
+  var cb=el('button','btn pri','Review recent conversations');cb.style.marginTop='12px';var co2=el('div');co2.style.marginTop='12px';
+  function showCoach(r){co2.textContent='';co2.appendChild(el('div','banner '+(r.conversations?'ok':'wr'),'Reviewed '+r.conversations+' conversation'+(r.conversations===1?'':'s')+'. '+(r.note||'')));
+   co2.appendChild(el('p',null,r.summary));
+   [['What is working',r.working,'g'],['What is not',r.notWorking,'o']].forEach(function(x){if(!x[1].length)return;co2.appendChild(el('div','team',x[0]));x[1].forEach(function(t){co2.appendChild(el('div','row2',null,[el('span','tag '+x[2],x[2]==='g'?'Keep':'Fix'),el('div','grow',t)]))})});
+   if(r.suggestions.length)co2.appendChild(el('div','team','Suggested changes'));
+   r.suggestions.forEach(function(sg){var b=el('button','btn sm pri','Draft this change');b.onclick=function(){inp.value=sg.change;sendBtn.click();toast('Sent to the builder on the left')};
+    co2.appendChild(el('div','pk',null,[el('div','nm',sg.change),el('div','sub',sg.why),sg.evidence?el('div','tnote',sg.evidence):null,(function(){var w=el('div');w.style.marginTop='10px';w.appendChild(b);return w})()]))})}
+  if(ST.coach)showCoach(ST.coach);
+  cb.onclick=function(){cb.disabled=true;cb.textContent='Reading conversations...';co2.textContent='';api('/admin/dash/agent-coach').then(function(r){cb.disabled=false;cb.textContent='Review again';ST.coach=r;showCoach(r)}).catch(function(e){cb.disabled=false;cb.textContent='Try again';co2.appendChild(el('div','empty',e.message))})};
+  body.appendChild(cb);body.appendChild(co2)}
  if(ST.tab==='versions'){body.appendChild(el('div','sub','Every published version is kept. Make any of them live again with one click.'));
   var cur=el('div','row2',null,[el('div','grow',null,[el('b',null,'Built-in default'),el('div','sub','The original instructions that came with '+m.name+'.')]),(function(){var b=el('button','btn sm','Use as draft');b.onclick=function(){ST.text=d.defaultInstructions;ST.dials={};ST.dirty=true;ST.tab='instructions';drawStudio(shell)};return b})()]);body.appendChild(cur);
   if(!d.versions.length)body.appendChild(el('div','empty','No versions published yet.'));

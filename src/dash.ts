@@ -4,6 +4,7 @@ import { clearAgentCache, DEFAULTS, DIAL_DEFS, EDITABLE_AGENTS, loadAgent, type 
 import { runPack } from "./testpack";
 import { LANES, ROADMAP, TOOLS } from "./roadmap";
 import { draftContent } from "./content";
+import { coachReview } from "./coach";
 import { runAgent } from "./agents";
 import { systemPrompt, type BotFacts } from "./bot";
 import { sb } from "./db";
@@ -316,6 +317,8 @@ export async function handleDash(req: Request, env: Env, url: URL): Promise<Resp
       ]);
       return json({ checks: { ghlDunzo, ghlLights, jobberDunzo, jobberLights, database } });
     }
+
+    if (p === "/admin/dash/agent-coach") return json(await coachReview(env));
 
     if (p === "/admin/dash/roadmap") return json({ lanes: LANES, items: ROADMAP, tools: TOOLS });
 
