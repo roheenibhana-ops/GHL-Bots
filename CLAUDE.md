@@ -8,7 +8,7 @@ This copy runs two Sacramento companies with one owner: Dunzo Gutters and Santa'
 
 - Commit on the assigned `claude/...` branch and push to `main` as well, without asking. Cloudflare deploys `main` automatically in about two minutes.
 - Before every push run `npx tsc --noEmit` and `npx vitest run`, and check the exit code. Do not pipe test output through `tail`, it hides failures.
-- Secrets live in Cloudflare as type Secret. Never put them in the repo, in `wrangler.toml`, or in chat, and never ask the owner to paste one.
+- Secrets live in Cloudflare as type Secret. Never put them in the repo, in `wrangler.toml`, or in chat, and never ask the owner to paste one. The one exception is the Claude API key, which can also be saved from Settings in the dashboard: it is stored encrypted in the `settings` table, never returned to the browser, and overrides the Cloudflare one.
 - Never send a real text to a real person unless the owner asked for that send. Drafts and dry runs are fine.
 - Report only what was checked. Say plainly what is untested.
 - The owner is in New Zealand. All sending is in Pacific time (Sacramento). Double check dates and times against Pacific before setting anything.

@@ -647,7 +647,18 @@ function vSettings(p){api('/admin/dash/settings').then(function(d){
    if(x.type==='toggle'){var lab=el('label','sw');var i=el('input');i.type='checkbox';i.checked=val==='true';i.onchange=function(){save(i.checked)};lab.appendChild(i);lab.appendChild(el('span'));ctl=lab}
    else if(x.type==='select'){ctl=el('select');x.options.forEach(function(o){var op=el('option',null,o);op.value=o;if(o===val)op.selected=true;ctl.appendChild(op)});ctl.onchange=function(){save(ctl.value)}}
    else{ctl=el('input');ctl.type=x.type==='number'?'number':'text';ctl.value=val;ctl.onchange=function(){save(ctl.value)}}
-   c.appendChild(el('div','set',null,[el('div','grow',null,[el('b',null,x.label),el('span',null,x.help)]),ctl]))});p.appendChild(c)})})}
+   c.appendChild(el('div','set',null,[el('div','grow',null,[el('b',null,x.label),el('span',null,x.help)]),ctl]))});p.appendChild(c)})};aiKeyCard(p)})}
+function aiKeyCard(p){var c=el('div','card');c.style.marginBottom='16px';c.appendChild(el('h3',null,'AI account (Claude)'));p.appendChild(c);var body=el('div');c.appendChild(body);
+ function draw(d){body.textContent='';var on=d.source!=='none';
+  var txt=d.source==='dashboard'?'Connected. Using the key saved here, ending in '+d.ending+'.':d.source==='cloudflare'?'Connected. Using the key set in Cloudflare, ending in '+d.ending+'.':'No key yet. The agents cannot reply until one is added.';
+  body.appendChild(el('div','banner '+(on?'ok':'bd'),null,[el('div','t',on?'Claude is connected':'Claude is not connected',[el('small',null,txt)])]));
+  if(d.broken)body.appendChild(el('div','banner wr','The key saved here can no longer be read. Paste it again.'));
+  var i=el('input');i.type='password';i.placeholder='sk-ant-...';i.autocomplete='off';i.style.minWidth='260px';
+  var sv=el('button','btn pri','Save key');sv.onclick=function(){var v=i.value.trim();if(!v)return;sv.disabled=true;sv.textContent='Checking with Claude...';api('/admin/dash/ai-key',{value:v}).then(function(r){toast('Key saved and working');draw(r)}).catch(function(e){toast(e.message);sv.disabled=false;sv.textContent='Save key'})};
+  var row=el('div','set',null,[el('div','grow',null,[el('b',null,'Claude API key'),el('span',null,'Create one at console.anthropic.com under API keys, and set a monthly spending limit there. The key is checked with Claude before it is saved, stored encrypted, and never shown again.')]),i,sv]);body.appendChild(row);
+  if(d.source==='dashboard'){var rm=el('button','btn','Remove saved key');rm.onclick=function(){if(!confirm('Remove the key saved here?'))return;api('/admin/dash/ai-key',{value:''}).then(function(r){toast('Removed');draw(r)}).catch(function(e){toast(e.message)})};
+   body.appendChild(el('div','set',null,[el('div','grow',null,[el('b',null,'Remove'),el('span',null,'Goes back to the key set in Cloudflare, if there is one.')]),rm]))}}
+ api('/admin/dash/ai-key').then(draw).catch(function(e){body.appendChild(el('div','empty',e.message))})}
 function vSim(p){var c=el('div','card');c.appendChild(el('h3',null,'Practice chat. Nothing is sent to anyone.'));
  var th=el('div','thread');th.style.cssText='height:50vh;border-radius:12px;margin-bottom:12px';var facts={firstName:'Sam',address:{street1:'2752 Argolis Way',city:'Sacramento',province:'CA',postalCode:'95826'},opening:"Hi Sam, it's Dunzo Gutters. Before the rains: gutter cleaning is $219 for a single story home or $319 for two stories. Reply 1 or 2 and we'll text you a quote to approve and pay online. Reply STOP to opt out."};var hist=[];
  th.appendChild(el('div','b out',facts.opening));

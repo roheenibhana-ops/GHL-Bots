@@ -44,10 +44,11 @@ export default {
     const url = new URL(req.url);
     // The control panel page is static. Everything else sees the settings you changed on the dashboard.
     if (url.pathname === "/dashboard") return new Response(DASH_HTML, { headers: { "content-type": "text/html; charset=utf-8", "cache-control": "no-store" } });
+    const rawEnv = env;
     if (!["/health", "/sim", "/app", "/stats"].includes(url.pathname)) env = await applySettings(env);
     if (url.pathname.startsWith("/admin/dash/")) {
       if (!isAdmin(req, env)) return json({ error: "unauthorized" }, 401);
-      const r = await handleDash(req, env, url);
+      const r = await handleDash(req, env, url, rawEnv);
       if (r) return r;
     }
     const jobberAccount = (): Account | null => {

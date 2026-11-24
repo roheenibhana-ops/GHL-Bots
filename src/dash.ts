@@ -112,7 +112,7 @@ const SAFETY_RULES = [
 ];
 
 /** All the dashboard's data and actions. Returns null when the path is not a dashboard path. */
-export async function handleDash(req: Request, env: Env, url: URL): Promise<Response | null> {
+export async function handleDash(req: Request, env: Env, url: URL, rawEnv: Env = env): Promise<Response | null> {
   const p = url.pathname;
   if (!p.startsWith("/admin/dash/")) return null;
   const enc = encodeURIComponent;
@@ -216,6 +216,26 @@ export async function handleDash(req: Request, env: Env, url: URL): Promise<Resp
       }
       const { map, ready, error } = await loadSettings(env, true);
       return json({ ready, error, defs: SETTINGS, values: effectiveValues(env, map) });
+    }
+
+    if (p === "/admin/dash/ai-key") {
+      const { loadSettings: ls, aiKeyStatus, aiKeyLooksRight, encryptSecret, AI_KEY_ROW } = await import("./settings");
+      if (req.method === "POST") {
+        const value = String(((await req.json()) as { value?: string }).value ?? "").trim();
+        const { ready, error } = await ls(env, true);
+        if (!ready) return json({ error: "The key could not be saved: " + (error ?? "settings table not found") }, 409);
+        if (value !== "") {
+          if (!aiKeyLooksRight(value)) return json({ error: "That does not look like a Claude API key. It should start with sk-ant-" }, 400);
+          // Prove the key works before saving it, so a typo can never take the agents down.
+          const test = await fetch("https://api.anthropic.com/v1/models?limit=1", { headers: { "x-api-key": value, "anthropic-version": "2023-06-01" } }).catch(() => null);
+          if (!test) return json({ error: "Could not reach Claude to check the key. Try again." }, 502);
+          if (test.status === 401 || test.status === 403) return json({ error: "Claude did not accept that key. Check it was copied in full and is still active." }, 400);
+          if (!test.ok) return json({ error: "Claude answered with an error (" + test.status + ") while checking the key. Nothing was changed." }, 502);
+        }
+        await saveSetting(env, AI_KEY_ROW, value === "" ? "" : await encryptSecret(rawEnv, value));
+      }
+      const { map } = await ls(env, true);
+      return json(await aiKeyStatus(rawEnv, map));
     }
 
     if (p === "/admin/dash/plan") {

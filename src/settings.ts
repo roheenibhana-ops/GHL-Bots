@@ -69,7 +69,59 @@ export function mergeSettings(env: Env, map: Record<string, string>): Env {
 
 export async function applySettings(env: Env): Promise<Env> {
   const { map } = await loadSettings(env);
-  return mergeSettings(env, map);
+  const merged = mergeSettings(env, map);
+  // An AI key saved from the dashboard wins over the one set in Cloudflare.
+  const key = await savedAiKey(env, map);
+  return key ? { ...merged, ANTHROPIC_API_KEY: key } : merged;
+}
+
+// ---------- The AI key, saved from the dashboard ----------
+// It is stored encrypted, is never sent back to the browser, and cannot be read or written through the normal settings route.
+export const AI_KEY_ROW = "SECRET_ANTHROPIC_API_KEY";
+const b64 = (u: Uint8Array) => btoa(String.fromCharCode(...u));
+const unb64 = (s: string) => Uint8Array.from(atob(s), (c) => c.charCodeAt(0));
+
+async function cryptoKey(env: Env): Promise<CryptoKey> {
+  const seed = (env as unknown as Record<string, string | undefined>).SETTINGS_KEY || env.SUPABASE_SERVICE_KEY;
+  const hash = await crypto.subtle.digest("SHA-256", new TextEncoder().encode("ai-key:" + seed));
+  return crypto.subtle.importKey("raw", hash, "AES-GCM", false, ["encrypt", "decrypt"]);
+}
+
+export async function encryptSecret(env: Env, plain: string): Promise<string> {
+  const iv = crypto.getRandomValues(new Uint8Array(12));
+  const ct = new Uint8Array(await crypto.subtle.encrypt({ name: "AES-GCM", iv }, await cryptoKey(env), new TextEncoder().encode(plain)));
+  return "v1." + b64(iv) + "." + b64(ct);
+}
+
+export async function decryptSecret(env: Env, blob: string): Promise<string | null> {
+  try {
+    const [v, iv, ct] = blob.split(".");
+    if (v !== "v1" || !iv || !ct) return null;
+    return new TextDecoder().decode(await crypto.subtle.decrypt({ name: "AES-GCM", iv: unb64(iv) }, await cryptoKey(env), unb64(ct)));
+  } catch {
+    return null;
+  }
+}
+
+let keyCache: { blob: string; key: string | null } | null = null;
+async function savedAiKey(env: Env, map: Record<string, string>): Promise<string | null> {
+  const blob = map[AI_KEY_ROW];
+  if (!blob) return null;
+  if (keyCache?.blob !== blob) keyCache = { blob, key: await decryptSecret(env, blob) };
+  return keyCache.key;
+}
+
+/** What the dashboard may know about the AI key: where it comes from and its last four characters. Never the key. */
+export async function aiKeyStatus(rawEnv: Env, map: Record<string, string>): Promise<{ source: "dashboard" | "cloudflare" | "none"; ending: string | null; broken?: boolean }> {
+  if (map[AI_KEY_ROW]) {
+    const k = await savedAiKey(rawEnv, map);
+    return k ? { source: "dashboard", ending: k.slice(-4) } : { source: rawEnv.ANTHROPIC_API_KEY ? "cloudflare" : "none", ending: null, broken: true };
+  }
+  return rawEnv.ANTHROPIC_API_KEY ? { source: "cloudflare", ending: rawEnv.ANTHROPIC_API_KEY.slice(-4) } : { source: "none", ending: null };
+}
+
+export function aiKeyLooksRight(value: string): boolean {
+  return /^sk-ant-[A-Za-z0-9_-]{20,300}$/.test(value);
 }
 
 /** The value each setting has right now, for the dashboard. */
