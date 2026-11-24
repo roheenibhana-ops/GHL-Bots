@@ -59,7 +59,7 @@ export function pickTargets(o: { promos: Promo[]; convs: Conv[]; msgs: Msg[]; no
   return out;
 }
 
-const OFFER = "The offer: one time gutter cleaning, $219 for a single story home or $319 for two stories, with a 50% deposit when the quote is approved online. It includes hand cleared gutters, a downspout flush, a photo report and a 30 day no clog guarantee. Over half of Sacramento's rain falls November to February.";
+const OFFER = "The offer: one time gutter cleaning, $219 for a single story home or $319 for two stories, with a 50% deposit when the quote is approved online. It includes hand cleared gutters, a downspout flush, a photo report and a 30 day no clog guarantee. Over half of Sacramento's rain falls November to February. The promo price is good through December 15: approving the quote and paying the deposit by then locks the price, and the clean can be scheduled later, into January.";
 
 export async function writeFollowUp(env: Env, t: { kind: "promo" | "quote"; firstName?: string | null; nth: number; history: string[]; stories?: number }, override?: { instructions: string; dials: Dials }): Promise<{ text: string; problems: string[]; skip?: boolean }> {
   const live = override ?? (await loadAgent(env, "dash"));
@@ -69,7 +69,7 @@ export async function writeFollowUp(env: Env, t: { kind: "promo" | "quote"; firs
     "HOW YOU FOLLOW UP (set by the owner and editable):",
     live.instructions,
     dialsText(live.dials),
-    "FIXED RULES: one text, one or two short sentences, under 240 characters. Never repeat a line that is already in the conversation. Never invent urgency, deadlines, discounts or prices. The only prices you may mention are in the offer below. No links. Never promise a day or time. Never guilt them for not replying. Make it easy to say not now. Plain text only, no quotation marks around it, no emojis.",
+    "FIXED RULES: one text, one or two short sentences, under 240 characters. Never repeat a line that is already in the conversation. Never invent urgency, deadlines, discounts or prices. The one real deadline is December 15, in the offer below, and you may mention it once, plainly, as helpful information and never as pressure. The only prices you may mention are in the offer below. No links. Never promise a day or time. Never guilt them for not replying. Make it easy to say not now. Plain text only, no quotation marks around it, no emojis.",
     OFFER,
   ].filter(Boolean).join("\n");
   const situation = t.kind === "promo"

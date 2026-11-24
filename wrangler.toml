@@ -19,6 +19,8 @@ QUIET_END_HOUR = "8"
 # Daily batch sender: texts per day (0 = none) and which campaign it sends.
 DAILY_CAP = "0"
 BATCH_CAMPAIGN = "pilot-2"
+# A short true sentence added to each promo text before the opt out line.
+PROMO_NOTE = "Price good through December 15."
 CLAUDE_MODEL = "claude-haiku-5-5"
 # Bot: "off" = only capture replies | "test" = reply only to contacts tagged bot-test | "live" = reply to everyone.
 BOT_MODE = "test"

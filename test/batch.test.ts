@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { isBlackout, pacificMsSinceMidnight, planBatch } from "../src/batch";
+import { withPromoNote, isBlackout, pacificMsSinceMidnight, planBatch } from "../src/batch";
 
 const H = 3_600_000;
 const base = { cap: 100, sentToday: 0, startHour: 9, endHour: 20, maxPerRun: 8 };
@@ -34,5 +34,15 @@ describe("days off", () => {
     expect(isBlackout("2026-11-26, 2026-12-25", "2026-11-27")).toBe(false);
     expect(isBlackout(undefined, "2026-11-26")).toBe(false);
     expect(isBlackout("", "2026-11-26")).toBe(false);
+  });
+});
+
+describe("promo note", () => {
+  const body = "Hi Al, it's Dunzo Gutters. Cleaning is $219. Reply 1 or 2. Reply STOP to opt out.";
+  it("adds the deadline once, before the opt out line", () => {
+    const out = withPromoNote(body, "Price good through December 15.");
+    expect(out).toBe("Hi Al, it's Dunzo Gutters. Cleaning is $219. Reply 1 or 2. Price good through December 15. Reply STOP to opt out.");
+    expect(withPromoNote(out, "Price good through December 15.")).toBe(out);
+    expect(withPromoNote(body, undefined)).toBe(body);
   });
 });

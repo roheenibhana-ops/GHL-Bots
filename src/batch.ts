@@ -27,6 +27,13 @@ export function planBatch(o: { cap: number; sentToday: number; msSinceMidnight: 
   return Math.min(o.maxPerRun, Math.ceil((o.cap - o.sentToday) / runsLeft));
 }
 
+/** Adds a short note (the deadline) to a promo text just before the opt out line, once. */
+export function withPromoNote(body: string, note: string | undefined): string {
+  const n = (note ?? "").trim();
+  if (!n || body.includes(n)) return body;
+  return /Reply STOP to opt out\.?\s*$/.test(body) ? body.replace(/\s*Reply STOP to opt out\.?\s*$/, ` ${n} Reply STOP to opt out.`) : `${body} ${n}`;
+}
+
 /** True when today (a Pacific date, YYYY-MM-DD) is on the list of days with no sending. */
 export function isBlackout(list: string | undefined, today: string): boolean {
   return (list ?? "").split(",").map((x) => x.trim()).includes(today);
@@ -81,7 +88,7 @@ export async function runDailyBatch(env: Env): Promise<Record<string, unknown>> 
           continue;
         }
       }
-      const text = plainPunctuation(m.body);
+      const text = withPromoNote(plainPunctuation(m.body), env.PROMO_NOTE);
       await sendSms(creds, m.contact_id, text);
       if (text !== m.body) await sb(env, "PATCH", `messages?id=eq.${m.id}`, { body: text }, "return=minimal");
       await sb(env, "PATCH", `messages?id=eq.${m.id}`, { status: "sent", sent_at: new Date().toISOString() }, "return=minimal");
