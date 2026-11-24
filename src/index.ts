@@ -294,6 +294,16 @@ export default {
       } catch (e) { return json({ error: (e as Error).message }, 502); }
     }
 
+    // Read only: a contact's GHL notes and whether any of them makes the bot stay silent.
+    if (url.pathname === "/admin/notes") {
+      if (!isAdmin(req, env)) return json({ error: "unauthorized" }, 401);
+      try {
+        const { ghlNotes, blockingNote, plainNote } = await import("./profile");
+        const notes = await ghlNotes(credsFor(env, "dunzo"), url.searchParams.get("contactId") ?? "");
+        return json({ blockedBy: blockingNote(notes), notes: notes.map((n) => plainNote(n.body ?? "").slice(0, 900)) });
+      } catch (e) { return json({ error: (e as Error).message }, 502); }
+    }
+
     // Read only: one contact's recent messages and conversation state.
     if (url.pathname === "/admin/convo") {
       if (!isAdmin(req, env)) return json({ error: "unauthorized" }, 401);
