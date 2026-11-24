@@ -39,6 +39,28 @@ a.nav{text-decoration:none}
 .stem{width:2px;height:22px;background:var(--line);margin:-6px auto 0}
 .team{font-size:12px;font-weight:700;color:var(--mute);text-transform:uppercase;letter-spacing:.05em;margin:14px 0 2px}
 .dim{opacity:1}
+.oc{display:flex;flex-direction:column;align-items:center;margin-top:12px;padding:26px 18px;overflow-x:auto}
+.onode{display:flex;gap:10px;align-items:center;padding:7px 11px 7px 7px;border:1px solid var(--line);border-radius:14px;background:var(--panel);cursor:pointer;transition:transform .12s,box-shadow .12s,border-color .12s;min-width:0}
+.onode:hover{transform:translateY(-2px);box-shadow:var(--shadow);border-color:var(--brand)}.onode:hover .avl{transform:rotate(-4deg) scale(1.08)}
+.onode .nm{font-size:14px;line-height:1.2}.onode .sub2{font-size:12px;line-height:1.25}.onode .sdot{flex:none}
+.onode.big{padding:12px 18px 12px 12px;border:2px solid var(--brand);box-shadow:var(--shadow)}.onode.big .nm{font-size:17px}.onode.big .sub2{font-size:13.5px}
+.oc-branch{display:grid;grid-template-columns:1fr 1fr;gap:18px;width:100%;position:relative;padding-top:24px;margin-top:24px}
+.oc-branch:before{content:"";position:absolute;top:0;left:25%;right:25%;height:2px;background:var(--line)}
+.oc-branch:after{content:"";position:absolute;top:-24px;left:50%;width:2px;height:24px;background:var(--line);margin-left:-1px}
+.oc-branch.one{grid-template-columns:1fr}.oc-branch.one:before{display:none}
+.oc-col{display:flex;flex-direction:column;align-items:center;position:relative;min-width:0}
+.oc-col:before{content:"";position:absolute;top:-24px;left:50%;width:2px;height:24px;background:var(--line);margin-left:-1px}
+.oc-branch.one>.oc-col:before{display:none}
+.oc-co{text-align:center;padding:10px 20px;border-radius:14px;background:var(--brand2);border:1px solid var(--brand);color:var(--brand)}.oc-co .sub2{color:inherit;opacity:.8}
+.oc-pill{font-size:12px;font-weight:750;text-transform:uppercase;letter-spacing:.05em;color:var(--mute);background:var(--bg);border:1px solid var(--line);padding:5px 12px;border-radius:99px}
+.oc-list{align-self:stretch;margin:10px 0 0 18px;border-left:2px solid var(--line);display:flex;flex-direction:column;gap:8px;padding:8px 0 2px}
+.oc-item{position:relative;margin-left:16px}.oc-item:before{content:"";position:absolute;left:-16px;top:50%;width:16px;height:2px;background:var(--line)}
+.oc-shared{width:100%;margin-top:26px;padding-top:20px;border-top:2px dashed var(--line);display:flex;flex-direction:column;align-items:center;gap:12px}
+.oc-row{display:grid;grid-template-columns:repeat(auto-fit,minmax(210px,1fr));gap:10px;width:100%}
+.oc-key{display:flex;gap:18px;flex-wrap:wrap;margin-top:18px}
+@media(max-width:1100px){.oc-branch.wide{grid-template-columns:1fr}.oc-branch.wide:before{display:none}.oc-branch.wide>.oc-col{margin-top:24px}}
+@media(max-width:600px){.oc-branch{grid-template-columns:1fr}.oc-branch:before{display:none}}
+
 .mono{width:42px;height:42px;border-radius:12px;color:#fff;display:grid;place-items:center;font-weight:800;font-size:17px;flex:none;box-shadow:inset 0 -3px 0 rgba(0,0,0,.18),0 2px 6px rgba(0,0,0,.15)}
 .sst{display:inline-flex;align-items:center;gap:7px;font-size:12.5px;font-weight:650;color:var(--mute);white-space:nowrap;margin-top:7px}
 .sysgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(290px,1fr));gap:14px;margin-top:14px;align-items:start}
@@ -371,10 +393,28 @@ function avatar(m,size){var a=el('div','avl');var sv=avatarSVG(m.name);
  if(size){a.style.width=size+'px';a.style.height=size+'px';a.style.fontSize=Math.round(size*.52)+'px'}return a}
 function mateCard(m){var c=el('div','mcard'+(m.state==='live'?' live':''),null,[avatar(m),el('div','grow',null,[el('div','nm',m.name),el('div','sub2',m.role)]),el('span','tag '+(m.state==='live'?'g':m.state==='external'?'b':''),m.state==='live'?'Live':m.state==='external'?'Your Claude':'Soon')]);
  c.title=m.does;c.onclick=function(){studioKey=m.agent||('profile:'+m.name);studioMeta=m;render()};return c}
+var AVIEW='org';try{AVIEW=localStorage.getItem('aview')||'org'}catch(e){}
+function onode(m,big){var st=m.state==='live'?'ok':m.state==='external'?'run':'plan';
+ var n=el('div','onode'+(big?' big':''),null,[avatar(m,big?58:42),el('div','grow',null,[el('div','nm',m.name),el('div','sub2',m.role)]),el('span','sdot '+st)]);
+ n.title=(m.state==='live'?'Live. ':m.state==='external'?'Handled by your own Claude setup. ':'Planned. ')+m.does;n.onclick=function(){studioKey=m.agent||('profile:'+m.name);studioMeta=m;render()};return n}
+function orgTeam(title,list){var col=el('div','oc-col');col.appendChild(el('div','oc-pill',title+' · '+list.length));var ul=el('div','oc-list');list.forEach(function(m){var it=el('div','oc-item');it.appendChild(onode(m));ul.appendChild(it)});col.appendChild(ul);return col}
+function orgCompany(title,sub,list){var col=el('div','oc-col');col.appendChild(el('div','oc-co',null,[el('b',null,title),el('div','sub2',sub)]));
+ var br=el('div','oc-branch');br.appendChild(orgTeam('Sales',list.filter(function(m){return m.team==='Sales'})));br.appendChild(orgTeam('Marketing',list.filter(function(m){return m.team==='Marketing'})));col.appendChild(br);return col}
+function orgChart(p,d){var c=el('div','card oc');
+ var dir=d.mates.filter(function(m){return m.unit==='director'})[0];var top=onode(dir,true);top.classList.add('oc-top');c.appendChild(top);
+ var br=el('div','oc-branch wide');
+ if(ACC!=='lights')br.appendChild(orgCompany('Dunzo Gutters','Gutters and exterior care',d.mates.filter(function(m){return m.unit==='dunzo'})));
+ if(ACC!=='dunzo')br.appendChild(orgCompany('Santa\'s Lights','Christmas and permanent lighting',d.mates.filter(function(m){return m.unit==='lights'})));
+ if(br.children.length===1)br.classList.add('one');c.appendChild(br);
+ var sh=el('div','oc-shared');sh.appendChild(el('div','oc-pill','Shared by both companies'));var row=el('div','oc-row');d.mates.filter(function(m){return m.unit==='shared'}).forEach(function(m){row.appendChild(onode(m))});sh.appendChild(row);c.appendChild(sh);
+ var key=el('div','oc-key');[['ok','Live'],['run','Your own Claude setup'],['plan','Planned']].forEach(function(k){key.appendChild(el('span','sst',null,[el('span','sdot '+k[0]),document.createTextNode(k[1])]))});c.appendChild(key);
+ p.appendChild(c)}
 function vAgents(p){
  if(studioKey){return vStudio(p)}
  api('/admin/dash/agents').then(function(d){ALLMATES=d.mates;
-  p.appendChild(el('div','sub','Meet the team. Click anyone to see what they do. Gus and Maverick are fully editable: change how they talk, test it, and publish it.'));
+  p.appendChild(el('div','sub','Meet the team. Click anyone to see what they do, and to open their studio.'));
+  var vw=el('div','chips');vw.style.marginTop='10px';[['org','Org chart'],['cards','Cards']].forEach(function(x){var c=el('button','chip'+(AVIEW===x[0]?' on':''),x[1]);c.onclick=function(){AVIEW=x[0];try{localStorage.setItem('aview',AVIEW)}catch(e){}render()};vw.appendChild(c)});p.appendChild(vw);
+  if(AVIEW==='org'){orgChart(p,d);var sb0=el('div','card');sb0.style.marginTop='16px';p.appendChild(sb0);vSystems(sb0,null);api('/admin/dash/systems').then(function(r){sb0.textContent='';vSystems(sb0,r.checks)}).catch(function(){});return}
   var dir=d.mates.filter(function(m){return m.unit==='director'})[0];
   var top=el('div','card top-card hov',null,[avatar(dir,64),el('div','nm',dir.name+', '+dir.role),el('span','tag g','Live'),el('div','sub',dir.does)]);top.querySelector('.sub:last-child').style.whiteSpace='normal';top.style.cursor='pointer';top.onclick=function(){studioKey=dir.agent;studioMeta=dir;render()};
   p.appendChild(top);p.appendChild(el('div','stem'));
