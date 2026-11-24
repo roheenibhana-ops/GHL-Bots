@@ -46,6 +46,7 @@ export const ROADMAP: RoadItem[] = [
   { lane: "soon", area: "Sales", emoji: "🏔️", title: "Big job booker", who: "Summit", detail: "Qualifies large jobs and books Clark on site with a briefing note on the customer." },
   { lane: "soon", area: "Marketing", emoji: "⛈️", title: "Seasonal campaigns", who: "Stormy, Frosty", detail: "Storm, leaf drop, early bird and last chance campaigns to past customers and old leads." },
   // ---- later
+  { lane: "later", area: "Marketing", emoji: "🔎", title: "SEO reporting", who: "Quill, Holly", detail: "Your Claude schedule writes and publishes the blogs. Quill and Holly switch to reporting: what was published each week, which customer questions have no post yet, and which posts bring in leads." },
   { lane: "later", area: "Marketing", emoji: "🏘️", title: "Neighbour targeting", detail: "Every finished job triggers door hangers, postcards and geo ads to the homes around it, plus a yard sign and area tracker showing which streets sell." },
   { lane: "later", area: "Marketing", emoji: "📊", title: "Ad reporter and ad variants", detail: "Daily cost per sold job by ad from Meta Ads, and winning ideas turned into new hooks, copy and video cuts." },
   { lane: "later", area: "Sales", emoji: "🏡", title: "Partner channels", detail: "Realtors and inspectors, property managers and HOAs, event planners for off season lighting, and home show leads followed up automatically." },
