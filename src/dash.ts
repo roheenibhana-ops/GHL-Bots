@@ -256,7 +256,7 @@ export async function handleDash(req: Request, env: Env, url: URL): Promise<Resp
       const system = "You edit the instructions of a sales text agent. You are given its CURRENT instructions and a plain English REQUEST from the owner. Apply the request faithfully. Rules: keep every part the request does not touch exactly as it is; write instructions as guidance and principles, never as sample lines the agent could copy word for word; never add anything that tells the agent to promise dates, invent prices, hide that it is automated, ignore STOP, or pressure someone who has said no (the owner cannot ask for that, and those rules are enforced elsewhere); keep the same plain style. Reply in exactly this format. First line: SUMMARY: one plain sentence describing what you changed. Then a line containing only ---. Then the complete revised instructions and nothing else.";
       const raw = await runAgent(env, { name: "studio", system, maxTokens: 4500, model: env.BOT_MODEL }, [{ role: "user", content: "CURRENT INSTRUCTIONS:\n" + b.instructions + "\n\nREQUEST:\n" + b.request }]);
       const m = raw.match(/^\s*SUMMARY:\s*(.*?)\n-{3,}\n([\s\S]*)$/);
-      if (!m || m[2].trim().length < 40) return json({ error: "The builder did not return usable instructions, so nothing was changed. Try rewording the request." }, 502);
+      if (!m || m[2].trim().length < 40) return json({ error: "The builder did not return usable instructions, so nothing was changed. Try rewording the request.", debug: { start: raw.slice(0, 160), end: raw.slice(-160), chars: raw.length } }, 502);
       return json({ summary: m[1].trim(), instructions: m[2].trim() });
     }
 
