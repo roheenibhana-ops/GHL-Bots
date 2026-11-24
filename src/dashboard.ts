@@ -4,22 +4,22 @@ export const DASH_HTML = String.raw`<!doctype html>
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>The Partridge Standard</title>
 <style>
-:root{--bg:#f2f5fb;--panel:#ffffff;--ink:#0c1a3d;--mute:#5a6a8c;--line:#dde5f3;--brand:#1747c4;--brand2:#e6edff;--warn:#2a55cf;--warn2:#edf2ff;--bad:#c8102e;--bad2:#fde8ec;--blue:#1747c4;--blue2:#e6edff;--me:#e1eaff;--shadow:0 1px 2px rgba(12,26,61,.06),0 4px 14px rgba(12,26,61,.06)}
-@media(prefers-color-scheme:dark){:root:not([data-theme=light]){--bg:#0a1124;--panel:#111a33;--ink:#eaf0ff;--mute:#93a1c4;--line:#1f2b4d;--brand:#6f9bff;--brand2:#14224a;--warn:#8fb0ff;--warn2:#14224a;--bad:#ff6b75;--bad2:#34131a;--blue:#6f9bff;--blue2:#14224a;--me:#1a2d5c;--shadow:none}}
-:root[data-theme=dark]{--bg:#0a1124;--panel:#111a33;--ink:#eaf0ff;--mute:#93a1c4;--line:#1f2b4d;--brand:#6f9bff;--brand2:#14224a;--warn:#8fb0ff;--warn2:#14224a;--bad:#ff6b75;--bad2:#34131a;--blue:#6f9bff;--blue2:#14224a;--me:#1a2d5c;--shadow:none}
+:root{--bg:#f4f5f7;--panel:#fff;--ink:#14171c;--mute:#6a7280;--line:#e5e8ee;--brand:#0b7a4b;--brand2:#e8f5ee;--warn:#b45309;--warn2:#fef3e2;--bad:#c0262d;--bad2:#fdecee;--blue:#1d5fd1;--blue2:#e8f0fd;--me:#e6efff;--shadow:0 1px 2px rgba(16,24,40,.06),0 4px 14px rgba(16,24,40,.05)}
+@media(prefers-color-scheme:dark){:root:not([data-theme=light]){--bg:#0e1116;--panel:#171b22;--ink:#eef1f6;--mute:#9aa3b2;--line:#262c36;--brand:#34c57f;--brand2:#12281d;--warn:#f0a84a;--warn2:#2c2111;--bad:#ff7076;--bad2:#2e1618;--blue:#6ea2ff;--blue2:#16233b;--me:#1a2a47;--shadow:none}}
+:root[data-theme=dark]{--bg:#0e1116;--panel:#171b22;--ink:#eef1f6;--mute:#9aa3b2;--line:#262c36;--brand:#34c57f;--brand2:#12281d;--warn:#f0a84a;--warn2:#2c2111;--bad:#ff7076;--bad2:#2e1618;--blue:#6ea2ff;--blue2:#16233b;--me:#1a2a47;--shadow:none}
 *{box-sizing:border-box}html,body{margin:0;background:var(--bg);color:var(--ink);font:15px/1.45 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif}
 button,input,select,textarea{font:inherit;color:inherit}
 .app{display:grid;grid-template-columns:232px 1fr;min-height:100vh}
 .side{background:var(--panel);border-right:1px solid var(--line);padding:18px 12px;position:sticky;top:0;height:100vh;display:flex;flex-direction:column;gap:4px}
 .logo{display:flex;align-items:center;gap:10px;padding:6px 10px 16px;font-weight:750;font-size:15.5px;line-height:1.15;letter-spacing:-.01em;color:var(--ink)}
-.logo i{width:34px;height:34px;border-radius:10px;background:var(--brand);display:grid;place-items:center;color:#fff;font-style:normal;font-size:17px;font-weight:800;border-bottom:3px solid var(--bad);flex:none}
+.logo i{width:34px;height:34px;border-radius:10px;background:var(--brand);display:grid;place-items:center;color:#fff;font-style:normal;font-size:17px;font-weight:800;flex:none}
 .nav{display:flex;align-items:center;gap:11px;padding:10px 12px;border-radius:10px;color:var(--mute);cursor:pointer;border:0;background:none;text-align:left;font-weight:550;width:100%}
 .nav:hover{background:var(--bg);color:var(--ink)}.nav.on{background:var(--brand2);color:var(--brand)}
 .nav svg{width:19px;height:19px;stroke:currentColor;fill:none;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round;flex:none}
 .nav b{margin-left:auto;background:var(--bad);color:#fff;border-radius:99px;font-size:11px;padding:1px 7px}
 .spacer{flex:1}
 .main{min-width:0;display:flex;flex-direction:column;overflow-x:hidden}
-.top{display:flex;align-items:center;gap:12px;padding:14px 26px;border-bottom:1px solid var(--line);background:var(--panel);position:sticky;top:0;z-index:5;box-shadow:inset 0 3px 0 var(--brand)}
+.top{display:flex;align-items:center;gap:12px;padding:14px 26px;border-bottom:1px solid var(--line);background:var(--panel);position:sticky;top:0;z-index:5}
 .top h1{margin:0;font-size:19px;letter-spacing:-.01em}
 .pill{display:inline-flex;align-items:center;gap:7px;padding:6px 12px;border-radius:99px;font-weight:600;font-size:13px}
 .pill i{width:8px;height:8px;border-radius:50%;background:currentColor}
@@ -27,7 +27,7 @@ button,input,select,textarea{font:inherit;color:inherit}
 .btn{border:1px solid var(--line);background:var(--panel);padding:8px 14px;border-radius:10px;cursor:pointer;font-weight:600}
 .btn:hover{background:var(--bg)}.btn.pri{background:var(--brand);border-color:var(--brand);color:#fff}.btn.pri:hover{filter:brightness(1.08)}
 .btn.dng{background:var(--bad);border-color:var(--bad);color:#fff}
-:root[data-theme=dark] .btn.dng{color:#1b0709}
+:root[data-theme=dark] .btn.dng,:root:not([data-theme=light]) .btn.dng{color:#1a0a0b}
 .theme{width:40px;padding:8px 0;text-align:center}
 .seg{display:inline-flex;background:var(--bg);border:1px solid var(--line);border-radius:12px;padding:3px;gap:2px}
 .seg button{border:0;background:none;padding:6px 14px;border-radius:9px;font-weight:650;color:var(--mute);cursor:pointer;font-size:13.5px}
@@ -50,7 +50,7 @@ button,input,select,textarea{font:inherit;color:inherit}
 .av{width:38px;height:38px;border-radius:50%;background:var(--brand2);color:var(--brand);display:grid;place-items:center;font-weight:700;flex:none}
 .grow{flex:1;min-width:0}.nm{font-weight:650}.sub{color:var(--mute);font-size:13.5px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .tag{display:inline-block;font-size:12px;font-weight:600;padding:2px 9px;border-radius:99px;background:var(--bg);color:var(--mute)}
-.tag.g{background:var(--brand2);color:var(--brand)}.tag.o{background:var(--bad2);color:var(--bad)}.tag.r{background:var(--bad2);color:var(--bad)}.tag.b{background:var(--blue2);color:var(--blue)}
+.tag.g{background:var(--brand2);color:var(--brand)}.tag.o{background:var(--warn2);color:var(--warn)}.tag.r{background:var(--bad2);color:var(--bad)}.tag.b{background:var(--blue2);color:var(--blue)}
 .dot{width:9px;height:9px;border-radius:50%;background:var(--bad);flex:none}
 .chips{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:14px}
 .chip{padding:6px 13px;border-radius:99px;border:1px solid var(--line);background:var(--panel);cursor:pointer;font-weight:600;font-size:13.5px;color:var(--mute)}
@@ -201,12 +201,12 @@ function vResults(p){if(ACC==='lights'){p.appendChild(el('div','card',null,[el('
   rows.forEach(function(x){var pct=Math.min(100,Math.round(x[1]/base*100));var bar=el('div','bar',null,[(function(){var i=el('i');i.style.width=pct+'%';return i})()]);c.appendChild(el('div','fun',null,[el('div',null,x[0]),bar,el('b',null,String(x[1]))]))});
   c.appendChild(el('div','sub','Reply rate '+r.replyRate+' · Approval rate of repliers '+f.approvalRateOfReplies+' · With the team '+d.outcomes.handedToTeam+' · STOP requests '+d.outcomes.stopRequests));
   var jq=d.jobberQuoteStatuses||{};c.appendChild(el('div','sub','Jobber quote statuses: '+(Object.keys(jq).length?Object.keys(jq).map(function(k){return k+' '+jq[k]}).join(', '):'none yet')))}).catch(function(e){c.textContent='';c.appendChild(el('div','empty',e.message))})}
-function mateRow(m){return el('div','mate',null,[el('div','av',m.name.charAt(0)),el('div','grow',null,[el('div','nm',m.name),el('div','sub',m.does)]),el('span','tag '+(m.state==='live'?'g':''),m.state==='live'?'Live':'Planned')])}
+function mateRow(m){return el('div','mate',null,[el('div','av',m.name.charAt(0)),el('div','grow',null,[el('div','nm',m.name),el('div','sub',m.does)]),el('span','tag '+(m.state==='live'?'g':'o'),m.state==='live'?'Live':'Planned')])}
 function unitCard(title,sub,list,dim){var c=el('div','card'+(dim?' dim':''),null,[el('h3',null,title),el('div','sub',sub)]);
  ['Sales','Marketing'].forEach(function(t){var ms=list.filter(function(m){return m.team===t});if(!ms.length)return;c.appendChild(el('div','team',t));ms.forEach(function(m){c.appendChild(mateRow(m))})});return c}
 function vAgents(p){api('/admin/dash/agents').then(function(d){
  var dir=d.mates.filter(function(m){return m.unit==='director'})[0];
- var top=el('div','card top-card',null,[el('div','av','M'),el('div','nm',dir.name),el('span','tag','Planned'),el('div','sub',dir.does)]);top.querySelector('.sub').style.whiteSpace='normal';
+ var top=el('div','card top-card',null,[el('div','av','M'),el('div','nm',dir.name),el('span','tag o','Planned'),el('div','sub',dir.does)]);top.querySelector('.sub').style.whiteSpace='normal';
  p.appendChild(top);p.appendChild(el('div','stem'));
  var units=el('div','units');
  units.appendChild(unitCard('Dunzo Gutters','Gutter and exterior cleaning, repairs and installs',d.mates.filter(function(m){return m.unit==='dunzo'}),ACC==='lights'));
