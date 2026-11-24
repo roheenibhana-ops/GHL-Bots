@@ -163,7 +163,7 @@ export async function handleDash(req: Request, env: Env, url: URL): Promise<Resp
       let contact: Record<string, unknown> = {};
       try {
         const c = await getContact(credsFor(env, account), id);
-        contact = { name: [c.firstName, c.lastName].filter(Boolean).join(" "), phone: c.phone, email: c.email, tags: c.tags ?? [], dnd: isSmsDnd(c) };
+        contact = { name: [c.firstName, c.lastName].filter(Boolean).join(" "), phone: c.phone, email: c.email, tags: c.tags ?? [], dnd: isSmsDnd(c), owner: c.assignedTo ?? null };
       } catch { /* the chat still shows without the contact card */ }
       const f = conv?.facts ?? {};
       return json({

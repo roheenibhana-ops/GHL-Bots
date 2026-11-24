@@ -1,5 +1,5 @@
 import { sb } from "./db";
-import { addTags, credsFor, getContact, sendSms } from "./ghl";
+import { addTags, credsFor, getContact, sendSms, updateContact } from "./ghl";
 import { setStage } from "./stages";
 import { isSmsDnd } from "./safety";
 import { plainPunctuation } from "./bot";
@@ -67,6 +67,7 @@ export async function runDailyBatch(env: Env): Promise<Record<string, unknown>> 
       if (text !== m.body) await sb(env, "PATCH", `messages?id=eq.${m.id}`, { body: text }, "return=minimal");
       await sb(env, "PATCH", `messages?id=eq.${m.id}`, { status: "sent", sent_at: new Date().toISOString() }, "return=minimal");
       if (env.BOT_TAG) await addTags(creds, m.contact_id, [env.BOT_TAG]).catch(() => undefined);
+      if (env.PROMO_OWNER_ID && !c.assignedTo) await updateContact(creds, m.contact_id, { assignedTo: env.PROMO_OWNER_ID }).catch(() => undefined);
       await setStage(env, m.account, m.contact_id, "New Lead");
       result.sent++;
     } catch {

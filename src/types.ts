@@ -23,6 +23,8 @@ export interface Env {
   QUIET_END_HOUR: string;
   DAILY_CAP?: string;
   START_ON?: string;
+  /** GHL user id to make the owner of each contact a promo is sent to, when they have no owner yet. */
+  PROMO_OWNER_ID?: string;
   BATCH_CAMPAIGN?: string;
   BATCH_MAX_PER_RUN?: string;
   CLAUDE_MODEL: string;
@@ -66,4 +68,6 @@ export interface GhlContact {
   dnd?: boolean;
   dndSettings?: Record<string, { status?: string } | undefined>;
   tags?: string[];
+  /** The GHL user who owns the contact. */
+  assignedTo?: string;
 }
