@@ -156,12 +156,12 @@ export async function handleDash(req: Request, env: Env, url: URL): Promise<Resp
         const b = (await req.json()) as { key?: string; value?: string };
         const bad = validSetting(b.key ?? "", String(b.value ?? ""));
         if (bad) return json({ error: bad }, 400);
-        const { ready } = await loadSettings(env, true);
-        if (!ready) return json({ error: "The settings table does not exist yet. Run supabase/006_settings.sql in Supabase first." }, 409);
+        const { ready, error } = await loadSettings(env, true);
+        if (!ready) return json({ error: "Settings could not be saved: " + (error ?? "table not found") }, 409);
         await saveSetting(env, b.key!, String(b.value));
       }
-      const { map, ready } = await loadSettings(env, true);
-      return json({ ready, defs: SETTINGS, values: effectiveValues(env, map) });
+      const { map, ready, error } = await loadSettings(env, true);
+      return json({ ready, error, defs: SETTINGS, values: effectiveValues(env, map) });
     }
 
     if (p === "/admin/dash/activity") {

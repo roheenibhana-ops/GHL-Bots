@@ -193,7 +193,7 @@ function vAgents(p){var c=el('div','card');c.appendChild(el('h3',null,'Your sale
   [['What the bot is told (instructions)',d.prompt],['What the bot knows (business knowledge)',d.knowledge]].forEach(function(x){var card=el('div','card');card.style.marginTop='16px';var btn=el('button','btn sm','Show');var pre=el('pre',null,x[1]);pre.style.display='none';
    btn.onclick=function(){var on=pre.style.display==='none';pre.style.display=on?'block':'none';btn.textContent=on?'Hide':'Show'};card.appendChild(el('h3',null,x[0],[]));card.appendChild(btn);card.appendChild(pre);p.appendChild(card)})}).catch(function(e){c.appendChild(el('div','empty',e.message))})}
 function vSettings(p){api('/admin/dash/settings').then(function(d){
- if(!d.ready)p.appendChild(el('div','banner wr','These switches need one setup step: run supabase/006_settings.sql in the Supabase SQL editor, then reload.'));
+ if(!d.ready)p.appendChild(el('div','banner wr','These switches cannot save yet. '+(d.error||'Run supabase/006_settings.sql in the Supabase SQL editor, then reload.')));
  var groups={};d.defs.forEach(function(x){(groups[x.group]=groups[x.group]||[]).push(x)});
  Object.keys(groups).forEach(function(gname){var c=el('div','card');c.style.marginBottom='16px';c.appendChild(el('h3',null,gname));
   groups[gname].forEach(function(x){var val=d.values[x.key],ctl;

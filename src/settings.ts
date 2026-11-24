@@ -24,15 +24,15 @@ export const SETTINGS: SettingDef[] = [
 ];
 
 type Row = { key: string; value: string };
-let cache: { at: number; map: Record<string, string>; ready: boolean } | null = null;
+let cache: { at: number; map: Record<string, string>; ready: boolean; error?: string } | null = null;
 
-export async function loadSettings(env: Env, force = false): Promise<{ map: Record<string, string>; ready: boolean }> {
+export async function loadSettings(env: Env, force = false): Promise<{ map: Record<string, string>; ready: boolean; error?: string }> {
   if (!force && cache && Date.now() - cache.at < 8000) return cache;
   try {
     const rows = await sb<Row[]>(env, "GET", "settings?select=key,value&limit=200");
     cache = { at: Date.now(), map: Object.fromEntries(rows.map((r) => [r.key, r.value])), ready: true };
-  } catch {
-    cache = { at: Date.now(), map: {}, ready: false };
+  } catch (e) {
+    cache = { at: Date.now(), map: {}, ready: false, error: (e as Error).message.slice(0, 240) };
   }
   return cache;
 }
