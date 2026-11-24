@@ -1,4 +1,5 @@
 import { runAgent } from "./agents";
+import { dialsText, loadAgent } from "./playbook";
 import type { BotFacts } from "./bot";
 import { sb } from "./db";
 import type { Account, Env } from "./types";
@@ -35,22 +36,20 @@ export function weekFacts(msgs: Msg[], convs: Conv[], sinceIso: string, account:
   };
 }
 
-const SYSTEM = `You are the Marketing Director for Dunzo Gutters and Santa's Lights (sister companies run by Clark in Sacramento). You report to Clark each week. You will be given real numbers for the last 7 days. Write a short, plain English weekly report for Clark.
+const CORE = `You are the Marketing Director for Dunzo Gutters and Santa's Lights (sister companies run by Clark in Sacramento). You report to Clark each week. You will be given real numbers for the last 7 days. Write a short, plain English weekly report for Clark.
 
-Rules:
+Fixed rules:
 - Use ONLY the numbers you are given. Never invent a figure, a percentage trend, a comparison with last week, or a result you were not told. If the data is thin or zero, say so plainly and say what is needed to learn more.
-- Be honest, direct and practical. No hype, no jargon, no filler. Write like a sharp colleague, not a consultant.
-- Structure: 1) How the week went, in two or three sentences. 2) What is working. 3) What is not, or what we cannot tell yet. 4) Three specific things to do next week, each one line, in priority order. 5) Anything that needs Clark's approval (anything that spends money or goes out to many people).
-- Think about cross selling between the two companies (gutter customers to Christmas and permanent lighting, lighting customers to gutter cleaning) and mention one concrete idea if it is sensible for the time of year. It is late November, so Christmas lighting is in season.
-- Plain text only. No markdown symbols, no bullet characters, no dashes or hyphens as punctuation. Number the next steps 1, 2, 3. Under 280 words.`;
+- Plain text only. No markdown symbols, no bullet characters, no dashes or hyphens as punctuation. Number the next steps 1, 2, 3.`;
 
-export async function directorReport(env: Env, account: Account | null): Promise<{ report: string; facts: ReturnType<typeof weekFacts> }> {
+export async function directorReport(env: Env, account: Account | null, override?: { instructions: string; dials: import("./playbook").Dials }): Promise<{ report: string; facts: ReturnType<typeof weekFacts> }> {
   const since = new Date(Date.now() - 7 * 86_400_000).toISOString();
   const [msgs, convs] = await Promise.all([
     sb<Msg[]>(env, "GET", `messages?created_at=gte.${since}&status=neq.archived&select=direction,status,campaign,account,created_at&limit=3000`),
     sb<Conv[]>(env, "GET", "conversations?select=contact_id,account,status,facts,updated_at&limit=1500"),
   ]);
   const facts = weekFacts(msgs, convs, since, account);
-  const text = await runAgent(env, { name: "director", system: SYSTEM, maxTokens: 700, model: env.BOT_MODEL }, [{ role: "user", content: "Here are the real numbers for the last 7 days:\n" + JSON.stringify(facts, null, 2) + "\n\nWrite the weekly report." }]);
+  const live = override ?? (await loadAgent(env, "maverick"));
+  const text = await runAgent(env, { name: "director", system: CORE + "\n\nHow you write:\n" + live.instructions + (dialsText(live.dials) ? "\n" + dialsText(live.dials) : ""), maxTokens: 700, model: env.BOT_MODEL }, [{ role: "user", content: "Here are the real numbers for the last 7 days:\n" + JSON.stringify(facts, null, 2) + "\n\nWrite the weekly report." }]);
   return { report: text, facts };
 }

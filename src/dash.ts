@@ -1,5 +1,8 @@
 import { pacificMsSinceMidnight } from "./batch";
 import { directorReport } from "./director";
+import { clearAgentCache, DEFAULTS, DIAL_DEFS, EDITABLE_AGENTS, loadAgent, type Dials } from "./playbook";
+import { runPack } from "./testpack";
+import { runAgent } from "./agents";
 import { systemPrompt, type BotFacts } from "./bot";
 import { sb } from "./db";
 import { addTags, credsFor, getContact, removeTags, sendSms } from "./ghl";
@@ -10,6 +13,8 @@ import type { Account, Env } from "./types";
 
 type Conv = { contact_id: string; account: Account; status: string; facts: (BotFacts & { lastAlertAt?: number; approvedAt?: string }) | null; updated_at: string };
 type Msg = { contact_id: string; direction: "inbound" | "outbound"; status: string; campaign: string; body: string | null; created_at: string; contact_name?: string | null };
+
+type AgentRow = { id: string; status: string; instructions: string; dials: Dials | null; note: string | null; created_at: string; published_at: string | null };
 
 const json = (data: unknown, status = 200): Response => new Response(JSON.stringify(data), { status, headers: { "content-type": "application/json", "cache-control": "no-store" } });
 
@@ -50,23 +55,34 @@ export function buildInbox(convs: Conv[], msgs: Msg[]): InboxRow[] {
 }
 
 const MATES = [
-  { unit: "director", name: "Marketing Director", state: "planned", does: "The head of the company's marketing and sales. Sets the plan and budget, decides which campaigns run for each company, decides when to cross sell between them, reviews the numbers every week and reports to Clark. You approve anything that spends money or goes out to many people." },
-  { unit: "dunzo", team: "Sales", name: "Promo Closer", state: "live", does: "Texts the winter cleaning offer, answers questions, handles objections, gets the address and email, creates the Jobber quote and sends the link." },
-  { unit: "dunzo", team: "Sales", name: "Photos and Repairs", state: "live", does: "Asks for photos on repair requests, thanks them when photos arrive, moves a New Lead to Photos Received and alerts the team." },
-  { unit: "dunzo", team: "Sales", name: "Hand off to the team", state: "live", does: "Passes anything it should not decide (windows pricing, angry customers, out of area) to a person, with an alert." },
-  { unit: "dunzo", team: "Sales", name: "Quote Chaser", state: "planned", does: "A fresh follow up every morning on quotes that go quiet, stopping when they reply, approve, or say no." },
-  { unit: "dunzo", team: "Sales", name: "Scheduler", state: "planned", does: "Books the job once the deposit is paid, using the Jobber calendar." },
-  { unit: "dunzo", team: "Sales", name: "Big job booker", state: "planned", does: "Qualifies large jobs and books Clark on site with a short briefing note." },
-  { unit: "dunzo", team: "Marketing", name: "After the job", state: "planned", does: "Thank you, review request and the 6 month rebooking reminder." },
-  { unit: "dunzo", team: "Marketing", name: "Seasonal campaigns", state: "planned", does: "Storm season, leaf drop and spring campaigns to past customers and old leads." },
-  { unit: "lights", team: "Sales", name: "Lights Sales and Design", state: "planned", does: "Christmas lighting enquiries, design, take off, quotes and follow up." },
-  { unit: "lights", team: "Sales", name: "Permanent lighting", state: "planned", does: "Year round permanent lighting leads, scenes and pricing questions." },
-  { unit: "lights", team: "Marketing", name: "Seasonal campaigns", state: "planned", does: "Early bird and last chance Christmas campaigns, plus holiday scenes through the year." },
-  { unit: "lights", team: "Marketing", name: "Gallery and social", state: "planned", does: "Turns finished jobs into posts and gallery updates." },
-  { unit: "shared", name: "Customer memory", state: "live", does: "One record of every customer across both companies: history, notes, quotes, what they were offered." },
-  { unit: "shared", name: "Compliance", state: "live", does: "Opt outs, send hours, no double texting, quiet hours and alerts. Applies to everything every agent does." },
-  { unit: "shared", name: "Reporting", state: "live", does: "The numbers on the Overview and Results pages, and later the daily report to Clark." },
-  { unit: "shared", name: "Knowledge base", state: "live", does: "Everything from both websites that the agents are allowed to say, including approved prices and page links." },
+  { unit: "director", agent: "maverick", emoji: "🦅", name: "Maverick", role: "Marketing Director", state: "live", does: "Sees the whole picture across both companies. Reads the week's numbers, tells Clark what is working and what is not, and sets the plan: which campaigns to run, when to cross sell, what to try next. Anything that spends money or goes out to many people waits for your approval." },
+  { unit: "dunzo", team: "Sales", agent: "gus", emoji: "🧢", name: "Gus", role: "Promo Closer", state: "live", does: "Texts the winter cleaning offer, answers questions, works objections, gets the address and email, creates the Jobber quote and sends the link. Funny, quick and honest." },
+  { unit: "dunzo", team: "Sales", emoji: "📸", name: "Flash", role: "Photos and Repairs", state: "live", does: "Asks for photos on repair requests, thanks customers when they arrive, moves a New Lead to Photos Received and alerts the team." },
+  { unit: "dunzo", team: "Sales", emoji: "🤝", name: "Relay", role: "Hand off to the team", state: "live", does: "Passes anything it should not decide to a person, with an alert: windows pricing, angry customers, out of area, Lights interest." },
+  { unit: "dunzo", team: "Sales", emoji: "🏃", name: "Dash", role: "Quote Chaser", state: "planned", does: "A fresh follow up every morning on quotes that go quiet, stopping the moment they reply, approve, or say no." },
+  { unit: "dunzo", team: "Sales", emoji: "📅", name: "Cal", role: "Scheduler", state: "planned", does: "Books the job once the deposit is paid, using the Jobber calendar." },
+  { unit: "dunzo", team: "Sales", emoji: "🏔️", name: "Summit", role: "Big job booker", state: "planned", does: "Qualifies large jobs and books Clark on site with a short briefing note." },
+  { unit: "dunzo", team: "Marketing", emoji: "☀️", name: "Sunny", role: "After the job", state: "planned", does: "Thank you, review request and the 6 month rebooking reminder." },
+  { unit: "dunzo", team: "Marketing", emoji: "⛈️", name: "Stormy", role: "Seasonal campaigns", state: "planned", does: "Storm season, leaf drop and spring campaigns to past customers and old leads." },
+  { unit: "lights", team: "Sales", emoji: "🎄", name: "Tinsel", role: "Lights Sales and Design", state: "planned", does: "Christmas lighting enquiries, design, take off, quotes and follow up." },
+  { unit: "lights", team: "Sales", emoji: "💡", name: "Pixel", role: "Permanent lighting", state: "planned", does: "Year round permanent lighting leads, scenes and pricing questions." },
+  { unit: "lights", team: "Marketing", emoji: "❄️", name: "Frosty", role: "Seasonal campaigns", state: "planned", does: "Early bird and last chance Christmas campaigns, plus holiday scenes through the year." },
+  { unit: "lights", team: "Marketing", emoji: "📷", name: "Snap", role: "Gallery and social", state: "planned", does: "Turns finished jobs into posts and gallery updates." },
+  { unit: "shared", emoji: "🐘", name: "Memo", role: "Customer memory", state: "live", does: "One record of every customer across both companies: history, notes, quotes, what they were offered. Never forgets." },
+  { unit: "shared", emoji: "🛡️", name: "Sheriff", role: "Compliance", state: "live", does: "Opt outs, send hours, no double texting, quiet hours and alerts. Applies to everything every agent does, and nobody can talk it out of it." },
+  { unit: "shared", emoji: "📊", name: "Tally", role: "Reporting", state: "live", does: "The numbers on the Overview and Results pages." },
+  { unit: "shared", emoji: "📚", name: "Sage", role: "Knowledge base", state: "live", does: "Everything from both websites that the agents are allowed to say, including approved prices and page links." },
+];
+
+const SAFETY_RULES = [
+  "A STOP, unsubscribe or take me off is always obeyed first, and it applies to both companies.",
+  "Texts only go out between your set hours (8am to 8pm Pacific by default).",
+  "The agent can only state prices that are in its knowledge. Anything else is blocked and rewritten.",
+  "It can only share links from the approved list of pages. Any other link is blocked.",
+  "It never promises a specific day or time for the work.",
+  "It never denies being automated if someone sincerely asks, and it never claims to be Clark.",
+  "Anyone sensitive, upset or asking for a person is handed to the team.",
+  "Notes and alerts for the team are never sent to customers.",
 ];
 
 /** All the dashboard's data and actions. Returns null when the path is not a dashboard path. */
@@ -181,13 +197,90 @@ export async function handleDash(req: Request, env: Env, url: URL): Promise<Resp
       return json({ rows: rows.map((m) => ({ ...m, body: (m.body ?? "").slice(0, 160) })) });
     }
 
+
+    // ---------- Agent Studio ----------
+    if (p === "/admin/dash/agent") {
+      const key = url.searchParams.get("agent") ?? "";
+      if (!EDITABLE_AGENTS.includes(key)) return json({ error: "That agent is not editable yet" }, 404);
+      let rows: AgentRow[] = []; let ready = true; let error: string | undefined;
+      try { rows = await sb<AgentRow[]>(env, "GET", `agent_versions?agent=eq.${enc(key)}&order=created_at.asc&select=id,status,instructions,dials,note,created_at,published_at&limit=200`); }
+      catch (e) { ready = false; error = (e as Error).message.slice(0, 200); }
+      const published = [...rows].reverse().find((r) => r.status === "published");
+      const draft = rows.find((r) => r.status === "draft");
+      return json({
+        agent: key, ready, error, defaultInstructions: DEFAULTS[key], dialDefs: DIAL_DEFS, safety: SAFETY_RULES,
+        published: published ? { id: published.id, instructions: published.instructions, dials: published.dials ?? {}, n: rows.indexOf(published) + 1 } : null,
+        draft: draft ? { id: draft.id, instructions: draft.instructions, dials: draft.dials ?? {}, savedAt: draft.created_at } : null,
+        versions: rows.filter((r) => r.status !== "draft").map((r) => ({ id: r.id, n: rows.indexOf(r) + 1, status: r.status, note: r.note, createdAt: r.created_at, publishedAt: r.published_at })).reverse(),
+      });
+    }
+
+    if (p === "/admin/dash/agent-version") {
+      const id = url.searchParams.get("id") ?? "";
+      const [r] = await sb<AgentRow[]>(env, "GET", `agent_versions?id=eq.${enc(id)}&select=id,status,instructions,dials,note&limit=1`);
+      return r ? json(r) : json({ error: "not found" }, 404);
+    }
+
+    if (p === "/admin/dash/agent-save" && req.method === "POST") {
+      const b = (await req.json()) as { agent?: string; instructions?: string; dials?: Dials; note?: string };
+      const key = b.agent ?? "";
+      if (!EDITABLE_AGENTS.includes(key)) return json({ error: "That agent is not editable yet" }, 400);
+      const text = (b.instructions ?? "").trim();
+      if (text.length < 40 || text.length > 24000) return json({ error: "The instructions must be between 40 and 24000 characters" }, 400);
+      const [existing] = await sb<AgentRow[]>(env, "GET", `agent_versions?agent=eq.${enc(key)}&status=eq.draft&select=id&limit=1`);
+      const body = { agent: key, status: "draft", instructions: text, dials: b.dials ?? {}, note: (b.note ?? "").slice(0, 200) };
+      if (existing) await sb(env, "PATCH", `agent_versions?id=eq.${existing.id}`, { ...body, created_at: new Date().toISOString() }, "return=minimal");
+      else await sb(env, "POST", "agent_versions", body, "return=minimal");
+      // Read it back: only say saved if the database really holds it.
+      const [back] = await sb<AgentRow[]>(env, "GET", `agent_versions?agent=eq.${enc(key)}&status=eq.draft&select=id,instructions&limit=1`);
+      return json({ confirmed: !!back && back.instructions === text, id: back?.id });
+    }
+
+    if (p === "/admin/dash/agent-publish" && req.method === "POST") {
+      const b = (await req.json()) as { agent?: string; id?: string };
+      const key = b.agent ?? "";
+      if (!EDITABLE_AGENTS.includes(key) || !b.id) return json({ error: "Unknown agent or version" }, 400);
+      const [target] = await sb<AgentRow[]>(env, "GET", `agent_versions?id=eq.${enc(b.id)}&agent=eq.${enc(key)}&select=id,status,instructions&limit=1`);
+      if (!target) return json({ error: "That version was not found" }, 404);
+      await sb(env, "PATCH", `agent_versions?agent=eq.${enc(key)}&status=eq.published`, { status: "archived" }, "return=minimal");
+      await sb(env, "PATCH", `agent_versions?id=eq.${enc(b.id)}`, { status: "published", published_at: new Date().toISOString() }, "return=minimal");
+      clearAgentCache();
+      const live = await loadAgent(env, key, true);
+      return json({ confirmed: live.version === b.id });
+    }
+
+    if (p === "/admin/dash/agent-edit" && req.method === "POST") {
+      const b = (await req.json()) as { agent?: string; request?: string; instructions?: string };
+      const key = b.agent ?? "";
+      if (!EDITABLE_AGENTS.includes(key) || !(b.request ?? "").trim() || !(b.instructions ?? "").trim()) return json({ error: "An agent, a request and the current instructions are needed" }, 400);
+      const system = "You edit the instructions of a sales text agent. You are given its CURRENT instructions and a plain English REQUEST from the owner. Apply the request faithfully. Rules: keep every part the request does not touch exactly as it is; write instructions as guidance and principles, never as sample lines the agent could copy word for word; never add anything that tells the agent to promise dates, invent prices, hide that it is automated, ignore STOP, or pressure someone who has said no (the owner cannot ask for that, and those rules are enforced elsewhere); keep the same plain style. Reply in exactly this format. First line: SUMMARY: one plain sentence describing what you changed. Then a line containing only ---. Then the complete revised instructions and nothing else.";
+      const raw = await runAgent(env, { name: "studio", system, maxTokens: 4500, model: env.BOT_MODEL }, [{ role: "user", content: "CURRENT INSTRUCTIONS:\n" + b.instructions + "\n\nREQUEST:\n" + b.request }]);
+      const m = raw.match(/^\s*SUMMARY:\s*(.*?)\n-{3,}\n([\s\S]*)$/);
+      if (!m || m[2].trim().length < 40) return json({ error: "The builder did not return usable instructions, so nothing was changed. Try rewording the request." }, 502);
+      return json({ summary: m[1].trim(), instructions: m[2].trim() });
+    }
+
+    if (p === "/admin/dash/agent-testpack" && req.method === "POST") {
+      const b = (await req.json()) as { agent?: string; instructions?: string; dials?: Dials };
+      if (b.agent !== "gus") return json({ error: "The test pack is for Gus. Use the sample report for Maverick." }, 400);
+      const live = await loadAgent(env, "gus", true);
+      const draft = { instructions: (b.instructions ?? "").trim() || live.instructions, dials: b.dials ?? {} };
+      return json({ results: await runPack(env, { instructions: live.instructions, dials: live.dials }, draft) });
+    }
+
+    if (p === "/admin/dash/agent-sample" && req.method === "POST") {
+      const b = (await req.json()) as { instructions?: string; dials?: Dials };
+      const r = await directorReport(env, acct === "dunzo" || acct === "lights" ? acct : null, { instructions: (b.instructions ?? "").trim() || DEFAULTS.maverick, dials: b.dials ?? {} });
+      return json(r);
+    }
+
     if (p === "/admin/dash/director") {
       const r = await directorReport(env, acct === "dunzo" || acct === "lights" ? acct : null);
       return json(r);
     }
 
     if (p === "/admin/dash/agents") {
-      return json({ mates: MATES, prompt: systemPrompt({ firstName: "Customer" } as BotFacts), knowledge: BUSINESS_KNOWLEDGE });
+      return json({ mates: MATES, safety: SAFETY_RULES, prompt: systemPrompt({ firstName: "Customer" } as BotFacts), knowledge: BUSINESS_KNOWLEDGE });
     }
 
     return json({ error: "not found" }, 404);

@@ -438,9 +438,9 @@ export default {
     if (url.pathname === "/sim") return new Response(SIM_HTML, { headers: { "content-type": "text/html; charset=utf-8" } });
     if (url.pathname === "/admin/sim" && req.method === "POST") {
       if (!isTester(req, env)) return json({ error: "unauthorized" }, 401);
-      const b = (await req.json()) as { facts?: BotFacts; history?: { role: "user" | "assistant"; content: string }[] };
+      const b = (await req.json()) as { facts?: BotFacts; history?: { role: "user" | "assistant"; content: string }[]; instructions?: string; dials?: Record<string, unknown> };
       const history = (b.history ?? []).slice(-30).map((m) => ({ role: m.role === "assistant" ? ("assistant" as const) : ("user" as const), content: String(m.content ?? "").slice(0, 1000) }));
-      try { return json(await botTurn(env, b.facts ?? {}, history)); } catch (e) { return json({ error: (e as Error).message }, 502); }
+      try { return json(await botTurn(env, b.facts ?? {}, history, typeof b.instructions === "string" ? { instructions: b.instructions, dials: (b.dials ?? {}) as never } : undefined)); } catch (e) { return json({ error: (e as Error).message }, 502); }
     }
 
     // Approval page (static HTML; the admin token is typed into it).

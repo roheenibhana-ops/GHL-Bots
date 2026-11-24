@@ -38,7 +38,29 @@ a.nav{text-decoration:none}
 .top-card{text-align:center;border:2px solid var(--brand)}.top-card .av{margin:0 auto 8px;width:46px;height:46px}
 .stem{width:2px;height:22px;background:var(--line);margin:-6px auto 0}
 .team{font-size:12px;font-weight:700;color:var(--mute);text-transform:uppercase;letter-spacing:.05em;margin:14px 0 2px}
-.dim{opacity:.4}.btn.sm{padding:5px 10px;font-size:13px;border-radius:8px}
+.dim{opacity:.4}
+.avl{width:42px;height:42px;border-radius:14px;display:grid;place-items:center;font-size:22px;flex:none;box-shadow:inset 0 0 0 1px rgba(0,0,0,.05)}
+.mgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(210px,1fr));gap:10px;margin-top:6px}
+.mcard{display:flex;gap:11px;align-items:center;padding:11px 12px;border:1px solid var(--line);border-radius:14px;background:var(--bg);cursor:pointer;transition:transform .12s,box-shadow .12s,border-color .12s}
+.mcard:hover{transform:translateY(-2px);box-shadow:var(--shadow);border-color:var(--brand)}.mcard.live{background:var(--panel)}
+.sub2{color:var(--mute);font-size:13px}.hov{transition:box-shadow .12s}.hov:hover{box-shadow:0 8px 26px rgba(0,0,0,.1)}
+.prof{display:flex;gap:16px;align-items:flex-start}.prof .acts{display:flex;gap:8px;flex:none}.studio-head .prof{align-items:center}
+.studio{display:grid;grid-template-columns:minmax(0,.8fr) minmax(0,1.2fr);gap:16px;align-items:start}
+.chatcard{display:flex;flex-direction:column;height:calc(100vh - 300px);min-height:520px}
+.bchat{flex:1;overflow:auto;display:flex;flex-direction:column;gap:8px;padding:4px 2px 10px}
+.bb{max-width:94%;padding:9px 13px;border-radius:14px;white-space:pre-wrap;word-wrap:break-word}.bb.bot{background:var(--bg);border:1px solid var(--line);align-self:flex-start}.bb.me{background:var(--brand);color:#fff;align-self:flex-end}
+.chatcard .chips{margin:8px 0}.chatcard .compose{border:0;padding:8px 0 0;background:none}.chatcard .compose textarea{height:62px}
+.rightcard{min-height:520px}.tabs2{display:flex;gap:6px;flex-wrap:wrap;border-bottom:1px solid var(--line);margin:-4px 0 14px;padding-bottom:10px}
+.tabs2 button{border:0;background:none;padding:7px 12px;border-radius:9px;color:var(--mute);font-weight:650;cursor:pointer}.tabs2 button.on{background:var(--brand2);color:var(--brand)}
+textarea.big{width:100%;min-height:380px;margin-top:12px;border:1px solid var(--line);border-radius:12px;padding:12px;background:var(--bg);line-height:1.5;font-size:13.5px}
+.btnrow{display:flex;gap:8px;margin-top:10px;flex-wrap:wrap}
+.seg2{display:inline-flex;background:var(--bg);border:1px solid var(--line);border-radius:11px;padding:3px;gap:2px}.seg2 button{border:0;background:none;padding:6px 13px;border-radius:8px;font-weight:650;color:var(--mute);cursor:pointer;text-transform:capitalize}.seg2 button.on{background:var(--brand);color:#fff}
+.diff{margin-top:10px;border:1px solid var(--line);border-radius:10px;overflow:hidden;font-size:12.5px}.dl{padding:6px 10px;white-space:pre-wrap;word-wrap:break-word}.dl.add{background:var(--brand2);color:var(--brand)}.dl.del{background:var(--bad2);color:var(--bad)}.dl.same{color:var(--mute);background:var(--bg)}
+.row2{display:flex;gap:12px;align-items:center;padding:12px 0;border-bottom:1px solid var(--line)}.row2:last-child{border:0}
+.pk{border:1px solid var(--line);border-radius:12px;padding:12px;margin-bottom:10px}.pk .two{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:8px}.pk .col{background:var(--bg);border-radius:10px;padding:10px}.pk .nm .tag{margin-left:8px}
+.lock{width:30px;text-align:center}
+@media(max-width:900px){.studio{grid-template-columns:minmax(0,1fr)}.chatcard{height:auto;min-height:380px}.bchat{max-height:300px}.prof{flex-wrap:wrap}.pk .two{grid-template-columns:1fr}}
+.btn.sm{padding:5px 10px;font-size:13px;border-radius:8px}
 .btn[disabled]{opacity:.5;cursor:default}
 .page{padding:24px 26px 60px;max-width:1280px;width:100%;min-width:0}
 .grid{display:grid;gap:16px}.grid>*{min-width:0}.g4{grid-template-columns:repeat(4,minmax(0,1fr))}.g2{grid-template-columns:minmax(0,1.1fr) minmax(0,.9fr)}
@@ -126,7 +148,7 @@ function lock(){sessionStorage.removeItem('t');T='';$('app').style.display='none
 function nav(){var n=$('nav'),tb=$('tabs');n.textContent='';tb.textContent='';VIEWS.forEach(function(v){
  var b=el('button','nav'+(v[0]===view?' on':''),null,[svg(v[0]),el('span',null,v[1])]);if(v[0]==='inbox'&&pendingCount)b.appendChild(el('b',null,String(pendingCount)));b.onclick=function(){go(v[0])};n.appendChild(b);
  var t=el('button',v[0]===view?'on':'',null,[svg(v[0]),el('span',null,v[1]==='Approvals'?'Approve':v[1]==='Simulator'?'Practice':v[1])]);t.onclick=function(){go(v[0])};tb.appendChild(t)})}
-function go(v){view=v;openId=null;nav();$('title').textContent=(VIEWS.filter(function(x){return x[0]===v})[0]||[0,'']) [1];render()}
+function go(v){view=v;openId=null;studioKey=null;studioMeta=null;ST=null;nav();$('title').textContent=(VIEWS.filter(function(x){return x[0]===v})[0]||[0,'']) [1];render()}
 function status(){var s=S.settings||{};var p=$('status'),pa=s.PAUSE_ALL==='true';
  var sending=s.SENDING_ENABLED==='true'&&Number(s.DAILY_CAP)>0;
  var txt,cls;if(pa){txt='Paused';cls='bd'}else if(s.BOT_MODE==='live'){txt=sending?'Live and sending':'Live';cls='ok'}else if(s.BOT_MODE==='test'){txt='Test mode';cls='wr'}else{txt='Bot is off';cls='bl'}
@@ -213,20 +235,119 @@ function vDirector(p){
   var box=el('pre',null,d.report);box.style.maxHeight='none';box.style.fontSize='14.5px';box.style.lineHeight='1.55';out.appendChild(box);
   var det=el('details');det.style.marginTop='12px';det.appendChild(el('summary',null,'The numbers behind it'));det.appendChild(el('pre',null,JSON.stringify(d.facts,null,2)));out.appendChild(det)}).catch(function(e){b.disabled=false;b.textContent='Try again';out.appendChild(el('div','empty',e.message))})};
  c.appendChild(b);c.appendChild(out);p.appendChild(c)}
-function mateRow(m){return el('div','mate',null,[el('div','av',m.name.charAt(0)),el('div','grow',null,[el('div','nm',m.name),el('div','sub',m.does)]),el('span','tag '+(m.state==='live'?'g':'o'),m.state==='live'?'Live':'Planned')])}
-function unitCard(title,sub,list,dim){var c=el('div','card'+(dim?' dim':''),null,[el('h3',null,title),el('div','sub',sub)]);
- ['Sales','Marketing'].forEach(function(t){var ms=list.filter(function(m){return m.team===t});if(!ms.length)return;c.appendChild(el('div','team',t));ms.forEach(function(m){c.appendChild(mateRow(m))})});return c}
-function vAgents(p){api('/admin/dash/agents').then(function(d){
- var dir=d.mates.filter(function(m){return m.unit==='director'})[0];
- var top=el('div','card top-card',null,[el('div','av','M'),el('div','nm',dir.name),el('span','tag o','Planned'),el('div','sub',dir.does)]);top.querySelector('.sub').style.whiteSpace='normal';
- p.appendChild(top);p.appendChild(el('div','stem'));
- var units=el('div','units');
- units.appendChild(unitCard('Dunzo Gutters','Gutter and exterior cleaning, repairs and installs',d.mates.filter(function(m){return m.unit==='dunzo'}),ACC==='lights'));
- units.appendChild(unitCard('Santa\'s Lights','Christmas and permanent lighting',d.mates.filter(function(m){return m.unit==='lights'}),ACC==='dunzo'));
- p.appendChild(units);
- var sh=el('div','card');sh.style.marginTop='16px';sh.appendChild(el('h3',null,'Shared by both companies'));d.mates.filter(function(m){return m.unit==='shared'}).forEach(function(m){sh.appendChild(mateRow(m))});p.appendChild(sh);
- [['What the bot is told (instructions)',d.prompt],['What the bot knows (business knowledge)',d.knowledge]].forEach(function(x){var card=el('div','card');card.style.marginTop='16px';var btn=el('button','btn sm','Show');var pre=el('pre',null,x[1]);pre.style.display='none';
-  btn.onclick=function(){var on=pre.style.display==='none';pre.style.display=on?'block':'none';btn.textContent=on?'Hide':'Show'};card.appendChild(el('h3',null,x[0]));card.appendChild(btn);card.appendChild(pre);p.appendChild(card)})}).catch(function(e){p.appendChild(el('div','empty',e.message))})}
+var studioKey=null,studioMeta=null,ST=null,ALLMATES=[];
+var SQL7="create table if not exists agent_versions (\n  id uuid primary key default gen_random_uuid(),\n  agent text not null,\n  status text not null check (status in ('draft','published','archived')),\n  instructions text not null,\n  dials jsonb not null default '{}'::jsonb,\n  note text,\n  created_at timestamptz not null default now(),\n  published_at timestamptz\n);\ncreate index if not exists agent_versions_agent_idx on agent_versions (agent, created_at);\nalter table agent_versions enable row level security;\ngrant all on table public.agent_versions to service_role;";
+function hue(s){var h=0;for(var i=0;i<s.length;i++)h=(h*31+s.charCodeAt(i))%360;return h}
+function avatar(m,size){var a=el('div','avl',m.emoji||'?');var h=hue(m.name);a.style.background='linear-gradient(135deg,hsl('+h+' 85% 88%),hsl('+((h+40)%360)+' 80% 80%))';if(size){a.style.width=size+'px';a.style.height=size+'px';a.style.fontSize=Math.round(size*.52)+'px'}return a}
+function mateCard(m){var c=el('div','mcard'+(m.state==='live'?' live':''),null,[avatar(m),el('div','grow',null,[el('div','nm',m.name),el('div','sub2',m.role)]),el('span','tag '+(m.state==='live'?'g':''),m.state==='live'?'Live':'Soon')]);
+ c.title=m.does;c.onclick=function(){studioKey=m.agent||('profile:'+m.name);studioMeta=m;render()};return c}
+function vAgents(p){
+ if(studioKey){return vStudio(p)}
+ api('/admin/dash/agents').then(function(d){ALLMATES=d.mates;
+  p.appendChild(el('div','sub','Meet the team. Click anyone to see what they do. Gus and Maverick are fully editable: change how they talk, test it, and publish it.'));
+  var dir=d.mates.filter(function(m){return m.unit==='director'})[0];
+  var top=el('div','card top-card hov',null,[avatar(dir,64),el('div','nm',dir.name+', '+dir.role),el('span','tag g','Live'),el('div','sub',dir.does)]);top.querySelector('.sub:last-child').style.whiteSpace='normal';top.style.cursor='pointer';top.onclick=function(){studioKey=dir.agent;studioMeta=dir;render()};
+  p.appendChild(top);p.appendChild(el('div','stem'));
+  function unit(title,sub,list,dim){var c=el('div','card'+(dim?' dim':''),null,[el('h3',null,title),el('div','sub',sub)]);
+   ['Sales','Marketing'].forEach(function(t){var ms=list.filter(function(m){return m.team===t});if(!ms.length)return;c.appendChild(el('div','team',t));var g=el('div','mgrid');ms.forEach(function(m){g.appendChild(mateCard(m))});c.appendChild(g)});return c}
+  var units=el('div','units');
+  units.appendChild(unit('Dunzo Gutters','Gutter and exterior cleaning, repairs and installs',d.mates.filter(function(m){return m.unit==='dunzo'}),ACC==='lights'));
+  units.appendChild(unit('Santa\'s Lights','Christmas and permanent lighting',d.mates.filter(function(m){return m.unit==='lights'}),ACC==='dunzo'));
+  p.appendChild(units);
+  var sh=el('div','card');sh.style.marginTop='16px';sh.appendChild(el('h3',null,'Shared by both companies'));var g=el('div','mgrid');d.mates.filter(function(m){return m.unit==='shared'}).forEach(function(m){g.appendChild(mateCard(m))});sh.appendChild(g);p.appendChild(sh)}).catch(function(e){p.appendChild(el('div','empty',e.message))})}
+function diffLines(a,b){var x=a.split('\n'),y=b.split('\n'),n=x.length,m=y.length,L=[],i,j;for(i=0;i<=n;i++)L.push(new Array(m+1).fill(0));
+ for(i=n-1;i>=0;i--)for(j=m-1;j>=0;j--)L[i][j]=x[i]===y[j]?L[i+1][j+1]+1:Math.max(L[i+1][j],L[i][j+1]);
+ var out=[];i=0;j=0;while(i<n&&j<m){if(x[i]===y[j]){out.push(['same',x[i]]);i++;j++}else if(L[i+1][j]>=L[i][j+1]){out.push(['del',x[i]]);i++}else{out.push(['add',y[j]]);j++}}
+ while(i<n)out.push(['del',x[i++]]);while(j<m)out.push(['add',y[j++]]);return out}
+function diffView(a,b){var box=el('div','diff');var d=diffLines(a,b),same=0,changed=0;
+ function flush(){if(same){box.appendChild(el('div','dl same',same+' unchanged line'+(same>1?'s':'')));same=0}}
+ d.forEach(function(r){if(r[0]==='same'){same++;return}flush();changed++;box.appendChild(el('div','dl '+r[0],(r[0]==='add'?'+ ':'- ')+r[1]))});flush();
+ if(!changed){box.textContent='';box.appendChild(el('div','dl same','No changes.'))}return box}
+function vStudio(p){
+ var m=studioMeta;
+ var back=el('button','btn sm','Back to the team');back.onclick=function(){studioKey=null;studioMeta=null;ST=null;render()};p.appendChild(back);
+ if(!m.agent){var c=el('div','card');c.style.marginTop='14px';c.appendChild(el('div','prof',null,[avatar(m,88),el('div','grow',null,[el('div','nm',m.name),el('div','sub2',m.role),el('span','tag '+(m.state==='live'?'g':''),m.state==='live'?'Live':'Planned')])]));
+  c.appendChild(el('p',null,m.does));c.appendChild(el('div','sub',m.state==='live'?'Works today, but its behaviour lives in the code for now. Gus and Maverick are the first agents with the full studio. The rest follow as they are built.':'Not built yet. When it is, it gets its own studio here, with the same chat builder, test pack and version history.'));p.appendChild(c);return}
+ var shell=el('div');p.appendChild(shell);shell.appendChild(el('div','empty','Loading '+m.name+'...'));
+ api('/admin/dash/agent?agent='+m.agent).then(function(d){
+  var live=d.published?d.published.instructions:d.defaultInstructions,liveDials=d.published?d.published.dials:{};
+  ST={m:m,d:d,live:live,liveDials:liveDials,text:d.draft?d.draft.instructions:live,dials:JSON.parse(JSON.stringify(d.draft?d.draft.dials:liveDials)),saved:!!d.draft,dirty:false,draftId:d.draft?d.draft.id:null,tab:'instructions',chat:[],ran:false,pack:null};drawStudio(shell)}).catch(function(e){shell.textContent='';shell.appendChild(el('div','empty',e.message))})}
+function differs(){return ST.text.trim()!==ST.live.trim()||JSON.stringify(ST.dials)!==JSON.stringify(ST.liveDials)}
+function saveDraft(done){api('/admin/dash/agent-save',{agent:ST.m.agent,instructions:ST.text,dials:ST.dials,note:''}).then(function(r){
+  if(r.confirmed){ST.saved=true;ST.dirty=false;ST.draftId=r.id;toast('Draft saved and confirmed');if(done)done(true)}else{toast('NOT saved. The database did not confirm it.');if(done)done(false)}}).catch(function(e){toast('NOT saved: '+e.message);if(done)done(false)})}
+function publishNow(id,label){api('/admin/dash/agent-publish',{agent:ST.m.agent,id:id}).then(function(r){if(r.confirmed){toast(label+' is now live');studioKey=ST.m.agent;render()}else toast('Publish was NOT confirmed. Nothing changed.')}).catch(function(e){toast('Not published: '+e.message)})}
+function drawStudio(shell){
+ shell.textContent='';var m=ST.m,d=ST.d;
+ var head=el('div','card studio-head');head.style.marginTop='14px';
+ var live=el('span','tag g',d.published?'Live: version '+d.published.n:'Live: built-in default');var st=el('span','tag '+(ST.dirty?'o':''),ST.dirty?'Unsaved changes':(ST.saved?'Draft saved':'No draft'));
+ var pub=el('button','btn pri','Publish');var sv=el('button','btn','Save draft');
+ function badges(){st.textContent=ST.dirty?'Unsaved changes':(ST.saved?'Draft saved':'No draft');st.className='tag '+(ST.dirty?'o':'');sv.disabled=!d.ready||!ST.dirty;pub.disabled=!d.ready||!(ST.saved||ST.dirty)||!differs()}
+ ST.badges=badges;
+ sv.onclick=function(){saveDraft(function(){drawStudio(shell)})};
+ pub.onclick=function(){var go=function(){if(!ST.ran&&m.agent==='gus'&&!confirm('You have not run the test pack on this draft. Publish anyway? This goes live to real customers straight away.'))return;if(ST.ran||m.agent!=='gus'){if(!confirm('Publish this version? It goes live straight away.'))return}publishNow(ST.draftId,'The new version')};if(ST.dirty)saveDraft(function(ok){if(ok)go()});else go()};
+ head.appendChild(el('div','prof',null,[avatar(m,72),el('div','grow',null,[el('div','nm',m.name+' · '+m.role),el('div','sub',m.does),el('div','facts',null,[live,st])]),el('div','acts',null,[sv,pub])]));
+ shell.appendChild(head);
+ if(!d.ready){var bn=el('div','card');bn.style.marginTop='14px';bn.appendChild(el('h3',null,'One setup step'));bn.appendChild(el('div','sub','Saving and publishing need one table. Paste this in the Supabase SQL editor and run it, then reload. You can still chat with the builder and test changes meanwhile.'));var pre=el('pre',null,SQL7);bn.appendChild(pre);var cp=el('button','btn sm','Copy the SQL');cp.onclick=function(){try{navigator.clipboard.writeText(SQL7);toast('Copied')}catch(e){toast('Select the text and copy it')}};bn.appendChild(cp);shell.appendChild(bn)}
+ var grid=el('div','studio');grid.style.marginTop='14px';
+ // ---- left: the builder chat
+ var chat=el('div','card chatcard');chat.appendChild(el('h3',null,'Tell '+m.name+' what to change'));
+ var log=el('div','bchat');
+ function say(kind,txt){log.appendChild(el('div','bb '+kind,txt));log.scrollTop=log.scrollHeight}
+ say('bot','Hi, I am the builder for '+m.name+'. Describe how you want '+(m.agent==='gus'?'him':'them')+' to change in plain words, and I will show you exactly what I would change before anything is saved.');
+ ST.chat.forEach(function(c){say(c.kind,c.txt)});
+ chat.appendChild(log);
+ var chips=el('div','chips');(m.agent==='gus'?['Make him funnier','Be more direct about closing','Shorter replies','Go softer on price pushback','Sound more like a local tradesman']:['Make it shorter','Focus more on cross selling','Be blunter about what is not working','Add a section on Lights']).forEach(function(t){var c=el('button','chip',t);c.onclick=function(){inp.value=t;sendBtn.click()};chips.appendChild(c)});chat.appendChild(chips);
+ var inp=el('textarea');inp.placeholder='For example: be a bit more casual, and never mention the guards price';var sendBtn=el('button','btn pri','Ask');
+ sendBtn.onclick=function(){var v=inp.value.trim();if(!v)return;inp.value='';ST.chat.push({kind:'me',txt:v});say('me',v);var w=el('div','bb bot','Working on it...');log.appendChild(w);sendBtn.disabled=true;
+  api('/admin/dash/agent-edit',{agent:m.agent,request:v,instructions:ST.text}).then(function(r){w.remove();sendBtn.disabled=false;var card=el('div','bb bot');card.appendChild(el('div',null,r.summary));card.appendChild(diffView(ST.text,r.instructions));
+    var ap=el('button','btn sm pri','Apply and save as draft'),ds=el('button','btn sm','Discard');ap.style.margin='10px 8px 0 0';
+    ap.onclick=function(){ST.text=r.instructions;ST.dirty=true;ap.disabled=true;ds.remove();if(d.ready){saveDraft(function(ok){say('bot',ok?'Done. It is saved as a draft, and the live agent is not affected. Test it on the right, then Publish.':'I could NOT save that. It is not applied.');ST.tab='instructions';drawStudio(shell)})}else{say('bot','Applied to your working copy here. Run the setup step above to be able to save it.');ST.tab='instructions';drawStudio(shell)}};
+    ds.onclick=function(){card.remove();say('bot','Okay, nothing changed.')};card.appendChild(ap);card.appendChild(ds);log.appendChild(card);log.scrollTop=log.scrollHeight;ST.chat.push({kind:'bot',txt:r.summary})}).catch(function(e){w.remove();sendBtn.disabled=false;say('bot','Nothing was changed. '+e.message)})};
+ inp.onkeydown=function(e){if(e.key==='Enter'&&!e.shiftKey){e.preventDefault();sendBtn.click()}};
+ chat.appendChild(el('div','compose',null,[inp,sendBtn]));grid.appendChild(chat);
+ // ---- right: the tabs
+ var right=el('div','card rightcard');var tabs=el('div','tabs2');
+ [['instructions','Instructions'],['dials','Personality'],['test','Test'],['versions','Versions'],['rules','Safety and knowledge']].forEach(function(t){var b=el('button',ST.tab===t[0]?'on':'',t[1]);b.onclick=function(){ST.tab=t[0];drawStudio(shell)};tabs.appendChild(b)});right.appendChild(tabs);
+ var body=el('div','tbody');right.appendChild(body);grid.appendChild(right);shell.appendChild(grid);
+ if(ST.tab==='instructions'){
+  body.appendChild(el('div','sub','This is how '+m.name+' talks and sells. You can edit it by hand, or ask the builder on the left. The safety rules live in the code and cannot be edited here.'));
+  var ta=el('textarea','big');ta.value=ST.text;ta.oninput=function(){ST.text=ta.value;ST.dirty=true;badges()};body.appendChild(ta);
+  var row=el('div','btnrow');var rs=el('button','btn sm','Reset the draft to the built-in default');rs.onclick=function(){if(confirm('Replace the draft text with the built-in default?')){ST.text=d.defaultInstructions;ST.dirty=true;drawStudio(shell)}};
+  var sd=el('button','btn sm','Show what changed from live');var dv=el('div');sd.onclick=function(){dv.textContent='';dv.appendChild(diffView(ST.live,ST.text))};row.appendChild(rs);row.appendChild(sd);body.appendChild(row);body.appendChild(dv)}
+ if(ST.tab==='dials'){body.appendChild(el('div','sub','Quick dials. Each one adds a short instruction on top of the text. Changing a dial makes a draft, so nothing goes live until you publish.'));
+  d.dialDefs.forEach(function(df){if(m.agent==='maverick'&&df.key!=='humor'&&df.key!=='length')return;var cur=df.key==='crossSell'?(ST.dials.crossSell===false?'off':'on'):(ST.dials[df.key]||(df.key==='humor'?'balanced':df.key==='length'?'short':'balanced'));
+   var segc=el('div','seg2');df.options.forEach(function(o){var b=el('button',cur===o?'on':'',o);b.onclick=function(){if(df.key==='crossSell')ST.dials.crossSell=(o==='on');else ST.dials[df.key]=o;ST.dirty=true;drawStudio(shell)};segc.appendChild(b)});
+   body.appendChild(el('div','set',null,[el('div','grow',null,[el('b',null,df.label),el('span',null,df.blurb)]),segc]))})}
+ if(ST.tab==='test'){
+  if(m.agent==='gus'){
+   body.appendChild(el('div','sub','Try your draft before any customer sees it. Type as a customer, or run the test pack to see the live and draft versions side by side on tricky messages.'));
+   var th=el('div','thread');th.style.cssText='height:240px;border-radius:12px;margin:12px 0';var facts={firstName:'Sam',address:{street1:'2752 Argolis Way',city:'Sacramento',province:'CA',postalCode:'95826'},opening:"Hi Sam, it's Dunzo Gutters. Before the rains: gutter cleaning is $219 for a single story home or $319 for two stories. Reply 1 or 2 and we'll text you a quote to approve and pay online. Reply STOP to opt out."},hist=[];th.appendChild(el('div','b out',facts.opening));
+   var ta2=el('textarea');ta2.placeholder='Type as the customer and press Enter';ta2.style.cssText='flex:1;resize:none;border:1px solid var(--line);border-radius:12px;padding:10px 12px;background:var(--bg);height:44px';
+   function go2(){var v=ta2.value.trim();if(!v)return;ta2.value='';th.appendChild(el('div','b in',v));hist.push({role:'user',content:v});var w=el('div','meta','Thinking...');th.appendChild(w);th.scrollTop=th.scrollHeight;
+    api('/admin/sim',{facts:facts,history:hist,instructions:ST.text,dials:ST.dials}).then(function(r){w.remove();hist.push({role:'assistant',content:r.output.reply});facts=r.facts;th.appendChild(el('div','b out',r.output.reply));th.appendChild(el('div','meta r','intent: '+r.output.intent));th.scrollTop=th.scrollHeight}).catch(function(e){w.textContent=e.message})}
+   ta2.onkeydown=function(e){if(e.key==='Enter'&&!e.shiftKey){e.preventDefault();go2()}};body.appendChild(th);body.appendChild(el('div','compose',null,[ta2]));
+   var run=el('button','btn pri','Run the test pack (9 tricky messages, live against draft)');run.style.marginTop='14px';var res=el('div');res.style.marginTop='12px';
+   function showPack(rs){res.textContent='';var bad=0;rs.forEach(function(r){var c=el('div','pk');var flag=function(x){return x.problems.length?el('span','tag r','Blocked: '+x.problems[0].slice(0,60)):el('span','tag g','Safe')};
+    var same=r.live.reply===r.draft.reply;c.appendChild(el('div','nm',r.name,[el('span','tag',same?'same reply':'changed')]));c.appendChild(el('div','sub','Should: '+(r.expect||'')));
+    var two=el('div','two');var a=el('div','col',null,[el('div','sub','LIVE ('+r.live.intent+')'),el('div',null,r.live.reply),flag(r.live)]),b2=el('div','col',null,[el('div','sub','DRAFT ('+r.draft.intent+')'),el('div',null,r.draft.reply),flag(r.draft)]);two.appendChild(a);two.appendChild(b2);c.appendChild(two);if(r.draft.problems.length)bad++;res.appendChild(c)});
+    res.insertBefore(el('div','banner '+(bad?'bd':'ok'),bad?bad+' draft reply'+(bad>1?'ies were':' was')+' blocked by the safety rules. Fix before publishing.':'Every draft reply passed the safety rules.'),res.firstChild)}
+   if(ST.pack)showPack(ST.pack);
+   run.onclick=function(){run.disabled=true;run.textContent='Running... about 30 seconds';res.textContent='';api('/admin/dash/agent-testpack',{agent:'gus',instructions:ST.text,dials:ST.dials}).then(function(r){run.disabled=false;run.textContent='Run it again';ST.ran=true;ST.pack=r.results;showPack(r.results)}).catch(function(e){run.disabled=false;run.textContent='Run the test pack';res.appendChild(el('div','empty',e.message))})};
+   body.appendChild(run);body.appendChild(res)}
+  else{body.appendChild(el('div','sub','See how your draft changes the report. It reads your real numbers and writes a sample. Nothing is sent to anyone.'));
+   var wb=el('button','btn pri','Write a sample report with this draft');wb.style.marginTop='12px';var ro=el('div');ro.style.marginTop='12px';wb.onclick=function(){wb.disabled=true;wb.textContent='Writing...';ro.textContent='';api('/admin/dash/agent-sample'+accQ(),{instructions:ST.text,dials:ST.dials}).then(function(r){wb.disabled=false;wb.textContent='Write it again';ST.ran=true;var pr=el('pre',null,r.report);pr.style.maxHeight='none';ro.appendChild(pr)}).catch(function(e){wb.disabled=false;wb.textContent='Try again';ro.appendChild(el('div','empty',e.message))})};body.appendChild(wb);body.appendChild(ro)}}
+ if(ST.tab==='versions'){body.appendChild(el('div','sub','Every published version is kept. Make any of them live again with one click.'));
+  var cur=el('div','row2',null,[el('div','grow',null,[el('b',null,'Built-in default'),el('div','sub','The original instructions that came with '+m.name+'.')]),(function(){var b=el('button','btn sm','Use as draft');b.onclick=function(){ST.text=d.defaultInstructions;ST.dials={};ST.dirty=true;ST.tab='instructions';drawStudio(shell)};return b})()]);body.appendChild(cur);
+  if(!d.versions.length)body.appendChild(el('div','empty','No versions published yet.'));
+  d.versions.forEach(function(v){var vb=el('button','btn sm','View');var mb=el('button','btn sm',v.status==='published'?'Live now':'Make live');mb.disabled=v.status==='published';var out=el('div');
+   vb.onclick=function(){api('/admin/dash/agent-version?id='+encodeURIComponent(v.id)).then(function(r){out.textContent='';out.appendChild(diffView(ST.live,r.instructions));out.insertBefore(el('div','sub','Compared with what is live now:'),out.firstChild)})};
+   mb.onclick=function(){if(confirm('Make version '+v.n+' live again? It goes live straight away.'))publishNow(v.id,'Version '+v.n)};
+   body.appendChild(el('div','row2',null,[el('div','grow',null,[el('b',null,'Version '+v.n),el('div','sub',(v.publishedAt?'Published '+ago(v.publishedAt):'Saved '+ago(v.createdAt))),out]),el('span','tag '+(v.status==='published'?'g':''),v.status==='published'?'Live':'Earlier'),vb,mb]))})}
+ if(ST.tab==='rules'){body.appendChild(el('div','sub','These are locked in the code. No instruction, draft or builder request can switch them off.'));
+  d.safety.forEach(function(r){body.appendChild(el('div','row2',null,[el('div','lock','🔒'),el('div','grow',r)]))});
+  var kb=el('button','btn sm','Show what '+m.name+' knows');var kp=el('pre');kp.style.display='none';kb.style.marginTop='14px';kb.onclick=function(){if(kp.style.display==='none'){api('/admin/dash/agents').then(function(r){kp.textContent=r.knowledge;kp.style.display='block';kb.textContent='Hide'})}else{kp.style.display='none';kb.textContent='Show what '+m.name+' knows'}};body.appendChild(kb);body.appendChild(kp)}
+ badges()}
+
 function vSettings(p){api('/admin/dash/settings').then(function(d){
  if(!d.ready)p.appendChild(el('div','banner wr','These switches cannot save yet. '+(d.error||'Run supabase/006_settings.sql in the Supabase SQL editor, then reload.')));
  var groups={};d.defs.forEach(function(x){(groups[x.group]=groups[x.group]||[]).push(x)});
