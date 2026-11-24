@@ -77,6 +77,7 @@ button,input,select,textarea{font:inherit;color:inherit}
 .set select,.set input[type=number],.set input[type=text]{padding:8px 10px;border:1px solid var(--line);border-radius:10px;background:var(--bg);min-width:120px}
 .mate{display:flex;gap:14px;align-items:flex-start;padding:14px 0;border-bottom:1px solid var(--line)}.mate:last-child{border:0}
 .mate .av{border-radius:12px}
+.mate .sub{white-space:normal;overflow:visible}
 pre{white-space:pre-wrap;word-wrap:break-word;background:var(--bg);border:1px solid var(--line);border-radius:12px;padding:14px;font-size:12.5px;max-height:420px;overflow:auto}
 .bar{height:10px;border-radius:99px;background:var(--bg);overflow:hidden}.bar i{display:block;height:100%;background:var(--brand);border-radius:99px}
 .fun{display:grid;grid-template-columns:150px 1fr 54px;gap:12px;align-items:center;padding:8px 0}
