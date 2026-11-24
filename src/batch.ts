@@ -35,6 +35,15 @@ export function withPromoNote(body: string, note: string | undefined): string {
   return /Reply STOP to opt out\.?\s*$/.test(body) ? body.replace(/\s*Reply STOP to opt out\.?\s*$/, ` ${n} Reply STOP to opt out.`) : `${body} ${n}`;
 }
 
+/** The daily limit for a date: a special limit for that day if one is set (like "2026-11-27:100"), else the normal one. */
+export function capForDate(base: number, special: string | undefined, today: string): number {
+  for (const part of (special ?? "").split(",")) {
+    const [d, n] = part.trim().split(":");
+    if (d === today && /^\d+$/.test(n ?? "")) return Number(n);
+  }
+  return base;
+}
+
 /** True when today (a Pacific date, YYYY-MM-DD) is on the list of days with no sending. */
 export function isBlackout(list: string | undefined, today: string): boolean {
   return (list ?? "").split(",").map((x) => x.trim()).includes(today);
@@ -47,12 +56,12 @@ type Row = { id: string; account: Account; contact_id: string; body: string };
 /** Sends today's share of approved campaign texts. Does nothing unless sending is enabled and a daily cap is set. */
 export async function runDailyBatch(env: Env): Promise<Record<string, unknown>> {
   if (env.SENDING_ENABLED !== "true") return { skipped: "campaign sending is off" };
-  const cap = Number(env.DAILY_CAP ?? 0);
-  if (!(cap > 0)) return { skipped: "DAILY_CAP is not set" };
   const campaign = env.BATCH_CAMPAIGN ?? "pilot-2";
   const now = new Date();
   // Nothing goes out before the start date (Pacific), so sending can be switched on the night before.
   const today = new Intl.DateTimeFormat("en-CA", { timeZone: "America/Los_Angeles" }).format(now);
+  const cap = capForDate(Number(env.DAILY_CAP ?? 0), env.DAILY_CAP_DATES, today);
+  if (!(cap > 0)) return { skipped: "DAILY_CAP is not set" };
   if (env.START_ON && today < env.START_ON) return { skipped: `waiting for the start date ${env.START_ON}` };
   if (isBlackout(env.BLACKOUT_DATES, today)) return { skipped: `no sending today (${today} is a day off)` };
   const ms = pacificMsSinceMidnight(now);

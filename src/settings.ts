@@ -18,6 +18,7 @@ export const SETTINGS: SettingDef[] = [
   { key: "PHOTO_MODE", group: "Bot", label: "Photo handling", help: "Off, test, or live. Moves a lead to Photos Received when they send photos.", type: "select", options: ["off", "test", "live"] },
   { key: "SENDING_ENABLED", group: "Promo texts", label: "Send approved promo texts", help: "Lets the daily sender release texts you have approved. Nothing goes out unless this is on and a daily limit is set.", type: "toggle" },
   { key: "DAILY_CAP", group: "Promo texts", label: "Promo texts per day", help: "The most promo texts sent in one day, spread across the sending window. 0 means none.", type: "number" },
+  { key: "DAILY_CAP_DATES", group: "Promo texts", label: "Special limit on single days", help: "A different limit for one day, like 2026-11-27:100. Separate more with commas. Every other day uses the normal limit above.", type: "text" },
   { key: "START_ON", group: "Promo texts", label: "Do not send before (date)", help: "Year, month, day, like 2026-11-25, in Pacific time. Promo texts wait until this date even if sending is on.", type: "text" },
   { key: "PROMO_OWNER_ID", group: "Promo texts", label: "Owner for promo leads (GHL user ID)", help: "Each contact a promo is sent to gets this GHL user as its owner, if it has no owner yet. Set to Clark.", type: "text" },
   { key: "BLACKOUT_DATES", group: "Promo texts", label: "No sending on these dates", help: "Holidays and days off, Pacific time, like 2026-11-26,2026-12-25. No promo or follow up texts go out on these dates. Customers who text us still get an answer.", type: "text" },
@@ -55,6 +56,7 @@ export function mergeSettings(env: Env, map: Record<string, string>): Env {
   set("BATCH_CAMPAIGN", map.BATCH_CAMPAIGN);
   set("START_ON", map.START_ON);
   if (map.PROMO_DEADLINE !== undefined) o.PROMO_DEADLINE = map.PROMO_DEADLINE;
+  if (map.DAILY_CAP_DATES !== undefined) o.DAILY_CAP_DATES = map.DAILY_CAP_DATES;
   set("DASH_MODE", map.DASH_MODE);
   set("DASH_PROMO_DAYS", map.DASH_PROMO_DAYS);
   if (map.BLACKOUT_DATES !== undefined) o.BLACKOUT_DATES = map.BLACKOUT_DATES;
@@ -81,6 +83,7 @@ export function effectiveValues(env: Env, map: Record<string, string>): Record<s
     SENDING_ENABLED: map.SENDING_ENABLED ?? e.SENDING_ENABLED ?? "false",
     DAILY_CAP: map.DAILY_CAP ?? e.DAILY_CAP ?? "0",
     BATCH_CAMPAIGN: map.BATCH_CAMPAIGN ?? e.BATCH_CAMPAIGN ?? "pilot-2",
+    DAILY_CAP_DATES: map.DAILY_CAP_DATES ?? e.DAILY_CAP_DATES ?? "",
     START_ON: map.START_ON ?? e.START_ON ?? "",
     PROMO_DEADLINE: map.PROMO_DEADLINE ?? e.PROMO_DEADLINE ?? "",
     DASH_MODE: map.DASH_MODE ?? e.DASH_MODE ?? "off",
@@ -103,6 +106,7 @@ export function validSetting(key: string, value: string): string | null {
     if (!Number.isInteger(n) || n < 0 || n > (key.startsWith("WINDOW") ? 23 : 5000)) return "Out of range";
   }
   if (key === "PROMO_DEADLINE") return value === "" || /^\d{4}-\d{2}-\d{2}$/.test(value) ? null : "Use a date like 2026-12-15";
+  if (key === "DAILY_CAP_DATES") return value === "" || /^\d{4}-\d{2}-\d{2}:\d{1,4}(,\s*\d{4}-\d{2}-\d{2}:\d{1,4}){0,20}$/.test(value) ? null : "Use a date and a number like 2026-11-27:100";
   if (key === "BLACKOUT_DATES") return value === "" || /^\d{4}-\d{2}-\d{2}(,\s*\d{4}-\d{2}-\d{2}){0,30}$/.test(value) ? null : "Use dates like 2026-11-26, separated by commas";
   if (def.type === "text" && !/^[A-Za-z0-9_-]{1,40}$/.test(value)) return "Letters, numbers, dashes only";
   return null;
