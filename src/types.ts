@@ -23,6 +23,8 @@ export interface Env {
   QUIET_END_HOUR: string;
   DAILY_CAP?: string;
   START_ON?: string;
+  /** Dates (Pacific, YYYY-MM-DD, comma separated) when no promo or follow up texts are sent. */
+  BLACKOUT_DATES?: string;
   /** GHL user id to make the owner of each contact a promo is sent to, when they have no owner yet. */
   PROMO_OWNER_ID?: string;
   BATCH_CAMPAIGN?: string;

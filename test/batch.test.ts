@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { pacificMsSinceMidnight, planBatch } from "../src/batch";
+import { isBlackout, pacificMsSinceMidnight, planBatch } from "../src/batch";
 
 const H = 3_600_000;
 const base = { cap: 100, sentToday: 0, startHour: 9, endHour: 20, maxPerRun: 8 };
@@ -25,5 +25,14 @@ describe("pacificMsSinceMidnight", () => {
   it("handles daylight saving", () => {
     expect(pacificMsSinceMidnight(new Date("2026-07-01T16:30:00Z"))).toBe(9.5 * H);
     expect(pacificMsSinceMidnight(new Date("2026-12-01T17:30:00Z"))).toBe(9.5 * H);
+  });
+});
+
+describe("days off", () => {
+  it("knows a blackout date", () => {
+    expect(isBlackout("2026-11-26, 2026-12-25", "2026-11-26")).toBe(true);
+    expect(isBlackout("2026-11-26, 2026-12-25", "2026-11-27")).toBe(false);
+    expect(isBlackout(undefined, "2026-11-26")).toBe(false);
+    expect(isBlackout("", "2026-11-26")).toBe(false);
   });
 });

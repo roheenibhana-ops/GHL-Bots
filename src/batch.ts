@@ -27,6 +27,11 @@ export function planBatch(o: { cap: number; sentToday: number; msSinceMidnight: 
   return Math.min(o.maxPerRun, Math.ceil((o.cap - o.sentToday) / runsLeft));
 }
 
+/** True when today (a Pacific date, YYYY-MM-DD) is on the list of days with no sending. */
+export function isBlackout(list: string | undefined, today: string): boolean {
+  return (list ?? "").split(",").map((x) => x.trim()).includes(today);
+}
+
 const NEVER_TEXT_TAGS = ["bot-paused", "bot-needs-human", "bot-opted-out"];
 
 type Row = { id: string; account: Account; contact_id: string; body: string };
@@ -41,6 +46,7 @@ export async function runDailyBatch(env: Env): Promise<Record<string, unknown>> 
   // Nothing goes out before the start date (Pacific), so sending can be switched on the night before.
   const today = new Intl.DateTimeFormat("en-CA", { timeZone: "America/Los_Angeles" }).format(now);
   if (env.START_ON && today < env.START_ON) return { skipped: `waiting for the start date ${env.START_ON}` };
+  if (isBlackout(env.BLACKOUT_DATES, today)) return { skipped: `no sending today (${today} is a day off)` };
   const ms = pacificMsSinceMidnight(now);
   const dayStart = new Date(now.getTime() - ms).toISOString();
   const enc = encodeURIComponent(campaign);
