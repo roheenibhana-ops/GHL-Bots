@@ -123,7 +123,7 @@ export async function handleDash(req: Request, env: Env, url: URL): Promise<Resp
       const dayStart = new Date(Date.now() - pacificMsSinceMidnight(new Date())).toISOString();
       const [convs, today, queue] = await Promise.all([
         sb<Conv[]>(env, "GET", "conversations?select=contact_id,account,status,facts,updated_at&order=updated_at.desc&limit=500" + af),
-        sb<{ direction: string; status: string; campaign: string }[]>(env, "GET", `messages?created_at=gte.${dayStart}&status=neq.archived&select=direction,status,campaign&limit=2000${af}`),
+        sb<{ direction: string; status: string; campaign: string }[]>(env, "GET", `messages?or=(created_at.gte.${dayStart},sent_at.gte.${dayStart})&status=neq.archived&select=direction,status,campaign&limit=2000${af}`),
         sb<{ status: string }[]>(env, "GET", `messages?campaign=eq.${enc(eff.BATCH_CAMPAIGN)}&select=status&limit=3000${af}`),
       ]);
       const byStatus: Record<string, number> = {};
@@ -216,7 +216,7 @@ export async function handleDash(req: Request, env: Env, url: URL): Promise<Resp
     }
 
     if (p === "/admin/dash/activity") {
-      const rows = await sb<Msg[]>(env, "GET", "messages?status=in.(sent,received)&order=created_at.desc&limit=40&select=contact_id,direction,status,campaign,body,created_at,contact_name" + af);
+      const rows = await sb<Msg[]>(env, "GET", "messages?status=in.(sent,received)&order=created_at.desc&limit=40&select=contact_id,direction,status,campaign,body,created_at,sent_at,contact_name" + af);
       return json({ rows: rows.map((m) => ({ ...m, body: (m.body ?? "").slice(0, 160) })) });
     }
 
