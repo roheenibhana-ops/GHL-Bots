@@ -9,7 +9,14 @@ export const quoKey = (env: Env): string | undefined => (env as unknown as Recor
 export async function quoGet<T>(env: Env, path: string, params: Record<string, string | number | undefined> = {}, key = quoKey(env)): Promise<T> {
   if (!key) throw new Error("Quo is not connected. Add the Quo API key in Settings.");
   const q = Object.entries(params).filter(([, v]) => v !== undefined && v !== "").map(([k, v]) => `${encodeURIComponent(k).replace(/%5B/g, "[").replace(/%5D/g, "]")}=${encodeURIComponent(String(v))}`).join("&");
-  const res = await fetch(`${BASE}${path}${q ? "?" + q : ""}`, { headers: { Authorization: key, "Quo-Api-Version": VERSION } });
+  let res: Response;
+  // Quo allows 10 requests a second. When it says slow down, wait as long as it asks and try again.
+  for (let attempt = 0; ; attempt++) {
+    res = await fetch(`${BASE}${path}${q ? "?" + q : ""}`, { headers: { Authorization: key, "Quo-Api-Version": VERSION } });
+    if (res.status !== 429 || attempt >= 3) break;
+    const wait = Math.min(Math.max(Number(res.headers.get("retry-after")) || 1, 1), 5);
+    await new Promise((r) => setTimeout(r, wait * 1000 + 200));
+  }
   if (!res.ok) throw new Error(`Quo ${path} -> ${res.status}: ${(await res.text()).slice(0, 240)}`);
   return (await res.json()) as T;
 }

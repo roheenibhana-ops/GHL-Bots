@@ -48,11 +48,15 @@ export function parseStudy(raw: string): { voice: string; notes: string } {
 /** Reads recent real texts and calls from Quo and distils how the owner talks. Saves nothing: the caller stores it as a draft for approval. */
 export async function studyVoice(env: Env, o: { userId?: string; days?: number } = {}): Promise<VoiceStudy> {
   const since = new Date(Date.now() - (o.days ?? 120) * 86_400_000).toISOString();
-  const [users, msgs, calls] = await Promise.all([quoUsers(env), quoMessages(env, { sinceIso: since, maxPages: 8 }), quoCalls(env, { sinceIso: since, maxPages: 2 })]);
+  const users = await quoUsers(env);
+  const msgs = await quoMessages(env, { sinceIso: since, maxPages: 8 });
+  const calls = await quoCalls(env, { sinceIso: since, maxPages: 2 });
   const texts = textSamples(msgs, users, o.userId);
   // The longest real conversations teach the most.
   const talk = calls.filter((c) => c.duration >= 90 && !c.aiHandled && (!o.userId || c.answeredBy === o.userId || c.initiatedBy === o.userId)).sort((a, b) => b.duration - a.duration).slice(0, 10);
-  const scripts = (await Promise.all(talk.map(async (c) => callSample(c, await quoTranscript(env, c.id).catch(() => []), users)))).filter(Boolean);
+  // One at a time, to stay well inside Quo's speed limit.
+  const scripts: string[] = [];
+  for (const c of talk) { const t = callSample(c, await quoTranscript(env, c.id).catch(() => []), users); if (t) scripts.push(t); }
   if (!texts.conversations && !scripts.length) throw new Error("Quo returned no conversations written by a person in that period, so there is nothing to learn from yet.");
   const who = o.userId ? name(users.find((u) => u.id === o.userId)) : "the whole team";
   const system = [
