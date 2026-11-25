@@ -35,9 +35,9 @@ export function addressLine(p: CcProject): string {
 }
 
 /** The best picture address for one photo: a mid sized one for looking at, a small one for lists. Pure. */
-export function photoUrl(p: CcPhoto, want: "view" | "thumb" = "view"): string | null {
+export function photoUrl(p: CcPhoto, want: "view" | "thumb" | "full" = "view"): string | null {
   const by = new Map((p.uris ?? []).map((u) => [String(u.type).toLowerCase(), u.uri ?? u.url ?? ""]));
-  const order = want === "thumb" ? ["thumbnail", "thumb", "web", "medium", "large", "original"] : ["web", "large", "medium", "original", "thumbnail"];
+  const order = want === "thumb" ? ["thumbnail", "thumb", "web", "medium", "large", "original"] : want === "full" ? ["original", "large", "web", "medium", "thumbnail"] : ["web", "large", "medium", "original", "thumbnail"];
   for (const k of order) if (by.get(k)) return by.get(k) as string;
   const any = [...by.values()].find(Boolean);
   return any || p.photo_url || null;
