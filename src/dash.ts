@@ -368,6 +368,21 @@ export async function handleDash(req: Request, env: Env, url: URL, rawEnv: Env =
       return json({ sections: CHECKLIST, marks });
     }
 
+    // ---------- Zapier: a saved snapshot of the Zaps that are running ----------
+    // The Worker cannot read Zapier itself, so the list is saved here whenever it is checked.
+    if (p === "/admin/dash/zaps") {
+      const rows = await sb<{ id: number; body: unknown }[]>(env, "GET", "library?kind=eq.zaps&select=id,body&order=id.desc&limit=1").catch(() => []);
+      if (req.method === "POST") {
+        const b = (await req.json()) as { zaps?: { name?: string; group?: string; on?: boolean; does?: string; app?: string }[] };
+        const zaps = (Array.isArray(b.zaps) ? b.zaps : []).filter((z) => typeof z.name === "string").slice(0, 200).map((z) => ({ name: String(z.name).slice(0, 160), group: String(z.group ?? "Other").slice(0, 60), on: z.on !== false, does: String(z.does ?? "").slice(0, 300), app: String(z.app ?? "").slice(0, 300) }));
+        const body = { checkedAt: new Date().toISOString(), zaps };
+        if (rows[0]) await sb(env, "PATCH", `library?id=eq.${rows[0].id}`, { body }, "return=minimal");
+        else await sb(env, "POST", "library", { company: "all", kind: "zaps", body }, "return=minimal");
+        return json(body);
+      }
+      return json(rows[0]?.body ?? { checkedAt: null, zaps: [] });
+    }
+
     if (p === "/admin/dash/quo-key") {
       const S = await import("./settings");
       if (req.method === "POST") {
