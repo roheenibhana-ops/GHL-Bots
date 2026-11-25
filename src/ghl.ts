@@ -31,6 +31,9 @@ async function call<T>(c: GhlCreds, method: string, path: string, body?: unknown
   return (await res.json()) as T;
 }
 
+/** A plain call to the GHL API, for one off lookups. */
+export const ghlRaw = <T>(c: GhlCreds, method: string, path: string, body?: unknown) => call<T>(c, method, path, body);
+
 /** One page of contacts. NOTE: body shape is from the OpenAPI spec; verify against a live account in the dry run. */
 export async function searchContacts(
   c: GhlCreds,

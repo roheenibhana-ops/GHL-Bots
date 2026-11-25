@@ -344,6 +344,12 @@ export default {
     }
 
     // Self-test of Jobber phone search: takes a real client's number from the account and checks the search finds them. Returns a boolean only.
+    // Read only: one customer as GoHighLevel and Jobber each see them.
+    if (url.pathname === "/admin/lookup") {
+      if (!isAdmin(req, env)) return json({ error: "unauthorized" }, 401);
+      const { lookupCustomer } = await import("./lookup");
+      try { return json(await lookupCustomer(env, url.searchParams.get("account") === "lights" ? "lights" : "dunzo", url.searchParams.get("q") ?? "")); } catch (e) { return json({ error: (e as Error).message }, 502); }
+    }
     if (url.pathname === "/admin/jobber/search-selftest") {
       if (!isAdmin(req, env)) return json({ error: "unauthorized" }, 401);
       const account = jobberAccount();
