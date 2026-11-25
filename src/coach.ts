@@ -82,7 +82,8 @@ export async function historyPage(env: Env, before?: number, account: "dunzo" | 
   const convs = await searchConversations(creds, 24, before);
   const out: string[] = [];
   for (const c of convs) {
-    const msgs = (await conversationMessages(creds, c.id, 50)).reverse().filter((m) => m.body);
+    // A conversation can be listed and then be gone (deleted or merged). Skip it and carry on.
+    const msgs = (await conversationMessages(creds, c.id, 50).catch(() => [])).reverse().filter((m) => m.body);
     const first = (c.fullName ?? "").split(" ")[0];
     const clean = (t: string) => {
       let x = t.replace(/https?:\/\/\S+/g, "[link]").replace(/\S+@\S+/g, "[email]").replace(/[A-Za-z0-9._+-]+%40[A-Za-z0-9.-]+/g, "[email]").replace(/\+?\d[\d\s().-]{8,}\d/g, "[phone]");
