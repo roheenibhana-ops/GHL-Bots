@@ -352,8 +352,8 @@ export default {
         const { numbers } = await listClientPhones(env, account, 1);
         const sample = numbers.map(normalizePhone).filter((n): n is string => !!n).slice(0, 5);
         const found = await findClientsByPhones(env, account, sample);
-        const results = sample.map((p) => assess(found.get(p) ?? [], p).found);
-        return json({ account, tried: sample.length, foundByPhoneSearch: results.filter(Boolean).length });
+        const all = sample.map((p) => assess(found.get(p) ?? [], p));
+        return json({ account, tried: sample.length, foundByPhoneSearch: all.filter((a) => a.found).length, withRecentRequests: all.filter((a) => a.recentRequests > 0).length, requestsRead: [...found.values()].flat().every((c) => Array.isArray(c.requests?.nodes)) });
       } catch (e) { return json({ error: (e as Error).message }, 502); }
     }
 
