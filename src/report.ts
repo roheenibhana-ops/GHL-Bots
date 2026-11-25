@@ -86,7 +86,8 @@ export async function createReport(env: Env, o: { kind: ReportKind; projectId: s
   const project: CcProject = await ccProject(env, o.projectId);
   const all = await ccProjectPhotos(env, o.projectId, 60);
   const chosen = (o.photoIds?.length ? all.filter((p) => o.photoIds!.includes(p.id)) : all).slice(0, o.kind === "lights" ? 6 : 14);
-  const photos: ReportPhoto[] = chosen.map((p) => ({ id: p.id, url: photoUrl(p, "view") ?? "", thumb: photoUrl(p, "thumb") ?? "", note: p.description?.plain_text_content?.trim().slice(0, 200) || undefined })).filter((p) => p.url);
+  // CompanyCam's lighter size is very small, so the customer page shows the full picture, loaded only as they scroll to it.
+  const photos: ReportPhoto[] = chosen.map((p) => ({ id: p.id, url: photoUrl(p, "full") ?? photoUrl(p, "view") ?? "", thumb: photoUrl(p, "thumb") ?? "", note: p.description?.plain_text_content?.trim().slice(0, 200) || undefined })).filter((p) => p.url);
   if (!photos.length) throw new Error("That project has no photos to look at yet.");
   // The agent looks at the full size picture when it can, because detail matters. The customer page uses the lighter one.
   const full = new Map(chosen.map((p) => [p.id, photoUrl(p, "full") ?? ""]));
@@ -139,7 +140,7 @@ export function reportHtml(r: Report): string {
 <p class="sum">${esc(b.summary)}</p>
 ${b.next.length ? `<h2>What we recommend</h2><ol>${b.next.map((x) => `<li>${esc(x)}</li>`).join("")}</ol>` : ""}
 <h2>What we found</h2>
-${b.findings.map((f) => `<div class="card">${photo(f.photo)}<div class="in"><span class="tag" style="color:${tone[f.level][0]};background:${tone[f.level][1]}">${tone[f.level][2]}</span>${f.where ? `<h3>${esc(f.where)}</h3>` : ""}<p>${esc(f.what)}</p>${f.advice ? `<p class="adv">${esc(f.advice)}</p>` : ""}</div></div>`).join("")}`;
+${b.findings.map((f) => `<div class="card crop">${photo(f.photo)}<div class="in"><span class="tag" style="color:${tone[f.level][0]};background:${tone[f.level][1]}">${tone[f.level][2]}</span>${f.where ? `<h3>${esc(f.where)}</h3>` : ""}<p>${esc(f.what)}</p>${f.advice ? `<p class="adv">${esc(f.advice)}</p>` : ""}</div></div>`).join("")}`;
   } else {
     const b = r.body as LightsBody;
     const svg = (lines: [number, number][][]) => `<svg viewBox="0 0 1 1" preserveAspectRatio="none">${lines.map((l) => { const d = l.map((p, i) => (i ? "L" : "M") + p[0] + " " + p[1]).join(" "); return `<path d="${d}" class="glow"/><path d="${d}" class="bulb"/>`; }).join("")}</svg>`;
@@ -157,7 +158,7 @@ ${b.ideas.length ? `<h2>Ideas to add</h2><ul>${b.ideas.map((x) => `<li>${esc(x)}
 h2{font-size:18px;margin:26px 0 10px}h3{font-size:16px;margin:8px 0 2px}p{margin:6px 0}.sum{font-size:17px}.adv{color:#4b5563}.fine{color:#6a7280;font-size:13.5px}
 .score{display:flex;gap:10px;margin-bottom:14px}.score div{flex:1;background:#f4f5f7;border-radius:14px;padding:12px;text-align:center}.score b{display:block;font-size:26px;color:#0b7a4b}.score span{font-size:13px;color:#6a7280}
 .card{border:1px solid #e5e8ee;border-radius:16px;overflow:hidden;margin:12px 0;background:#fff}.card .in{padding:12px 14px 14px}.tag{display:inline-block;font-size:12px;font-weight:700;padding:3px 10px;border-radius:99px}
-.ph{position:relative;background:#111}.ph img{display:block;width:100%;height:auto}.ph svg{position:absolute;inset:0;width:100%;height:100%}
+.ph{position:relative;background:#111}.ph img{display:block;width:100%;height:auto}.ph svg{position:absolute;inset:0;width:100%;height:100%}.crop .ph img{max-height:440px;object-fit:cover}
 .glow{fill:none;stroke:#ffd27a;stroke-opacity:.45;stroke-width:14px;stroke-linecap:round;stroke-linejoin:round;vector-effect:non-scaling-stroke;filter:blur(3px)}
 .bulb{fill:none;stroke:#fff6d8;stroke-width:6px;stroke-linecap:round;stroke-dasharray:0 13;vector-effect:non-scaling-stroke}
 ol,ul{padding-left:22px;margin:6px 0}li{margin:5px 0}.foot{text-align:center;color:#6a7280;font-size:13.5px;margin-top:22px}</style></head>
