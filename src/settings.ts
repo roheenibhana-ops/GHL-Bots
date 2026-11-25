@@ -71,14 +71,41 @@ export async function applySettings(env: Env): Promise<Env> {
   const { map } = await loadSettings(env);
   const merged = mergeSettings(env, map);
   // An AI key saved from the dashboard wins over the one set in Cloudflare.
-  const key = await savedAiKey(env, map);
-  const quo = await savedSecret(env, map, QUO_KEY_ROW);
   const out = { ...merged } as unknown as Record<string, string | undefined>;
-  if (key) out.ANTHROPIC_API_KEY = key;
-  if (quo) out.QUO_API_KEY = quo;
+  // Anything connected from the dashboard wins over what is set in Cloudflare.
+  for (const c of CONNECTORS) for (const f of c.fields) {
+    const v = await savedSecret(env, map, "SECRET_" + f.env);
+    if (v) out[f.env] = v;
+  }
   // The approved house voice, learned from the owner's real calls and texts.
   if (map[VOICE_ROW]) out.VOICE_PROFILE = map[VOICE_ROW];
   return out as unknown as Env;
+}
+
+// ---------- Connections: the keys for each outside system, saved from the dashboard ----------
+export interface ConnField { env: string; label: string; ph: string; secret: boolean }
+export interface Connector { id: string; title: string; name: string; need: boolean; help: string; fields: ConnField[] }
+export const CONNECTORS: Connector[] = [
+  { id: "claude", title: "AI account (Claude)", name: "Claude", need: true, help: "Create a key at console.anthropic.com under API keys, and set a monthly spending limit there. AI costs bill to that account.",
+    fields: [{ env: "ANTHROPIC_API_KEY", label: "Claude API key", ph: "sk-ant-...", secret: true }] },
+  { id: "ghl-dunzo", title: "GoHighLevel: Dunzo Gutters", name: "GoHighLevel", need: true, help: "In the Dunzo sub account go to Settings, Private Integrations, and create a token with contacts, conversations and opportunities access. The Location ID is on Settings, Business Profile.",
+    fields: [{ env: "GHL_TOKEN_DUNZO", label: "Private integration token", ph: "pit-...", secret: true }, { env: "GHL_LOCATION_DUNZO", label: "Location ID", ph: "Location ID", secret: false }] },
+  { id: "ghl-lights", title: "GoHighLevel: Santa's Lights", name: "GoHighLevel", need: true, help: "The same two things from the Santa's Lights sub account.",
+    fields: [{ env: "GHL_TOKEN_LIGHTS", label: "Private integration token", ph: "pit-...", secret: true }, { env: "GHL_LOCATION_LIGHTS", label: "Location ID", ph: "Location ID", secret: false }] },
+  { id: "jobber", title: "Jobber", name: "Jobber", need: true, help: "From your app in the Jobber Developer Center. After saving, press Connect for each company and approve it in Jobber.",
+    fields: [{ env: "JOBBER_CLIENT_ID", label: "App client ID", ph: "Client ID", secret: false }, { env: "JOBBER_CLIENT_SECRET", label: "App client secret", ph: "Client secret", secret: true }] },
+  { id: "quo", title: "Phone system (Quo)", name: "Quo", need: false, help: "In Quo go to Workspace Settings, then API, and generate a key (owner or admin only). The agents only read from Quo.",
+    fields: [{ env: "QUO_API_KEY", label: "Quo API key", ph: "Quo API key", secret: true }] },
+];
+
+/** For the dashboard: where each value comes from. Secrets show only their last four characters. */
+export async function connectionFields(rawEnv: Env, map: Record<string, string>, c: Connector) {
+  const raw = rawEnv as unknown as Record<string, string | undefined>;
+  return Promise.all(c.fields.map(async (f) => {
+    const saved = await savedSecret(rawEnv, map, "SECRET_" + f.env);
+    const v = saved || raw[f.env] || "";
+    return { env: f.env, label: f.label, ph: f.ph, secret: f.secret, source: saved ? "dashboard" : raw[f.env] ? "cloudflare" : "none", shown: !v ? "" : f.secret ? "ending in " + v.slice(-4) : v };
+  }));
 }
 
 // ---------- The AI key, saved from the dashboard ----------

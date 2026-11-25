@@ -239,6 +239,51 @@ export async function handleDash(req: Request, env: Env, url: URL, rawEnv: Env =
       return json(await aiKeyStatus(rawEnv, map));
     }
 
+    if (p === "/admin/dash/connections" || p === "/admin/dash/connection") {
+      const S = await import("./settings");
+      const raw = rawEnv as unknown as Record<string, string | undefined>;
+      if (p === "/admin/dash/connection" && req.method === "POST") {
+        const b = (await req.json()) as { id?: string; values?: Record<string, string>; remove?: boolean };
+        const c = S.CONNECTORS.find((x) => x.id === b.id);
+        if (!c) return json({ error: "Unknown connection" }, 400);
+        const { ready, error, map } = await S.loadSettings(env, true);
+        if (!ready) return json({ error: "Could not be saved: " + (error ?? "settings table not found") }, 409);
+        if (b.remove) {
+          for (const f of c.fields) await saveSetting(env, "SECRET_" + f.env, "");
+        } else {
+          const given: Record<string, string> = {};
+          for (const f of c.fields) { const v = String(b.values?.[f.env] ?? "").trim(); if (v) given[f.env] = v; }
+          if (!Object.keys(given).length) return json({ error: "Nothing to save. Paste a value first." }, 400);
+          // What the connection would use after this save: new values over the current ones.
+          const next: Record<string, string> = {};
+          for (const f of c.fields) next[f.env] = given[f.env] ?? (await S.savedSecret(rawEnv, map, "SECRET_" + f.env)) ?? raw[f.env] ?? "";
+          const missing = c.fields.filter((f) => !next[f.env]).map((f) => f.label);
+          if (missing.length) return json({ error: "Also needed: " + missing.join(", ") }, 400);
+          if (Object.values(given).some((v) => v.length > 400 || /\s/.test(v))) return json({ error: "That does not look right. Check it was copied without spaces." }, 400);
+          // Prove it works before saving, so a typo can never take a live system down.
+          let problem: string | null = null;
+          try {
+            if (c.id === "claude") {
+              if (!S.aiKeyLooksRight(next.ANTHROPIC_API_KEY)) problem = "That does not look like a Claude API key. It should start with sk-ant-";
+              else { const t = await fetch("https://api.anthropic.com/v1/models?limit=1", { headers: { "x-api-key": next.ANTHROPIC_API_KEY, "anthropic-version": "2023-06-01" } }); if (!t.ok) problem = t.status === 401 || t.status === 403 ? "Claude did not accept that key." : "Claude answered with an error (" + t.status + ")."; }
+            } else if (c.id === "quo") {
+              const t = await (await import("./quo")).quoCheckKey(next.QUO_API_KEY);
+              if (!t.ok) problem = t.status === 401 || t.status === 403 ? "Quo did not accept that key." : "Could not check the key with Quo (" + (t.status || "no answer") + ").";
+            } else if (c.id === "ghl-dunzo" || c.id === "ghl-lights") {
+              const acct = c.id === "ghl-dunzo" ? "dunzo" : "lights";
+              const up = acct.toUpperCase();
+              await getPipelines({ account: acct, token: next["GHL_TOKEN_" + up], locationId: next["GHL_LOCATION_" + up] });
+            }
+          } catch (e) { problem = c.name + " did not accept those details: " + (e as Error).message.slice(0, 140); }
+          if (problem) return json({ error: problem + " Nothing was changed." }, 400);
+          for (const [k, v] of Object.entries(given)) await saveSetting(env, "SECRET_" + k, await S.encryptSecret(rawEnv, v));
+        }
+      }
+      const { map } = await S.loadSettings(env, true);
+      const list = await Promise.all(S.CONNECTORS.map(async (c) => ({ id: c.id, title: c.title, name: c.name, need: c.need, help: c.help, fields: await S.connectionFields(rawEnv, map, c) })));
+      return json({ connections: list });
+    }
+
     if (p === "/admin/dash/quo-key") {
       const S = await import("./settings");
       if (req.method === "POST") {

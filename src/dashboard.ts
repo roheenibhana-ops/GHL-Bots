@@ -698,20 +698,31 @@ function vSettings(p){api('/admin/dash/settings').then(function(d){
    else if(x.type==='select'){ctl=el('select');x.options.forEach(function(o){var op=el('option',null,o);op.value=o;if(o===val)op.selected=true;ctl.appendChild(op)});ctl.onchange=function(){save(ctl.value)}}
    else{ctl=el('input');ctl.type=x.type==='number'?'number':'text';ctl.value=val;ctl.onchange=function(){save(ctl.value)}}
    c.appendChild(el('div','set',null,[el('div','grow',null,[el('b',null,x.label),el('span',null,x.help)]),ctl]))});p.appendChild(c)});aiKeyCard(p)})}
-function keyCard(p,K){var c=el('div','card');c.style.marginBottom='16px';c.appendChild(el('h3',null,K.title));p.appendChild(c);var body=el('div');c.appendChild(body);
- function draw(d){body.textContent='';var on=d.source!=='none';
-  var txt=d.source==='dashboard'?'Connected. Using the key saved here, ending in '+d.ending+'.':d.source==='cloudflare'?'Connected. Using the key set in Cloudflare, ending in '+d.ending+'.':K.none;
-  body.appendChild(el('div','banner '+(on?'ok':K.need?'bd':'wr'),null,[el('div','t',on?K.name+' is connected':K.name+' is not connected',[el('small',null,txt)])]));
-  if(d.broken)body.appendChild(el('div','banner wr','The key saved here can no longer be read. Paste it again.'));
-  var i=el('input');i.type='password';i.placeholder=K.ph;i.autocomplete='off';i.style.minWidth='260px';
-  var sv=el('button','btn pri','Save key');sv.onclick=function(){var v=i.value.trim();if(!v)return;sv.disabled=true;sv.textContent='Checking with '+K.name+'...';api(K.url,{value:v}).then(function(r){toast('Key saved and working');draw(r)}).catch(function(e){toast(e.message);sv.disabled=false;sv.textContent='Save key'})};
-  var row=el('div','set',null,[el('div','grow',null,[el('b',null,K.label),el('span',null,K.help)]),i,sv]);body.appendChild(row);
-  if(d.source==='dashboard'){var rm=el('button','btn','Remove saved key');rm.onclick=function(){if(!confirm('Remove the key saved here?'))return;api(K.url,{value:''}).then(function(r){toast('Removed');draw(r)}).catch(function(e){toast(e.message)})};
-   body.appendChild(el('div','set',null,[el('div','grow',null,[el('b',null,'Remove'),el('span',null,K.rm)]),rm]))}}
- api(K.url).then(draw).catch(function(e){body.appendChild(el('div','empty',e.message))})}
-function aiKeyCard(p){
- keyCard(p,{title:'AI account (Claude)',name:'Claude',url:'/admin/dash/ai-key',need:true,ph:'sk-ant-...',label:'Claude API key',none:'No key yet. The agents cannot reply until one is added.',help:'Create one at console.anthropic.com under API keys, and set a monthly spending limit there. The key is checked with Claude before it is saved, stored encrypted, and never shown again.',rm:'Goes back to the key set in Cloudflare, if there is one.'});
- keyCard(p,{title:'Phone system (Quo)',name:'Quo',url:'/admin/dash/quo-key',ph:'Quo API key',label:'Quo API key',none:'Optional. Connect it so the agents can learn from real calls and texts.',help:'In Quo go to Workspace Settings, then API, and generate a key (owner or admin only). The agents only read from Quo: they never send or change anything there. The key is checked with Quo, stored encrypted, and never shown again.',rm:'The agents stop reading from Quo.'})}
+function aiKeyCard(p){var hd=el('div','card');hd.style.marginBottom='16px';hd.appendChild(el('h3',null,'Connections'));hd.appendChild(el('div','sub','The outside systems the agents work with. Paste a key to connect one. Every key is tested before it is saved, stored encrypted, and never shown again. A key saved here is used in place of the one set in Cloudflare.'));p.appendChild(hd);
+ var box=el('div');p.appendChild(box);var CHK={'ghl-dunzo':['ghlDunzo'],'ghl-lights':['ghlLights'],'jobber':['jobberDunzo','jobberLights'],'quo':['quo']};var checks=null;
+ function draw(d){box.textContent='';d.connections.forEach(function(c){var card=el('div','card');card.style.marginBottom='16px';card.appendChild(el('h3',null,c.title));
+   var have=c.fields.every(function(f){return f.source!=='none'}),res=(CHK[c.id]||[]).map(function(k){return checks?checks[k]:undefined}),bad=res.filter(function(r){return r&&r!=='ok'}),ok=res.length&&res.every(function(r){return r==='ok'});
+   var tone=!have?(c.need?'bd':'wr'):bad.length?'bd':'ok';
+   var head=!have?c.name+' is not connected':bad.length?c.name+' has a problem':(ok?c.name+' is connected and working':c.name+' is connected');
+   var sub=!have?(c.need?'Needed for the agents to work.':'Optional.'):bad.length?bad.join(' '):(res.length&&!ok?'Checking...':'');
+   card.appendChild(el('div','banner '+tone,null,[el('div','t',head,[el('small',null,sub)])]));
+   card.appendChild(el('div','sub',c.help));
+   var ins={};c.fields.forEach(function(f){var i=el('input');i.type=f.secret?'password':'text';i.placeholder=f.ph;i.autocomplete='off';i.style.minWidth='260px';ins[f.env]=i;
+    var cur=f.source==='none'?'Not set.':(f.source==='dashboard'?'Saved here':'Set in Cloudflare')+(f.shown?', '+(f.secret?f.shown:'value '+f.shown):'')+'.';
+    card.appendChild(el('div','set',null,[el('div','grow',null,[el('b',null,f.label),el('span',null,cur)]),i]))});
+   var sv=el('button','btn pri','Save and test');sv.onclick=function(){var vals={},n=0;c.fields.forEach(function(f){var v=ins[f.env].value.trim();if(v){vals[f.env]=v;n++}});if(!n)return toast('Paste a value first');
+    if(have&&c.id!=='quo'&&!confirm('Replace the '+c.title+' details? They are tested first, and nothing changes if the test fails.'))return;
+    sv.disabled=true;sv.textContent='Testing with '+c.name+'...';api('/admin/dash/connection',{id:c.id,values:vals}).then(function(r){toast('Saved and working');draw(r);recheck()}).catch(function(e){toast(e.message);sv.disabled=false;sv.textContent='Save and test'})};
+   var acts=el('div','set',null,[el('div','grow'),sv]);
+   if(c.fields.some(function(f){return f.source==='dashboard'})){var rm=el('button','btn','Remove saved');rm.onclick=function(){if(!confirm('Remove the '+c.title+' details saved here? It goes back to whatever is set in Cloudflare.'))return;api('/admin/dash/connection',{id:c.id,remove:true}).then(function(r){toast('Removed');draw(r);recheck()}).catch(function(e){toast(e.message)})};acts.insertBefore(rm,sv)}
+   card.appendChild(acts);
+   if(c.id==='jobber'&&have){[['dunzo','Dunzo Gutters','jobberDunzo'],['lights','Santa\'s Lights','jobberLights']].forEach(function(a){var st=checks?checks[a[2]]:undefined;var b=el('button','btn',st==='ok'?'Reconnect':'Connect');b.onclick=function(){window.open('/admin/jobber/connect?key='+encodeURIComponent(T)+'&account='+a[0],'_blank')};
+     card.appendChild(el('div','set',null,[el('div','grow',null,[el('b',null,a[1]+' Jobber account'),el('span',null,st==='ok'?'Connected and working.':st?'Not connected: press Connect and approve it in Jobber, then come back and refresh.':'Checking...')]),b]))})}
+   box.appendChild(card)});
+  var db=el('div','card');db.style.marginBottom='16px';db.appendChild(el('h3',null,'Database (Supabase)'));db.appendChild(el('div','banner ok',null,[el('div','t','Supabase is connected',[el('small',null,'These settings are stored in it, so its own keys stay in Cloudflare and cannot be changed from this page.')])]));box.appendChild(db)}
+ var last=null;function recheck(){api('/admin/dash/systems').then(function(r){checks=r.checks;if(last)draw(last)}).catch(function(){})}
+ api('/admin/dash/connections').then(function(d){last=d;draw(d);recheck()}).catch(function(e){box.appendChild(el('div','empty',e.message))});
+ var _draw=draw;draw=function(d){last=d;_draw(d)}}
 function vSim(p){var c=el('div','card');c.appendChild(el('h3',null,'Practice chat. Nothing is sent to anyone.'));
  var th=el('div','thread');th.style.cssText='height:50vh;border-radius:12px;margin-bottom:12px';var facts={firstName:'Sam',address:{street1:'2752 Argolis Way',city:'Sacramento',province:'CA',postalCode:'95826'},opening:"Hi Sam, it's Dunzo Gutters. Before the rains: gutter cleaning is $219 for a single story home or $319 for two stories. Reply 1 or 2 and we'll text you a quote to approve and pay online. Reply STOP to opt out."};var hist=[];
  th.appendChild(el('div','b out',facts.opening));
