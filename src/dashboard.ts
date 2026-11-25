@@ -233,8 +233,9 @@ function status(){var s=S.settings||{};var p=$('status'),pa=s.PAUSE_ALL==='true'
  p.className='pill '+cls;p.textContent='';p.appendChild(el('i'));p.appendChild(document.createTextNode(txt));
  var b=$('panic');b.textContent=pa?'Resume':'Pause everything';b.className='btn '+(pa?'pri':'dng')}
 function load(){return api('/admin/dash/overview'+accQ()).then(function(o){S=o;pendingCount=o.conversations.withTeam;status();nav()})}
-function render(){var p=$('page');p.textContent='';clearInterval(timer);
- if(T.length<20){var w=el('div','banner wr','Your admin token is short. This page shows real customer conversations, so please change ADMIN_TOKEN in Cloudflare to a long random one (at least 20 characters).');p.appendChild(w)}load().then(function(){({overview:vOverview,inbox:vInbox,approve:vApprove,results:vResults,director:vDirector,roadmap:vRoadmap,agents:vAgents,settings:vSettings,sim:vSim})[view](p)}).catch(function(e){p.appendChild(el('div','empty',e.message))})}
+var renderN=0;
+function render(){var p=$('page');p.textContent='';clearInterval(timer);var myN=++renderN;
+ if(T.length<20){var w=el('div','banner wr','Your admin token is short. This page shows real customer conversations, so please change ADMIN_TOKEN in Cloudflare to a long random one (at least 20 characters).');p.appendChild(w)}load().then(function(){if(myN!==renderN)return;({overview:vOverview,inbox:vInbox,approve:vApprove,results:vResults,director:vDirector,roadmap:vRoadmap,agents:vAgents,settings:vSettings,sim:vSim})[view](p)}).catch(function(e){p.appendChild(el('div','empty',e.message))})}
 function kpi(n,l,tone){return el('div','card kpi',null,[el('div','n',String(n)),el('div','l',l)])}
 function who(r){return (r.name||'C').charAt(0).toUpperCase()}
 function vOverview(p){
