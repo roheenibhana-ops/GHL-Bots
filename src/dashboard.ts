@@ -7,6 +7,23 @@ export const DASH_HTML = String.raw`<!doctype html>
 :root{--bg:#f4f5f7;--panel:#fff;--ink:#14171c;--mute:#6a7280;--line:#e5e8ee;--brand:#0b7a4b;--brand2:#e8f5ee;--warn:#b45309;--warn2:#fef3e2;--bad:#c0262d;--bad2:#fdecee;--blue:#1d5fd1;--blue2:#e8f0fd;--me:#e6efff;--vio:#6d3fd6;--vio2:#f0eafd;--shadow:0 1px 2px rgba(16,24,40,.06),0 4px 14px rgba(16,24,40,.05)}
 @media(prefers-color-scheme:dark){:root:not([data-theme=light]){--bg:#0e1116;--panel:#171b22;--ink:#eef1f6;--mute:#9aa3b2;--line:#262c36;--brand:#34c57f;--brand2:#12281d;--warn:#f0a84a;--warn2:#2c2111;--bad:#ff7076;--bad2:#2e1618;--blue:#6ea2ff;--blue2:#16233b;--me:#1a2a47;--vio:#b79cff;--vio2:#221a3a;--shadow:none}}
 :root[data-theme=dark]{--bg:#0e1116;--panel:#171b22;--ink:#eef1f6;--mute:#9aa3b2;--line:#262c36;--brand:#34c57f;--brand2:#12281d;--warn:#f0a84a;--warn2:#2c2111;--bad:#ff7076;--bad2:#2e1618;--blue:#6ea2ff;--blue2:#16233b;--me:#1a2a47;--vio:#b79cff;--vio2:#221a3a;--shadow:none}
+.wfm{position:fixed;inset:0;z-index:80;background:rgba(10,14,20,.55);display:flex;align-items:flex-start;justify-content:center;padding:28px 16px;overflow:auto;backdrop-filter:blur(3px)}
+.wfb{background:var(--panel);border-radius:20px;width:100%;max-width:640px;box-shadow:0 20px 60px rgba(0,0,0,.35);border:1px solid var(--line)}
+.wfh{display:flex;gap:14px;align-items:center;padding:18px 20px;border-bottom:1px solid var(--line);position:sticky;top:0;background:var(--panel);border-radius:20px 20px 0 0;z-index:2}
+.wfh .nm{font-weight:700;font-size:18px}.wfh .x{margin-left:auto;border:0;background:var(--bg);width:36px;height:36px;border-radius:50%;cursor:pointer;font-size:18px;color:var(--ink)}
+.wfk{display:flex;gap:14px;flex-wrap:wrap;padding:12px 20px 0;font-size:12.5px;color:var(--mute)}.wfk span:before{content:'';display:inline-block;width:10px;height:10px;border-radius:3px;margin-right:6px;background:var(--c);vertical-align:-1px}
+.wff{padding:18px 20px 24px}
+.wfn{position:relative;border-radius:14px;padding:12px 14px;border:1.5px solid var(--c);background:var(--b);margin-bottom:26px}
+.wfn:after{content:'';position:absolute;left:28px;bottom:-21px;width:2px;height:15px;background:var(--line)}
+.wfn:before{content:'';position:absolute;left:23.5px;bottom:-26px;border:5.5px solid transparent;border-top:7px solid var(--mute);border-bottom:0}
+.wfn:last-child{margin-bottom:0}.wfn:last-child:after,.wfn:last-child:before{display:none}
+.wfn.start{--c:var(--brand);--b:var(--brand2)}.wfn.step{--c:var(--line);--b:var(--panel)}.wfn.check{--c:var(--warn);--b:var(--warn2)}.wfn.hand{--c:var(--blue);--b:var(--blue2);cursor:pointer}.wfn.end{--c:var(--vio);--b:var(--vio2)}
+.wfn .k{font-size:10.5px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--c);margin-bottom:3px}.wfn.step .k{color:var(--mute)}
+.wfn .t{font-weight:650;font-size:15px;line-height:1.3}.wfn .d{color:var(--mute);font-size:13.5px;margin-top:3px;line-height:1.4}
+.wfn .sy{display:flex;gap:6px;flex-wrap:wrap;margin-top:8px}.wfn .sy i{font-style:normal;font-size:11.5px;font-weight:600;padding:2px 9px;border-radius:99px;background:var(--bg);border:1px solid var(--line);color:var(--ink)}
+.wfbr{margin-top:9px;display:grid;gap:6px}.wfbr div{display:flex;gap:8px;align-items:flex-start;font-size:13px;background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:7px 10px}
+.wfbr b{color:var(--warn);white-space:nowrap}.wfbr em{font-style:normal;color:var(--mute)}.wfbr span{flex:1}
+.wfgo{color:var(--brand);font-weight:700;font-size:12px;margin:-18px 0 8px 44px;position:relative}
 .plan-h{display:flex;justify-content:space-between;align-items:flex-end;gap:12px;flex-wrap:wrap;margin-bottom:12px}
 .plan-h h3{margin:0}.plan-h .sub{color:var(--mute);font-size:13px;margin-top:4px}
 .plan-big{font-size:26px;font-weight:700;font-variant-numeric:tabular-nums}.plan-big small{font-size:13px;font-weight:500;color:var(--mute);margin-left:6px}
@@ -439,6 +456,23 @@ function hue(s){var h=0;for(var i=0;i<s.length;i++)h=(h*31+s.charCodeAt(i))%360;
 function avatar(m,size){var a=el('div','avl');var sv=avatarSVG(m.name);
  if(sv){a.innerHTML=sv;a.style.background='none';a.style.boxShadow='none'}else{a.textContent=m.emoji||'?';var h=hue(m.name);a.style.background='linear-gradient(135deg,hsl('+h+' 85% 88%),hsl('+((h+40)%360)+' 80% 80%))'}
  if(size){a.style.width=size+'px';a.style.height=size+'px';a.style.fontSize=Math.round(size*.52)+'px'}return a}
+var FLOWS={};
+function openFlow(name){var m=ALLMATES.filter(function(x){return x.name===name})[0];var f=FLOWS[name];if(!m||!f)return toast('No workflow for '+name+' yet');
+ var old=document.querySelector('.wfm');if(old)old.remove();
+ var ov=el('div','wfm');var box=el('div','wfb');ov.appendChild(box);ov.onclick=function(e){if(e.target===ov)ov.remove()};
+ var x=el('button','x','\u00d7');x.onclick=function(){ov.remove()};
+ var live=m.state==='live',ext=m.state==='external';
+ box.appendChild(el('div','wfh',null,[avatar(m,52),el('div',null,null,[el('div','nm',m.name+'\'s workflow'),el('div','sub2',m.role)]),el('span','tag '+(live?'g':ext?'b':'o'),live?'Live':ext?'Your Claude':'Planned'),x]));
+ if(!live&&!ext)box.appendChild(el('div','banner wr','Not built yet. This is how '+m.name+' will work once built.'));
+ var key=el('div','wfk');[['Starts when','var(--brand)'],['Does','var(--mute)'],['Decides','var(--warn)'],['Passes on','var(--blue)'],['Result','var(--vio)']].forEach(function(k){var sp=el('span',null,k[0]);sp.style.setProperty('--c',k[1]);key.appendChild(sp)});box.appendChild(key);
+ var fl=el('div','wff');var LAB={start:'Starts when',step:'Step',check:'Decides',hand:'Passes on',end:'Result'},n=0;
+ f.forEach(function(st){var nd=el('div','wfn '+st.k);if(st.k==='step')n++;
+  nd.appendChild(el('div','k',st.k==='step'?'Step '+n:LAB[st.k]));nd.appendChild(el('div','t',st.t));if(st.d)nd.appendChild(el('div','d',st.d));
+  if(st.br){var br=el('div','wfbr');st.br.forEach(function(b){br.appendChild(el('div',null,null,[el('b',null,'If'),el('span',null,b[0],[el('em',null,' \u2192 '+b[1])])]))});nd.appendChild(br);nd.appendChild(el('div','d','Otherwise it carries on below.'))}
+  if(st.sys&&st.sys.length){var sy=el('div','sy');st.sys.forEach(function(z){sy.appendChild(el('i',null,z))});nd.appendChild(sy)}
+  if(st.k==='hand'&&st.to){nd.title='Open '+st.to+'\'s workflow';nd.onclick=function(){openFlow(st.to)};nd.appendChild(el('div','d','Click to see '+st.to+'\'s workflow.'))}
+  fl.appendChild(nd)});box.appendChild(fl);document.body.appendChild(ov)}
+function flowBtn(m,cls){var b=el('button',cls||'btn','Workflow');b.onclick=function(e){e.stopPropagation();if(Object.keys(FLOWS).length)return openFlow(m.name);api('/admin/dash/agents').then(function(d){ALLMATES=d.mates;FLOWS=d.flows||{};openFlow(m.name)})};return b}
 function mateCard(m){var c=el('div','mcard'+(m.state==='live'?' live':''),null,[avatar(m),el('div','grow',null,[el('div','nm',m.name),el('div','sub2',m.role)]),el('span','tag '+(m.state==='live'?'g':m.state==='external'?'b':''),m.state==='live'?'Live':m.state==='external'?'Your Claude':'Soon')]);
  c.title=m.does;c.onclick=function(){studioKey=m.agent||('profile:'+m.name);studioMeta=m;render()};return c}
 var AVIEW='org';try{AVIEW=localStorage.getItem('aview')||'org'}catch(e){}
@@ -459,7 +493,7 @@ function orgChart(p,d){var c=el('div','card oc');
  p.appendChild(c)}
 function vAgents(p){
  if(studioKey){return vStudio(p)}
- api('/admin/dash/agents').then(function(d){ALLMATES=d.mates;
+ api('/admin/dash/agents').then(function(d){ALLMATES=d.mates;FLOWS=d.flows||{};
   p.appendChild(el('div','sub','Meet the team. Click anyone to see what they do, and to open their studio.'));
   var vw=el('div','chips');vw.style.marginTop='10px';[['org','Org chart'],['cards','Cards']].forEach(function(x){var c=el('button','chip'+(AVIEW===x[0]?' on':''),x[1]);c.onclick=function(){AVIEW=x[0];try{localStorage.setItem('aview',AVIEW)}catch(e){}render()};vw.appendChild(c)});p.appendChild(vw);
   if(AVIEW==='org'){orgChart(p,d);var sb0=el('div','card');sb0.style.marginTop='16px';p.appendChild(sb0);vSystems(sb0,null);api('/admin/dash/systems').then(function(r){sb0.textContent='';vSystems(sb0,r.checks)}).catch(function(){});return}
@@ -503,7 +537,7 @@ function diffView(a,b){var box=el('div','diff');var d=diffLines(a,b),same=0,chan
 function vStudio(p){
  var m=studioMeta;
  var back=el('button','btn sm','Back to the team');back.onclick=function(){studioKey=null;studioMeta=null;ST=null;render()};p.appendChild(back);
- if(!m.agent){var c=el('div','card');c.style.marginTop='14px';c.appendChild(el('div','prof',null,[avatar(m,88),el('div','grow',null,[el('div','nm',m.name),el('div','sub2',m.role),el('span','tag '+(m.state==='live'?'g':''),m.state==='live'?'Live':'Planned')])]));
+ if(!m.agent){var c=el('div','card');c.style.marginTop='14px';c.appendChild(el('div','prof',null,[avatar(m,88),el('div','grow',null,[el('div','nm',m.name),el('div','sub2',m.role),el('span','tag '+(m.state==='live'?'g':''),m.state==='live'?'Live':'Planned')]),flowBtn(m,'btn pri')]));
   c.appendChild(el('p',null,m.does));c.appendChild(el('div','sub',m.state==='live'?'Works today, but its behaviour lives in the code for now. Gus and Maverick are the first agents with the full studio. The rest follow as they are built.':'Not built yet. When it is, it gets its own studio here, with the same chat builder, test pack and version history.'));p.appendChild(c);return}
  var shell=el('div');p.appendChild(shell);shell.appendChild(el('div','empty','Loading '+m.name+'...'));
  api('/admin/dash/agent?agent='+m.agent).then(function(d){
@@ -522,7 +556,7 @@ function drawStudio(shell){
  ST.badges=badges;
  sv.onclick=function(){saveDraft(function(){drawStudio(shell)})};
  pub.onclick=function(){var go=function(){if(!ST.ran&&m.agent==='gus'&&!confirm('You have not run the test pack on this draft. Publish anyway? This goes live to real customers straight away.'))return;if(ST.ran||m.agent!=='gus'){if(!confirm('Publish this version? It goes live straight away.'))return}publishNow(ST.draftId,'The new version')};if(ST.dirty)saveDraft(function(ok){if(ok)go()});else go()};
- head.appendChild(el('div','prof',null,[avatar(m,72),el('div','grow',null,[el('div','nm',m.name+' · '+m.role),el('div','sub',m.does),el('div','facts',null,[live,st])]),el('div','acts',null,[sv,pub])]));
+ head.appendChild(el('div','prof',null,[avatar(m,72),el('div','grow',null,[el('div','nm',m.name+' · '+m.role),el('div','sub',m.does),el('div','facts',null,[live,st])]),el('div','acts',null,[flowBtn(m),sv,pub])]));
  shell.appendChild(head);
  if(!d.ready){var bn=el('div','card');bn.style.marginTop='14px';bn.appendChild(el('h3',null,'One setup step'));bn.appendChild(el('div','sub','Saving and publishing need one table. Paste this in the Supabase SQL editor and run it, then reload. You can still chat with the builder and test changes meanwhile.'));var pre=el('pre',null,SQL7);bn.appendChild(pre);var cp=el('button','btn sm','Copy the SQL');cp.onclick=function(){try{navigator.clipboard.writeText(SQL7);toast('Copied')}catch(e){toast('Select the text and copy it')}};bn.appendChild(cp);shell.appendChild(bn)}
  var grid=el('div','studio');grid.style.marginTop='14px';
@@ -544,7 +578,7 @@ function drawStudio(shell){
  chat.appendChild(el('div','compose',null,[inp,sendBtn]));grid.appendChild(chat);
  // ---- right: the tabs
  var right=el('div','card rightcard');var tabs=el('div','tabs2');
- [['instructions','Instructions'],['dials','Personality']].concat(m.agent==='gus'?[['coach','Mentor']]:[]).concat([['test','Test'],['versions','Versions'],['rules','Safety and knowledge']]).forEach(function(t){var b=el('button',ST.tab===t[0]?'on':'',t[1]);b.onclick=function(){ST.tab=t[0];drawStudio(shell)};tabs.appendChild(b)});right.appendChild(tabs);
+ [['instructions','Instructions'],['dials','Personality']].concat(m.agent==='gus'?[['coach','Mentor']]:[]).concat([['test','Test'],['versions','Versions'],['rules','Safety and knowledge']]).forEach(function(t){var b=el('button',ST.tab===t[0]?'on':'',t[1]);b.onclick=function(){ST.tab=t[0];drawStudio(shell)};tabs.appendChild(b)});var wt=el('button','','Workflow');wt.onclick=function(){flowBtn(m).click()};tabs.appendChild(wt);right.appendChild(tabs);
  var body=el('div','tbody');right.appendChild(body);grid.appendChild(right);shell.appendChild(grid);
  if(ST.tab==='instructions'){
   body.appendChild(el('div','sub','This is how '+m.name+' talks and sells. You can edit it by hand, or ask the builder on the left. The safety rules live in the code and cannot be edited here.'));
