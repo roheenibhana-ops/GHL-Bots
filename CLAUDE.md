@@ -8,7 +8,7 @@ This copy runs two Sacramento companies with one owner: Dunzo Gutters and Santa'
 
 - Commit on the assigned `claude/...` branch and push to `main` as well, without asking. Cloudflare deploys `main` automatically in about two minutes.
 - Before every push run `npx tsc --noEmit` and `npx vitest run`, and check the exit code. Do not pipe test output through `tail`, it hides failures.
-- Secrets live in Cloudflare as type Secret. Never put them in the repo, in `wrangler.toml`, or in chat, and never ask the owner to paste one. The one exception is the Claude API key, which can also be saved from Settings in the dashboard: it is stored encrypted in the `settings` table, never returned to the browser, and overrides the Cloudflare one.
+- Secrets live in Cloudflare as type Secret. Never put them in the repo, in `wrangler.toml`, or in chat, and never ask the owner to paste one. The exceptions are the Claude and Quo API keys, which can also be saved from Settings in the dashboard: it is stored encrypted in the `settings` table, never returned to the browser, and overrides the Cloudflare one.
 - Never send a real text to a real person unless the owner asked for that send. Drafts and dry runs are fine.
 - Report only what was checked. Say plainly what is untested.
 - The owner is in New Zealand. All sending is in Pacific time (Sacramento). Double check dates and times against Pacific before setting anything.
@@ -32,6 +32,7 @@ This copy runs two Sacramento companies with one owner: Dunzo Gutters and Santa'
 - `src/pilot.ts`: builds a campaign list from GHL contacts as drafts, and removes duplicates.
 - `src/convo.ts`, `src/bot.ts`, `src/playbook.ts`, `src/knowledge.ts`: the conversation agent, its rules, voice and business knowledge.
 - `src/quote.ts`, `src/jobber.ts`, `src/check.ts`: Jobber quotes and the customer history check.
+- `src/quo.ts`: read only client for Quo, the phone system. `src/voice.ts`: studies real calls and texts to learn the house voice, which the owner approves before agents use it.
 - `src/chaser.ts`: Dash, the follow up writer. `src/coach.ts`: the Mentor. `src/director.ts`: the weekly report.
 - `src/deadline.ts`: the offer deadline. Each customer is held to the date printed in the text they received.
 - `src/plan.ts`: the day by day send plan shown on the Overview.

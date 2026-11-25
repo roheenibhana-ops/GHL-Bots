@@ -72,12 +72,21 @@ export async function applySettings(env: Env): Promise<Env> {
   const merged = mergeSettings(env, map);
   // An AI key saved from the dashboard wins over the one set in Cloudflare.
   const key = await savedAiKey(env, map);
-  return key ? { ...merged, ANTHROPIC_API_KEY: key } : merged;
+  const quo = await savedSecret(env, map, QUO_KEY_ROW);
+  const out = { ...merged } as unknown as Record<string, string | undefined>;
+  if (key) out.ANTHROPIC_API_KEY = key;
+  if (quo) out.QUO_API_KEY = quo;
+  // The approved house voice, learned from the owner's real calls and texts.
+  if (map[VOICE_ROW]) out.VOICE_PROFILE = map[VOICE_ROW];
+  return out as unknown as Env;
 }
 
 // ---------- The AI key, saved from the dashboard ----------
 // It is stored encrypted, is never sent back to the browser, and cannot be read or written through the normal settings route.
 export const AI_KEY_ROW = "SECRET_ANTHROPIC_API_KEY";
+export const QUO_KEY_ROW = "SECRET_QUO_API_KEY";
+export const VOICE_ROW = "VOICE_PROFILE";
+export const VOICE_DRAFT_ROW = "VOICE_DRAFT";
 const b64 = (u: Uint8Array) => btoa(String.fromCharCode(...u));
 const unb64 = (s: string) => Uint8Array.from(atob(s), (c) => c.charCodeAt(0));
 
@@ -103,12 +112,21 @@ export async function decryptSecret(env: Env, blob: string): Promise<string | nu
   }
 }
 
-let keyCache: { blob: string; key: string | null } | null = null;
-async function savedAiKey(env: Env, map: Record<string, string>): Promise<string | null> {
-  const blob = map[AI_KEY_ROW];
+const keyCache = new Map<string, { blob: string; key: string | null }>();
+export async function savedSecret(env: Env, map: Record<string, string>, row: string): Promise<string | null> {
+  const blob = map[row];
   if (!blob) return null;
-  if (keyCache?.blob !== blob) keyCache = { blob, key: await decryptSecret(env, blob) };
-  return keyCache.key;
+  if (keyCache.get(row)?.blob !== blob) keyCache.set(row, { blob, key: await decryptSecret(env, blob) });
+  return keyCache.get(row)!.key;
+}
+const savedAiKey = (env: Env, map: Record<string, string>) => savedSecret(env, map, AI_KEY_ROW);
+
+/** Where the Quo key comes from, and its last four characters. Never the key. */
+export async function quoKeyStatus(rawEnv: Env, map: Record<string, string>): Promise<{ source: "dashboard" | "cloudflare" | "none"; ending: string | null }> {
+  const saved = await savedSecret(rawEnv, map, QUO_KEY_ROW);
+  if (saved) return { source: "dashboard", ending: saved.slice(-4) };
+  const cf = (rawEnv as unknown as Record<string, string | undefined>).QUO_API_KEY;
+  return cf ? { source: "cloudflare", ending: cf.slice(-4) } : { source: "none", ending: null };
 }
 
 /** What the dashboard may know about the AI key: where it comes from and its last four characters. Never the key. */

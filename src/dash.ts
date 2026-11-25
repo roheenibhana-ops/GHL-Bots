@@ -239,6 +239,55 @@ export async function handleDash(req: Request, env: Env, url: URL, rawEnv: Env =
       return json(await aiKeyStatus(rawEnv, map));
     }
 
+    if (p === "/admin/dash/quo-key") {
+      const S = await import("./settings");
+      if (req.method === "POST") {
+        const value = String(((await req.json()) as { value?: string }).value ?? "").trim();
+        const { ready, error } = await S.loadSettings(env, true);
+        if (!ready) return json({ error: "The key could not be saved: " + (error ?? "settings table not found") }, 409);
+        if (value !== "") {
+          if (!/^[A-Za-z0-9_-]{16,200}$/.test(value)) return json({ error: "That does not look like a Quo API key." }, 400);
+          const { quoCheckKey } = await import("./quo");
+          const t = await quoCheckKey(value);
+          if (t.status === 401 || t.status === 403) return json({ error: "Quo did not accept that key. Check it was copied in full." }, 400);
+          if (!t.ok) return json({ error: "Could not check the key with Quo (" + (t.status || "no answer") + "). Nothing was changed." }, 502);
+        }
+        await saveSetting(env, S.QUO_KEY_ROW, value === "" ? "" : await S.encryptSecret(rawEnv, value));
+      }
+      const { map } = await (await import("./settings")).loadSettings(env, true);
+      return json(await S.quoKeyStatus(rawEnv, map));
+    }
+
+    // ---------- The house voice, learned from Quo ----------
+    if (p === "/admin/dash/voice" || p === "/admin/dash/voice-study" || p === "/admin/dash/voice-publish") {
+      const S = await import("./settings");
+      const state = async () => {
+        const { map } = await S.loadSettings(env, true);
+        let draft: unknown = null;
+        try { draft = map[S.VOICE_DRAFT_ROW] ? JSON.parse(map[S.VOICE_DRAFT_ROW]) : null; } catch { draft = null; }
+        return { connected: (await S.quoKeyStatus(rawEnv, map)).source !== "none", live: map[S.VOICE_ROW] ?? "", draft };
+      };
+      if (p === "/admin/dash/voice-study" && req.method === "POST") {
+        const b = (await req.json().catch(() => ({}))) as { userId?: string; days?: number };
+        const { studyVoice } = await import("./voice");
+        try {
+          const study = await studyVoice(env, { userId: b.userId || undefined, days: Math.min(Math.max(Number(b.days ?? 120), 7), 365) });
+          await saveSetting(env, S.VOICE_DRAFT_ROW, JSON.stringify(study));
+        } catch (e) { return json({ error: (e as Error).message }, 502); }
+      }
+      if (p === "/admin/dash/voice-publish" && req.method === "POST") {
+        const text = String(((await req.json()) as { text?: string }).text ?? "").trim().slice(0, 4000);
+        await saveSetting(env, S.VOICE_ROW, text); // an empty text switches the learned voice off
+      }
+      const st = await state();
+      let users: { id: string; name: string }[] = [];
+      if (st.connected && p === "/admin/dash/voice") {
+        const { quoUsers } = await import("./quo");
+        users = (await quoUsers(env).catch(() => [])).map((u) => ({ id: u.id, name: [u.firstName, u.lastName].filter(Boolean).join(" ") || u.email || u.id }));
+      }
+      return json({ ...st, users });
+    }
+
     if (p === "/admin/dash/plan") {
       const { map } = await loadSettings(env);
       const eff = effectiveValues(env, map);
@@ -354,7 +403,9 @@ export async function handleDash(req: Request, env: Env, url: URL, rawEnv: Env =
         check(() => gql(env, "lights", "{ account { name } }")),
         check(() => sb(env, "GET", "settings?select=key&limit=1")),
       ]);
-      return json({ checks: { ghlDunzo, ghlLights, jobberDunzo, jobberLights, database } });
+      const { quoKey, quoUsers } = await import("./quo");
+      const quo = quoKey(env) ? await check(() => quoUsers(env)) : undefined;
+      return json({ checks: { ghlDunzo, ghlLights, jobberDunzo, jobberLights, database, quo } });
     }
 
     if (p === "/admin/dash/agent-coach") return json(await coachReview(env));

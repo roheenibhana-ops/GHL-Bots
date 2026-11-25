@@ -4,6 +4,7 @@ import { addNote, addTags, credsFor, getContact, getPipelines, listOpportunities
 import { isLightsReferral, propagateOptOut, referToLights } from "./lights";
 import { setStage } from "./stages";
 import { deadlineFor } from "./deadline";
+import { customerCallNotes } from "./quo";
 import { photoThanks, planPhotoMove } from "./photo";
 import { blockingNote, formatProfile, ghlNotes, ghlOpportunities, jobberHistory, OUR_NOTE_PREFIX } from "./profile";
 import { createGutterQuote, linkMessage } from "./quote";
@@ -161,6 +162,8 @@ export async function handleInbound(env: Env, p: InboundPayload, dryRun = false)
     const fullName = [contact.firstName, contact.lastName].filter(Boolean).join(" ");
     const [notes, opportunities, jb] = await Promise.all([ghlNotes(creds, p.contactId), ghlOpportunities(creds, p.contactId), phone10 ? jobberHistory(env, phone10, fullName) : Promise.resolve({ jobberMatched: false, quotes: [], jobs: [] })]);
     facts.profile = formatProfile({ tags, notes, opportunities, ...jb });
+    // Recent phone calls from Quo, so the agent knows when a person has already spoken to them. Never blocks a reply.
+    facts.calls = phone10 ? await customerCallNotes(env, phone10).catch(() => "") || undefined : undefined;
     facts.blocked = blockingNote([...notes, ...opportunities.flatMap((o) => o.notes)]) ?? undefined;
     facts.profileAt = Date.now();
   }

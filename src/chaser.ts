@@ -4,6 +4,7 @@ import { plainPunctuation, replyProblems, type BotFacts } from "./bot";
 import { sb } from "./db";
 import { credsFor, getContact, sendSms } from "./ghl";
 import { deadlineFor, deadlinePassed, formatDeadline } from "./deadline";
+import { voiceBlock } from "./voice";
 import { dialsText, HOUSE_VOICE, loadAgent, type Dials } from "./playbook";
 import { inSendWindow, isSmsDnd } from "./safety";
 import { quoteStatuses } from "./stats";
@@ -68,6 +69,7 @@ export async function writeFollowUp(env: Env, t: { kind: "promo" | "quote"; firs
   const system = [
     "You write ONE short follow up text message for Dunzo Gutters to a customer who has gone quiet.",
     HOUSE_VOICE,
+    voiceBlock(env.VOICE_PROFILE),
     "HOW YOU FOLLOW UP (set by the owner and editable):",
     live.instructions,
     dialsText(live.dials),

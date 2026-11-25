@@ -25,6 +25,10 @@ export interface Env {
   START_ON?: string;
   /** The promo deadline for texts sent from now on (YYYY-MM-DD). Change it for each batch. */
   PROMO_DEADLINE?: string;
+  /** Quo (phone system) API key. Read only use. Set in Cloudflare or saved from the dashboard. */
+  QUO_API_KEY?: string;
+  /** The approved house voice, learned from the owner's real calls and texts. */
+  VOICE_PROFILE?: string;
   /** Special daily limits for single dates, like "2026-11-27:100,2026-12-01:50". */
   DAILY_CAP_DATES?: string;
   /** Dash, the follow up agent: off | approve (drafts wait for you) | auto. */
