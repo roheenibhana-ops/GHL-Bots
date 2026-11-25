@@ -4,7 +4,8 @@ compatibility_date = "2025-01-01"
 
 # Cron: pulls the next outreach batch. Does nothing unless SENDING_ENABLED = "true".
 [triggers]
-crons = ["*/10 * * * *"]
+# The second one runs the flow watcher on its own, a few minutes after the main run, so the two never share a call budget.
+crons = ["*/10 * * * *", "5-59/10 * * * *"]
 
 [vars]
 # Safety switches. Keep sending OFF until the pilot is approved.

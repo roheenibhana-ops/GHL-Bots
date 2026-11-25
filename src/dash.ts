@@ -370,6 +370,14 @@ export async function handleDash(req: Request, env: Env, url: URL, rawEnv: Env =
 
     // ---------- Zapier: a saved snapshot of the Zaps that are running ----------
     // The Worker cannot read Zapier itself, so the list is saved here whenever it is checked.
+    // ---------- Flows: the app's own copy of each Zap, in watch mode ----------
+    if (p === "/admin/dash/flows") { const F = await import("./flowwatch"); return json(await F.flowsOverview(env)); }
+    if (p === "/admin/dash/flow-runs") { const F = await import("./flowwatch"); return json({ runs: await F.flowRuns(env, url.searchParams.get("flow") ?? "", url.searchParams.get("account") ?? "") }); }
+    if (p === "/admin/dash/flow-look" && req.method === "POST") {
+      const F = await import("./flowwatch");
+      try { const r = await F.watchFlows(env); const checked = await F.checkFlows(env).catch(() => 0); return json({ ...r, checked }); } catch (e) { return json({ error: (e as Error).message }, 502); }
+    }
+
     if (p === "/admin/dash/zaps") {
       const rows = await sb<{ id: number; body: unknown }[]>(env, "GET", "library?kind=eq.zaps&select=id,body&order=id.desc&limit=1").catch(() => []);
       if (req.method === "POST") {

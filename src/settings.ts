@@ -17,6 +17,7 @@ export const SETTINGS: SettingDef[] = [
   { key: "QUOTE_MODE", group: "Bot", label: "When a quote is ready", help: "Alert: tell the team only. Draft: make a draft quote in Jobber. Link: create it and text the customer the link.", type: "select", options: ["alert", "draft", "link"] },
   { key: "PHOTO_MODE", group: "Bot", label: "Photo handling", help: "Off, test, or live. Moves a lead to Photos Received when they send photos.", type: "select", options: ["off", "test", "live"] },
   { key: "QUO_CALL_PAUSE", group: "Bot", label: "Step back after a phone call", help: "On: if someone on the team has spoken to a customer by phone in the last 24 hours, or the customer left a voicemail, the bot does not reply to their text. It passes the conversation to the team with an alert. Needs Quo connected.", type: "select", options: ["on", "off"] },
+  { key: "FLOWS_WATCH", group: "Flows", label: "Watch the flows", help: "On: every few minutes the app looks at what just happened in Jobber, GoHighLevel and Quo and writes down what each flow would have done. It only reads. Nothing is changed in any system, and no Zap is affected.", type: "select", options: ["on", "off"] },
   { key: "SENDING_ENABLED", group: "Promo texts", label: "Send approved promo texts", help: "Lets the daily sender release texts you have approved. Nothing goes out unless this is on and a daily limit is set.", type: "toggle" },
   { key: "DAILY_CAP", group: "Promo texts", label: "Promo texts per day", help: "The most promo texts sent in one day, spread across the sending window. 0 means none.", type: "number" },
   { key: "DAILY_CAP_DATES", group: "Promo texts", label: "Special limit on single days", help: "A different limit for one day, like 2026-11-27:100. Separate more with commas. Every other day uses the normal limit above.", type: "text" },
@@ -53,6 +54,7 @@ export function mergeSettings(env: Env, map: Record<string, string>): Env {
   set("QUOTE_MODE", map.QUOTE_MODE);
   set("PHOTO_MODE", map.PHOTO_MODE);
   set("QUO_CALL_PAUSE", map.QUO_CALL_PAUSE);
+  set("FLOWS_WATCH", map.FLOWS_WATCH);
   set("SENDING_ENABLED", map.SENDING_ENABLED);
   set("DAILY_CAP", map.DAILY_CAP);
   set("BATCH_CAMPAIGN", map.BATCH_CAMPAIGN);
@@ -182,6 +184,7 @@ export function effectiveValues(env: Env, map: Record<string, string>): Record<s
     QUOTE_MODE: map.QUOTE_MODE ?? e.QUOTE_MODE ?? "link",
     PHOTO_MODE: map.PHOTO_MODE ?? e.PHOTO_MODE ?? "test",
     QUO_CALL_PAUSE: map.QUO_CALL_PAUSE ?? e.QUO_CALL_PAUSE ?? "on",
+    FLOWS_WATCH: map.FLOWS_WATCH ?? e.FLOWS_WATCH ?? "on",
     SENDING_ENABLED: map.SENDING_ENABLED ?? e.SENDING_ENABLED ?? "false",
     DAILY_CAP: map.DAILY_CAP ?? e.DAILY_CAP ?? "0",
     BATCH_CAMPAIGN: map.BATCH_CAMPAIGN ?? e.BATCH_CAMPAIGN ?? "pilot-2",

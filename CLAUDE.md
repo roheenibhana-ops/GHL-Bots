@@ -35,6 +35,7 @@ This copy runs two Sacramento companies with one owner: Dunzo Gutters and Santa'
 - `src/quo.ts`: read only client for Quo, the phone system. `src/voice.ts`: studies real calls and texts to learn the house voice, which the owner approves before agents use it.
 - `src/library.ts`: the library. Reads thousands of Quo texts and calls in batches, merges them into one playbook per company, and once the owner switches it on every agent learns from it (sales agents: voice and what customers ask; marketing writers: questions, customer wording and post ideas).
 - `src/companycam.ts`: read only client for CompanyCam job photos. `src/report.ts`: photo reports (Gutter Health Report, lighting design preview). An agent drafts from the photos, a person approves, and only then is the customer page at `/r/<id>` visible.
+- `src/flows.ts`: the app's own copy of every Zap, step by step, with a planner for each. `src/flowwatch.ts`: watch mode. A second cron looks at what just happened in Jobber, GoHighLevel and Quo and writes down what each flow would have done in `flow_runs`. Watch mode only ever reads.
 - `src/chaser.ts`: Dash, the follow up writer. `src/coach.ts`: the Mentor. `src/director.ts`: the weekly report.
 - `src/deadline.ts`: the offer deadline. Each customer is held to the date printed in the text they received.
 - `src/plan.ts`: the day by day send plan shown on the Overview.

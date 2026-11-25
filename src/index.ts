@@ -544,8 +544,15 @@ export default {
   },
 
   // Outreach batches. Inert unless SENDING_ENABLED = "true". Pilot logic comes in the next step.
-  async scheduled(_event: ScheduledEvent, rawEnv: Env): Promise<void> {
+  async scheduled(event: ScheduledEvent, rawEnv: Env): Promise<void> {
     const env = await applySettings(rawEnv);
+    // The flow watcher has its own run. It only reads, and writes down what each flow would have done.
+    if (event.cron === "5-59/10 * * * *") {
+      const { watchFlows, checkFlows } = await import("./flowwatch");
+      await watchFlows(env).catch(() => undefined);
+      await checkFlows(env).catch(() => undefined);
+      return;
+    }
     await sendQueuedReplies(env).catch(() => undefined); // bot replies held overnight
     await syncApprovals(env).catch(() => undefined);
     await runDailyBatch(env).catch(() => undefined);

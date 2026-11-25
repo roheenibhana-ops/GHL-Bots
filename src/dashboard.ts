@@ -40,6 +40,19 @@ export const DASH_HTML = String.raw`<!doctype html>
 .tcase.pass{opacity:.72}.twhat{background:var(--blue2);color:var(--ink);border-radius:12px;padding:10px 12px;font-size:14px;margin:8px 0 4px}.twhat b{color:var(--blue)}
 .thead{display:flex;justify-content:space-between;gap:12px;align-items:center;cursor:pointer}.thead h3{margin:0}.thead .ct{font-size:13px;color:var(--mute);white-space:nowrap}
 @media(max-width:640px){.tcase{grid-template-columns:1fr}.tcase .num{display:none}}
+.fgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(250px,1fr));gap:12px;margin-top:12px}
+.fcard{border:1px solid var(--line);border-radius:14px;padding:14px;background:var(--panel);cursor:pointer;transition:transform .12s,box-shadow .12s}.fcard:hover{transform:translateY(-2px);box-shadow:var(--shadow)}
+.fcard .nm{font-weight:700}.fcard .apps{display:flex;align-items:center;gap:5px;margin:8px 0}.fcard .apps span{color:var(--mute);font-size:13px}
+.abadge{width:26px;height:26px;border-radius:8px;display:inline-grid;place-items:center;color:#fff;font-weight:800;font-size:11px;flex:none}
+.zflow{display:flex;flex-direction:column;align-items:center;padding:18px 0}
+.znode{width:100%;max-width:440px;border:1.5px solid var(--line);border-radius:14px;background:var(--panel);padding:12px 14px;box-shadow:var(--shadow)}
+.znode.trig{border-color:var(--brand)}.znode .top{display:flex;align-items:center;gap:9px;font-size:12.5px;color:var(--mute);font-weight:650}
+.znode .tt{font-weight:700;font-size:15px;margin-top:7px}.znode .dd{color:var(--mute);font-size:13.5px;margin-top:3px;line-height:1.4}
+.zarrow{width:2px;height:26px;background:var(--vio);position:relative}.zarrow:after{content:'';position:absolute;left:-5px;bottom:-2px;border:6px solid transparent;border-top:8px solid var(--vio);border-bottom:0}
+.zpaths{display:flex;gap:14px;align-items:flex-start;justify-content:center;flex-wrap:wrap;width:100%;margin-top:0}
+.zpath{flex:1;min-width:230px;max-width:340px;display:flex;flex-direction:column;align-items:center;border-top:2px solid var(--vio);padding-top:0}
+.zpath .lab{background:var(--vio2);color:var(--vio);font-weight:700;font-size:12px;padding:4px 11px;border-radius:99px;margin:10px 0 0}
+.frun{border-top:1px solid var(--line);padding:11px 0}.frun .hd{display:flex;gap:8px;align-items:center;flex-wrap:wrap}.frun .hd b{font-weight:700}.frun ol{margin:6px 0 0;padding-left:20px;color:var(--mute);font-size:13.5px}.frun li{margin:2px 0}
 .plan-h{display:flex;justify-content:space-between;align-items:flex-end;gap:12px;flex-wrap:wrap;margin-bottom:12px}
 .plan-h h3{margin:0}.plan-h .sub{color:var(--mute);font-size:13px;margin-top:4px}
 .plan-big{font-size:26px;font-weight:700;font-variant-numeric:tabular-nums}.plan-big small{font-size:13px;font-weight:500;color:var(--mute);margin-left:6px}
@@ -224,8 +237,8 @@ pre{white-space:pre-wrap;word-wrap:break-word;background:var(--bg);border:1px so
 <div class="page" id="page"></div></div></div>
 <div class="tabs" id="tabs"></div><div class="toast" id="toast"></div>
 <script>
-var ICON={tests:'<path d="M9 4h6l1 2h3v14H5V6h3z"/><path d="M9 12l2 2 4-4"/><path d="M9 17h6"/>',reports:'<rect x="3" y="6" width="18" height="14" rx="2"/><circle cx="12" cy="13" r="3.5"/><path d="M8 6l1.5-2h5L16 6"/>',overview:'<path d="M4 13h6V4H4zM14 20h6v-9h-6zM4 20h6v-3H4zM14 8h6V4h-6z"/>',inbox:'<path d="M4 13l2-8h12l2 8v6H4z"/><path d="M4 13h5a3 3 0 0 0 6 0h5"/>',approve:'<path d="M5 12l4 4 10-10"/>',results:'<path d="M4 20V10M10 20V4M16 20v-7M22 20H2"/>',roadmap:'<path d="M5 19c4-1 3-6 7-7s3-6 7-7"/><circle cx="5" cy="19" r="1.6"/><circle cx="19" cy="5" r="1.6"/>',director:'<path d="M12 3l2.6 5.3 5.9.9-4.3 4.1 1 5.8L12 16.3 6.8 19.1l1-5.8L3.5 9.2l5.9-.9z"/>',agents:'<circle cx="9" cy="8" r="3.5"/><path d="M3 20c0-3.5 2.7-6 6-6s6 2.5 6 6"/><path d="M16 5a3 3 0 0 1 0 6M18 14c2 .7 3 2.6 3 5"/>',settings:'<circle cx="12" cy="12" r="3"/><path d="M19 12a7 7 0 0 0-.1-1.2l2-1.5-2-3.4-2.3 1a7 7 0 0 0-2-1.2L14 3h-4l-.6 2.7a7 7 0 0 0-2 1.2l-2.3-1-2 3.4 2 1.5A7 7 0 0 0 5 12c0 .4 0 .8.1 1.2l-2 1.5 2 3.4 2.3-1a7 7 0 0 0 2 1.2L10 21h4l.6-2.7a7 7 0 0 0 2-1.2l2.3 1 2-3.4-2-1.5c.1-.4.1-.8.1-1.2z"/>',sim:'<path d="M4 5h16v11H9l-5 4z"/>'};
-var VIEWS=[['overview','Overview','Every day'],['inbox','Inbox','Every day'],['approve','Approvals','Every day'],['reports','Photo reports','Every day'],['results','Results','How it is going'],['director','Director','How it is going'],['agents','Agents','The team'],['sim','Practice chat','The team'],['roadmap','Roadmap','Plan and setup'],['tests','Test checklist','Plan and setup'],['settings','Settings','Plan and setup']];
+var ICON={flows:'<rect x="8" y="3" width="8" height="5" rx="1.5"/><rect x="3" y="16" width="7" height="5" rx="1.5"/><rect x="14" y="16" width="7" height="5" rx="1.5"/><path d="M12 8v4M6.5 16v-2a2 2 0 0 1 2-2h7a2 2 0 0 1 2 2v2"/>',tests:'<path d="M9 4h6l1 2h3v14H5V6h3z"/><path d="M9 12l2 2 4-4"/><path d="M9 17h6"/>',reports:'<rect x="3" y="6" width="18" height="14" rx="2"/><circle cx="12" cy="13" r="3.5"/><path d="M8 6l1.5-2h5L16 6"/>',overview:'<path d="M4 13h6V4H4zM14 20h6v-9h-6zM4 20h6v-3H4zM14 8h6V4h-6z"/>',inbox:'<path d="M4 13l2-8h12l2 8v6H4z"/><path d="M4 13h5a3 3 0 0 0 6 0h5"/>',approve:'<path d="M5 12l4 4 10-10"/>',results:'<path d="M4 20V10M10 20V4M16 20v-7M22 20H2"/>',roadmap:'<path d="M5 19c4-1 3-6 7-7s3-6 7-7"/><circle cx="5" cy="19" r="1.6"/><circle cx="19" cy="5" r="1.6"/>',director:'<path d="M12 3l2.6 5.3 5.9.9-4.3 4.1 1 5.8L12 16.3 6.8 19.1l1-5.8L3.5 9.2l5.9-.9z"/>',agents:'<circle cx="9" cy="8" r="3.5"/><path d="M3 20c0-3.5 2.7-6 6-6s6 2.5 6 6"/><path d="M16 5a3 3 0 0 1 0 6M18 14c2 .7 3 2.6 3 5"/>',settings:'<circle cx="12" cy="12" r="3"/><path d="M19 12a7 7 0 0 0-.1-1.2l2-1.5-2-3.4-2.3 1a7 7 0 0 0-2-1.2L14 3h-4l-.6 2.7a7 7 0 0 0-2 1.2l-2.3-1-2 3.4 2 1.5A7 7 0 0 0 5 12c0 .4 0 .8.1 1.2l-2 1.5 2 3.4 2.3-1a7 7 0 0 0 2 1.2L10 21h4l.6-2.7a7 7 0 0 0 2-1.2l2.3 1 2-3.4-2-1.5c.1-.4.1-.8.1-1.2z"/>',sim:'<path d="M4 5h16v11H9l-5 4z"/>'};
+var VIEWS=[['overview','Overview','Every day'],['inbox','Inbox','Every day'],['approve','Approvals','Every day'],['reports','Photo reports','Every day'],['results','Results','How it is going'],['director','Director','How it is going'],['agents','Agents','The team'],['flows','Flows','The team'],['sim','Practice chat','The team'],['roadmap','Roadmap','Plan and setup'],['tests','Test checklist','Plan and setup'],['settings','Settings','Plan and setup']];
 var ACC='all';try{ACC=localStorage.getItem('acc')||'all'}catch(e){}
 function accQ(){return ACC==='all'?'':'?account='+ACC}
 function seg(){var s=$('seg');s.textContent='';[['all','All'],['dunzo','Dunzo'],['lights','Lights']].forEach(function(x){var b=el('button',ACC===x[0]?'on':'',x[1]);b.onclick=function(){ACC=x[0];try{localStorage.setItem('acc',ACC)}catch(e){}seg();render()};s.appendChild(b)})}
@@ -242,7 +255,7 @@ function nav(){var n=$('nav'),tb=$('tabs');n.textContent='';tb.textContent='';va
  if(v[2]!==grp){if(grp==='How it is going'){var sl=el('a','nav');sl.id='sblink';sl.href='https://santas-lights-scoreboard.roheeni-bhana.workers.dev/';sl.target='_blank';sl.rel='noopener';sl.innerHTML='<svg viewBox="0 0 24 24"><path d="M14 4h6v6"/><path d="M20 4l-9 9"/><path d="M18 14v5a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1V7a1 1 0 0 1 1-1h5"/></svg>';sl.appendChild(document.createTextNode('Scoreboard'));n.appendChild(sl)}grp=v[2];n.appendChild(el('div','navh',grp))}
  var b=el('button','nav'+(v[0]===view?' on':''),null,[svg(v[0]),el('span',null,v[1])]);if(v[0]==='inbox'&&pendingCount)b.appendChild(el('b',null,String(pendingCount)));b.onclick=function(){go(v[0])};n.appendChild(b);
  var t=el('button',v[0]===view?'on':'',null,[svg(v[0]),el('span',null,v[1]==='Approvals'?'Approve':v[1]==='Practice chat'?'Practice':v[1])]);t.onclick=function(){go(v[0])};tb.appendChild(t)})}
-function go(v){view=v;openId=null;ROPEN=null;studioKey=null;studioMeta=null;ST=null;nav();$('title').textContent=(VIEWS.filter(function(x){return x[0]===v})[0]||[0,'']) [1];render()}
+function go(v){view=v;openId=null;ROPEN=null;FLOPEN=null;studioKey=null;studioMeta=null;ST=null;nav();$('title').textContent=(VIEWS.filter(function(x){return x[0]===v})[0]||[0,'']) [1];render()}
 function status(){var s=S.settings||{};var p=$('status'),pa=s.PAUSE_ALL==='true';
  var sending=s.SENDING_ENABLED==='true'&&Number(s.DAILY_CAP)>0;
  var txt,cls;if(pa){txt='Paused';cls='bd'}else if(s.BOT_MODE==='live'){txt=sending?'Live and sending':'Live';cls='ok'}else if(s.BOT_MODE==='test'){txt='Test mode';cls='wr'}else{txt='Bot is off';cls='bl'}
@@ -251,7 +264,7 @@ function status(){var s=S.settings||{};var p=$('status'),pa=s.PAUSE_ALL==='true'
 function load(){return api('/admin/dash/overview'+accQ()).then(function(o){S=o;pendingCount=o.conversations.withTeam;status();nav()})}
 var renderN=0;
 function render(){var p=$('page');p.textContent='';clearInterval(timer);var myN=++renderN;
- if(T.length<20){var w=el('div','banner wr','Your admin token is short. This page shows real customer conversations, so please change ADMIN_TOKEN in Cloudflare to a long random one (at least 20 characters).');p.appendChild(w)}load().then(function(){if(myN!==renderN)return;({overview:vOverview,inbox:vInbox,approve:vApprove,reports:vReports,tests:vTests,results:vResults,director:vDirector,roadmap:vRoadmap,agents:vAgents,settings:vSettings,sim:vSim})[view](p)}).catch(function(e){p.appendChild(el('div','empty',e.message))})}
+ if(T.length<20){var w=el('div','banner wr','Your admin token is short. This page shows real customer conversations, so please change ADMIN_TOKEN in Cloudflare to a long random one (at least 20 characters).');p.appendChild(w)}load().then(function(){if(myN!==renderN)return;({overview:vOverview,inbox:vInbox,approve:vApprove,reports:vReports,tests:vTests,flows:vFlows,results:vResults,director:vDirector,roadmap:vRoadmap,agents:vAgents,settings:vSettings,sim:vSim})[view](p)}).catch(function(e){p.appendChild(el('div','empty',e.message))})}
 function kpi(n,l,tone){return el('div','card kpi',null,[el('div','n',String(n)),el('div','l',l)])}
 function who(r){return (r.name||'C').charAt(0).toUpperCase()}
 function vOverview(p){
@@ -384,6 +397,40 @@ function vTests(p){var top=el('div','card');p.appendChild(top);var list=el('div'
    list.appendChild(card)});
   if(!list.children.length)list.appendChild(el('div','empty','Nothing in this view.'))}
  api('/admin/dash/checklist').then(draw).catch(function(e){list.appendChild(el('div','empty',e.message))})}
+var FLOPEN=null,APPC={GoHighLevel:['G','#1d6fe5'],Jobber:['J','#4aa83a'],Quo:['Q','#6b46e5'],CompanyCam:['CC','#0a66ff'],Scoreboard:['SB','#e08a1d'],AI:['AI','#d97757'],Filter:['IF','#6a7280']};
+function abadge(app){var c=APPC[app]||['?','#888'];var b=el('span','abadge',c[0]);b.style.background=c[1];b.title=app;return b}
+function znode(st,n,trig){var nd=el('div','znode'+(trig?' trig':''));nd.appendChild(el('div','top',null,[abadge(st.app),el('span',null,(trig?'When this happens':'Step '+n)+' \u00b7 '+(st.app==='Filter'?'A check':st.app))]));nd.appendChild(el('div','tt',st.title));if(st.detail)nd.appendChild(el('div','dd',st.detail));return nd}
+function zdraw(box,steps,start){var n=start;steps.forEach(function(st){box.appendChild(el('div','zarrow'));box.appendChild(znode(st,n));n++;
+  if(st.paths){box.appendChild(el('div','zarrow'));var ps=el('div','zpaths');st.paths.forEach(function(pt){var col=el('div','zpath');col.appendChild(el('div','lab',pt.label));n=zdraw(col,pt.steps,n);ps.appendChild(col)});box.appendChild(ps)}});return n}
+function vFlows(p){if(FLOPEN)return flowDetail(p);
+ var top=el('div','card');p.appendChild(top);top.appendChild(el('h3',null,'Flows: the app\'s own copy of every Zap'));
+ var intro=el('div','sub','Each flow below does the job of one Zap. Right now they are all in watch mode: every few minutes the app looks at what just happened in Jobber, GoHighLevel and Quo, and writes down what each flow would have done. Nothing is changed in any system and no Zap is touched. When a flow has matched its Zap for a while, that Zap can be switched off.');intro.style.whiteSpace='normal';top.appendChild(intro);
+ var body=el('div');p.appendChild(body);
+ api('/admin/dash/flows').then(function(d){var fl=d.flows.filter(function(f){return ACC==='all'||f.account===ACC});
+  var seen=0,chk=0,mt=0;fl.forEach(function(f){seen+=f.stats.seen;chk+=f.stats.checked;mt+=f.stats.match});
+  top.appendChild(el('div','banner '+(d.watching?'ok':'wr'),null,[el('div','t',d.watching?'Watching only. Nothing is live.':'Watching is switched off',[el('small',null,d.watching?(d.lastLook?'Last looked '+ago(d.lastLook)+'. It looks again every 10 minutes.':'It has not looked yet. Press Look now.'):'Switch it on in Settings, under Flows.')])]));
+  var sm=el('div','tsum');[[fl.length,'flows built'],[seen,'real events seen'],[chk,'checked against the Zap'],[mt,'matched the Zap']].forEach(function(x){sm.appendChild(el('div',null,null,[el('b',null,String(x[0])),el('span',null,x[1])]))});top.appendChild(sm);
+  var lk=el('button','btn','Look now');lk.onclick=function(){lk.disabled=true;lk.textContent='Looking...';api('/admin/dash/flow-look',{}).then(function(r){toast(r.seen+' new event'+(r.seen===1?'':'s')+(r.errors&&r.errors.length?', with '+r.errors.length+' problem'+(r.errors.length>1?'s':''):''));if(r.errors&&r.errors.length)console.log(r.errors);render()}).catch(function(e){toast(e.message);lk.disabled=false;lk.textContent='Look now'})};top.appendChild(lk);
+  [['dunzo','Dunzo Gutters'],['lights','Santa\'s Lights']].forEach(function(co){var list=fl.filter(function(f){return f.account===co[0]&&f.key.indexOf('sb_')!==0});if(list.length)group(co[1],list)});
+  var sbl=fl.filter(function(f){return f.key.indexOf('sb_')===0});if(sbl.length)group('Scoreboard',sbl);
+  function group(title,list){var c=el('div','card');c.style.marginTop='16px';c.appendChild(el('h3',null,title+' ('+list.length+')'));var g=el('div','fgrid');
+   list.forEach(function(f){var apps=[f.trigger.app];(function walk(ss){ss.forEach(function(x){if(x.app!=='Filter'&&apps.indexOf(x.app)<0)apps.push(x.app);if(x.paths)x.paths.forEach(function(pp){walk(pp.steps)})})})(f.steps);
+    var row=el('div','apps');apps.forEach(function(a,i){if(i)row.appendChild(el('span',null,'\u2192'));row.appendChild(abadge(a))});
+    var st=f.stats,line=st.seen?(st.seen+' seen'+(st.checked?' \u00b7 '+st.match+' of '+st.checked+' matched the Zap':'')):'Nothing seen yet';
+    var cd=el('div','fcard',null,[el('div','nm',f.title),row,el('div','sub',line),el('span','tag o','Watching')]);cd.querySelector('.sub').style.whiteSpace='normal';cd.lastChild.style.marginTop='8px';cd.lastChild.style.display='inline-block';
+    cd.onclick=function(){FLOPEN={f:f};render()};g.appendChild(cd)});c.appendChild(g);body.appendChild(c)}
+ }).catch(function(e){body.appendChild(el('div','empty',e.message))})}
+function flowDetail(p){var f=FLOPEN.f;var bk=el('button','btn sm','Back to all flows');bk.onclick=function(){FLOPEN=null;render()};p.appendChild(bk);
+ var c=el('div','card');c.style.marginTop='14px';p.appendChild(c);
+ c.appendChild(el('div','prof',null,[el('div','grow',null,[el('div','nm',f.title+' \u00b7 '+(f.account==='lights'?'Santa\'s Lights':'Dunzo Gutters')),el('div','sub2','Replaces the Zap: '+f.zap),el('span','tag o','Watching, not live')])]));
+ var w=el('div','twhat');w.appendChild(el('b',null,'What it does: '));w.appendChild(document.createTextNode(f.what));c.appendChild(w);
+ var z=el('div','zflow');z.appendChild(znode(f.trigger,0,true));zdraw(z,f.steps,1);c.appendChild(z);
+ var lg=el('div','card');lg.style.marginTop='16px';p.appendChild(lg);lg.appendChild(el('h3',null,'What it has seen'));var note=el('div','sub','Each real event, and what this flow would have done. Nothing was changed. Where it can, the app then checks where the lead ended up, to see if the Zap did the same.');note.style.whiteSpace='normal';lg.appendChild(note);
+ api('/admin/dash/flow-runs?flow='+encodeURIComponent(f.key)+'&account='+f.account).then(function(d){if(!d.runs.length)lg.appendChild(el('div','empty','Nothing seen yet. It shows up here the next time this happens for real.'));
+  d.runs.forEach(function(r){var row=el('div','frun');var hd=el('div','hd',null,[el('b',null,r.subject||'Unknown'),el('span','sub',r.summary),el('span','sub',ago(r.plan.at||r.created_at))]);
+   if(r.verdict==='match')hd.appendChild(el('span','tag g','Matched the Zap'));else if(r.verdict==='moved')hd.appendChild(el('span','tag b','Lead has moved on'));else if(r.verdict==='unknown')hd.appendChild(el('span','tag','Could not check'));
+   row.appendChild(hd);var ol=document.createElement('ol');r.plan.steps.forEach(function(x){var li=document.createElement('li');li.textContent='Would: '+x;if(x.indexOf('STOP')===0){li.textContent=x;li.style.color='var(--bad)';li.style.fontWeight='650'}ol.appendChild(li)});row.appendChild(ol);
+   if(r.verdict_note){var vn=el('div','sub',r.verdict_note);vn.style.whiteSpace='normal';vn.style.marginTop='4px';row.appendChild(vn)}lg.appendChild(row)})}).catch(function(e){lg.appendChild(el('div','empty',e.message))})}
 function vApprove(p){
  var q=S.queue,s=S.settings;
  var g=el('div','grid g4');g.appendChild(kpi(q.waiting,'Waiting for your approval'));g.appendChild(kpi(q.approved,'Approved, going out'));g.appendChild(kpi(q.sent,'Already sent'));g.appendChild(kpi(q.held,'Held back for safety'));p.appendChild(g);

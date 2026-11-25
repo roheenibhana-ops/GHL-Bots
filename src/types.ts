@@ -25,6 +25,8 @@ export interface Env {
   START_ON?: string;
   /** The promo deadline for texts sent from now on (YYYY-MM-DD). Change it for each batch. */
   PROMO_DEADLINE?: string;
+  /** "off" stops the flow watcher. It only ever reads. */
+  FLOWS_WATCH?: string;
   /** CompanyCam access token. Read only use. */
   COMPANYCAM_TOKEN?: string;
   /** Quo (phone system) API key. Read only use. Set in Cloudflare or saved from the dashboard. */
