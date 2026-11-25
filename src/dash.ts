@@ -351,6 +351,23 @@ export async function handleDash(req: Request, env: Env, url: URL, rawEnv: Env =
       } catch (e) { return json({ error: (e as Error).message }, 502); }
     }
 
+    // ---------- The test checklist: every case for the whole app, with your ticks saved ----------
+    if (p === "/admin/dash/checklist") {
+      const { CHECKLIST } = await import("./checklist");
+      const rows = await sb<{ id: number; body: Record<string, { s: string; note?: string; at: string }> }[]>(env, "GET", "library?kind=eq.checks&select=id,body&order=id.desc&limit=1").catch(() => []);
+      const marks = rows[0]?.body ?? {};
+      if (req.method === "POST") {
+        const b = (await req.json()) as { id?: string; state?: string; note?: string };
+        const known = CHECKLIST.some((sec) => sec.cases.some((x) => x.id === b.id));
+        if (!known) return json({ error: "Unknown test" }, 400);
+        if (b.state === "pass" || b.state === "fail") marks[b.id!] = { s: b.state, note: String(b.note ?? "").slice(0, 300) || undefined, at: new Date().toISOString() };
+        else delete marks[b.id!];
+        if (rows[0]) await sb(env, "PATCH", `library?id=eq.${rows[0].id}`, { body: marks }, "return=minimal");
+        else await sb(env, "POST", "library", { company: "all", kind: "checks", body: marks }, "return=minimal");
+      }
+      return json({ sections: CHECKLIST, marks });
+    }
+
     if (p === "/admin/dash/quo-key") {
       const S = await import("./settings");
       if (req.method === "POST") {

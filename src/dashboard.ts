@@ -31,6 +31,15 @@ export const DASH_HTML = String.raw`<!doctype html>
 .rfind input,.rfind textarea,.rep input.w,.rep textarea{width:100%;border:1px solid var(--line);border-radius:10px;padding:8px 10px;background:var(--bg);color:var(--ink);font:inherit;margin-bottom:6px}.rfind textarea,.rep textarea{min-height:58px;resize:vertical}
 .rprev{width:100%;height:70vh;border:1px solid var(--line);border-radius:14px;background:#fff;margin-top:12px}
 @media(max-width:640px){.rfind{grid-template-columns:1fr}}
+.tsum{display:flex;gap:18px;flex-wrap:wrap;align-items:flex-end;margin-bottom:12px}.tsum b{font-size:30px;font-variant-numeric:tabular-nums}.tsum span{color:var(--mute);font-size:13px;display:block}
+.tcase{display:grid;grid-template-columns:28px 1fr auto;gap:12px;padding:12px 0;border-top:1px solid var(--line);align-items:start}
+.tcase .num{color:var(--mute);font-size:12.5px;font-weight:700;padding-top:2px}.tcase .do{font-weight:650}.tcase .ex{color:var(--mute);font-size:13.5px;margin-top:2px}.tcase .ex b{color:var(--ink);font-weight:600}
+.tcase .bd{display:flex;gap:6px;flex-wrap:wrap;margin-top:6px}.tcase .nt{margin-top:6px;font-size:13px;color:var(--bad);background:var(--bad2);border-radius:8px;padding:6px 9px}
+.tbtn{display:flex;gap:6px}.tbtn button{border:1.5px solid var(--line);background:var(--panel);color:var(--mute);border-radius:10px;padding:6px 11px;font-weight:700;font-size:13px;cursor:pointer}
+.tbtn .p.on{background:var(--brand);border-color:var(--brand);color:#fff}.tbtn .f.on{background:var(--bad);border-color:var(--bad);color:#fff}
+.tcase.pass{opacity:.72}.twhat{background:var(--blue2);color:var(--ink);border-radius:12px;padding:10px 12px;font-size:14px;margin:8px 0 4px}.twhat b{color:var(--blue)}
+.thead{display:flex;justify-content:space-between;gap:12px;align-items:center;cursor:pointer}.thead h3{margin:0}.thead .ct{font-size:13px;color:var(--mute);white-space:nowrap}
+@media(max-width:640px){.tcase{grid-template-columns:1fr}.tcase .num{display:none}}
 .plan-h{display:flex;justify-content:space-between;align-items:flex-end;gap:12px;flex-wrap:wrap;margin-bottom:12px}
 .plan-h h3{margin:0}.plan-h .sub{color:var(--mute);font-size:13px;margin-top:4px}
 .plan-big{font-size:26px;font-weight:700;font-variant-numeric:tabular-nums}.plan-big small{font-size:13px;font-weight:500;color:var(--mute);margin-left:6px}
@@ -215,8 +224,8 @@ pre{white-space:pre-wrap;word-wrap:break-word;background:var(--bg);border:1px so
 <div class="page" id="page"></div></div></div>
 <div class="tabs" id="tabs"></div><div class="toast" id="toast"></div>
 <script>
-var ICON={reports:'<rect x="3" y="6" width="18" height="14" rx="2"/><circle cx="12" cy="13" r="3.5"/><path d="M8 6l1.5-2h5L16 6"/>',overview:'<path d="M4 13h6V4H4zM14 20h6v-9h-6zM4 20h6v-3H4zM14 8h6V4h-6z"/>',inbox:'<path d="M4 13l2-8h12l2 8v6H4z"/><path d="M4 13h5a3 3 0 0 0 6 0h5"/>',approve:'<path d="M5 12l4 4 10-10"/>',results:'<path d="M4 20V10M10 20V4M16 20v-7M22 20H2"/>',roadmap:'<path d="M5 19c4-1 3-6 7-7s3-6 7-7"/><circle cx="5" cy="19" r="1.6"/><circle cx="19" cy="5" r="1.6"/>',director:'<path d="M12 3l2.6 5.3 5.9.9-4.3 4.1 1 5.8L12 16.3 6.8 19.1l1-5.8L3.5 9.2l5.9-.9z"/>',agents:'<circle cx="9" cy="8" r="3.5"/><path d="M3 20c0-3.5 2.7-6 6-6s6 2.5 6 6"/><path d="M16 5a3 3 0 0 1 0 6M18 14c2 .7 3 2.6 3 5"/>',settings:'<circle cx="12" cy="12" r="3"/><path d="M19 12a7 7 0 0 0-.1-1.2l2-1.5-2-3.4-2.3 1a7 7 0 0 0-2-1.2L14 3h-4l-.6 2.7a7 7 0 0 0-2 1.2l-2.3-1-2 3.4 2 1.5A7 7 0 0 0 5 12c0 .4 0 .8.1 1.2l-2 1.5 2 3.4 2.3-1a7 7 0 0 0 2 1.2L10 21h4l.6-2.7a7 7 0 0 0 2-1.2l2.3 1 2-3.4-2-1.5c.1-.4.1-.8.1-1.2z"/>',sim:'<path d="M4 5h16v11H9l-5 4z"/>'};
-var VIEWS=[['overview','Overview','Every day'],['inbox','Inbox','Every day'],['approve','Approvals','Every day'],['reports','Photo reports','Every day'],['results','Results','How it is going'],['director','Director','How it is going'],['agents','Agents','The team'],['sim','Practice chat','The team'],['roadmap','Roadmap','Plan and setup'],['settings','Settings','Plan and setup']];
+var ICON={tests:'<path d="M9 4h6l1 2h3v14H5V6h3z"/><path d="M9 12l2 2 4-4"/><path d="M9 17h6"/>',reports:'<rect x="3" y="6" width="18" height="14" rx="2"/><circle cx="12" cy="13" r="3.5"/><path d="M8 6l1.5-2h5L16 6"/>',overview:'<path d="M4 13h6V4H4zM14 20h6v-9h-6zM4 20h6v-3H4zM14 8h6V4h-6z"/>',inbox:'<path d="M4 13l2-8h12l2 8v6H4z"/><path d="M4 13h5a3 3 0 0 0 6 0h5"/>',approve:'<path d="M5 12l4 4 10-10"/>',results:'<path d="M4 20V10M10 20V4M16 20v-7M22 20H2"/>',roadmap:'<path d="M5 19c4-1 3-6 7-7s3-6 7-7"/><circle cx="5" cy="19" r="1.6"/><circle cx="19" cy="5" r="1.6"/>',director:'<path d="M12 3l2.6 5.3 5.9.9-4.3 4.1 1 5.8L12 16.3 6.8 19.1l1-5.8L3.5 9.2l5.9-.9z"/>',agents:'<circle cx="9" cy="8" r="3.5"/><path d="M3 20c0-3.5 2.7-6 6-6s6 2.5 6 6"/><path d="M16 5a3 3 0 0 1 0 6M18 14c2 .7 3 2.6 3 5"/>',settings:'<circle cx="12" cy="12" r="3"/><path d="M19 12a7 7 0 0 0-.1-1.2l2-1.5-2-3.4-2.3 1a7 7 0 0 0-2-1.2L14 3h-4l-.6 2.7a7 7 0 0 0-2 1.2l-2.3-1-2 3.4 2 1.5A7 7 0 0 0 5 12c0 .4 0 .8.1 1.2l-2 1.5 2 3.4 2.3-1a7 7 0 0 0 2 1.2L10 21h4l.6-2.7a7 7 0 0 0 2-1.2l2.3 1 2-3.4-2-1.5c.1-.4.1-.8.1-1.2z"/>',sim:'<path d="M4 5h16v11H9l-5 4z"/>'};
+var VIEWS=[['overview','Overview','Every day'],['inbox','Inbox','Every day'],['approve','Approvals','Every day'],['reports','Photo reports','Every day'],['results','Results','How it is going'],['director','Director','How it is going'],['agents','Agents','The team'],['sim','Practice chat','The team'],['roadmap','Roadmap','Plan and setup'],['tests','Test checklist','Plan and setup'],['settings','Settings','Plan and setup']];
 var ACC='all';try{ACC=localStorage.getItem('acc')||'all'}catch(e){}
 function accQ(){return ACC==='all'?'':'?account='+ACC}
 function seg(){var s=$('seg');s.textContent='';[['all','All'],['dunzo','Dunzo'],['lights','Lights']].forEach(function(x){var b=el('button',ACC===x[0]?'on':'',x[1]);b.onclick=function(){ACC=x[0];try{localStorage.setItem('acc',ACC)}catch(e){}seg();render()};s.appendChild(b)})}
@@ -242,7 +251,7 @@ function status(){var s=S.settings||{};var p=$('status'),pa=s.PAUSE_ALL==='true'
 function load(){return api('/admin/dash/overview'+accQ()).then(function(o){S=o;pendingCount=o.conversations.withTeam;status();nav()})}
 var renderN=0;
 function render(){var p=$('page');p.textContent='';clearInterval(timer);var myN=++renderN;
- if(T.length<20){var w=el('div','banner wr','Your admin token is short. This page shows real customer conversations, so please change ADMIN_TOKEN in Cloudflare to a long random one (at least 20 characters).');p.appendChild(w)}load().then(function(){if(myN!==renderN)return;({overview:vOverview,inbox:vInbox,approve:vApprove,reports:vReports,results:vResults,director:vDirector,roadmap:vRoadmap,agents:vAgents,settings:vSettings,sim:vSim})[view](p)}).catch(function(e){p.appendChild(el('div','empty',e.message))})}
+ if(T.length<20){var w=el('div','banner wr','Your admin token is short. This page shows real customer conversations, so please change ADMIN_TOKEN in Cloudflare to a long random one (at least 20 characters).');p.appendChild(w)}load().then(function(){if(myN!==renderN)return;({overview:vOverview,inbox:vInbox,approve:vApprove,reports:vReports,tests:vTests,results:vResults,director:vDirector,roadmap:vRoadmap,agents:vAgents,settings:vSettings,sim:vSim})[view](p)}).catch(function(e){p.appendChild(el('div','empty',e.message))})}
 function kpi(n,l,tone){return el('div','card kpi',null,[el('div','n',String(n)),el('div','l',l)])}
 function who(r){return (r.name||'C').charAt(0).toUpperCase()}
 function vOverview(p){
@@ -352,6 +361,29 @@ function reportEditor(p,id){var bk=el('button','btn sm','Back to reports');bk.on
    c.appendChild(el('div','set',null,[el('div','grow',null,[el('b',null,'Send by text'),el('span',null,'Sends one short text with the link, from the company\'s own number. Nothing is sent until you press this.')]),ph2,sd]))}
   c.appendChild(fr)}
  api('/admin/dash/report?id='+encodeURIComponent(id)).then(draw).catch(function(e){c.textContent='';c.appendChild(el('div','empty',e.message))})}
+var TFILT='all',TOPEN={};
+function vTests(p){var top=el('div','card');p.appendChild(top);var list=el('div');p.appendChild(list);
+ function draw(d){var all=[],M=d.marks;d.sections.forEach(function(sec){sec.cases.forEach(function(x){all.push(x)})});
+  var pass=all.filter(function(x){return M[x.id]&&M[x.id].s==='pass'}).length,fail=all.filter(function(x){return M[x.id]&&M[x.id].s==='fail'}).length,todo=all.length-pass-fail;
+  top.textContent='';top.appendChild(el('h3',null,'Test checklist for the whole app'));top.appendChild(el('div','sub','Every function, what it does, and every case to try. Press Pass or Fail as you go. Your ticks are saved, so you can stop and come back. A blue tag means Claude already checked that case on the live system. An orange tag means it matters most that a person looks.'));
+  var sm=el('div','tsum');sm.style.marginTop='14px';[[pass,'passed','var(--brand)'],[fail,'failed','var(--bad)'],[todo,'still to do','var(--ink)'],[all.length,'cases in total','var(--mute)']].forEach(function(x){var b=el('b',null,String(x[0]));b.style.color=x[2];sm.appendChild(el('div',null,null,[b,el('span',null,x[1])]))});top.appendChild(sm);
+  var bar=el('div','pbar');[['s',pass],['h',0],['w',0]].forEach(function(){});var i1=el('i','s');i1.style.width=(pass/all.length*100)+'%';var i2=el('i');i2.style.cssText='background:var(--bad);width:'+(fail/all.length*100)+'%';bar.appendChild(i1);bar.appendChild(i2);top.appendChild(bar);
+  var ch=el('div','chips');ch.style.margin='14px 0 0';[['all','All'],['todo','Still to do'],['fail','Failed'],['pass','Passed'],['care','Needs your eyes'],['claude','Claude checked']].forEach(function(f){var c=el('button','chip'+(TFILT===f[0]?' on':''),f[1]);c.onclick=function(){TFILT=f[0];draw(d)};ch.appendChild(c)});top.appendChild(ch);
+  list.textContent='';
+  d.sections.forEach(function(sec){var show=sec.cases.filter(function(x){var m=M[x.id]&&M[x.id].s;return TFILT==='all'||(TFILT==='todo'&&!m)||(TFILT==='fail'&&m==='fail')||(TFILT==='pass'&&m==='pass')||(TFILT==='care'&&x.care)||(TFILT==='claude'&&x.v)});if(!show.length)return;
+   var sp=sec.cases.filter(function(x){return M[x.id]&&M[x.id].s==='pass'}).length,sf=sec.cases.filter(function(x){return M[x.id]&&M[x.id].s==='fail'}).length;
+   var card=el('div','card');card.style.marginTop='16px';var open=TOPEN[sec.key]!==false;
+   var hd=el('div','thead',null,[el('h3',null,sec.title),el('div','ct',sp+' of '+sec.cases.length+' passed'+(sf?', '+sf+' failed':''))]);hd.onclick=function(){TOPEN[sec.key]=!open;draw(d)};card.appendChild(hd);
+   var mb=el('div','pbar');mb.style.cssText='height:6px;margin-top:8px';var a1=el('i','s');a1.style.width=(sp/sec.cases.length*100)+'%';var a2=el('i');a2.style.cssText='background:var(--bad);width:'+(sf/sec.cases.length*100)+'%';mb.appendChild(a1);mb.appendChild(a2);card.appendChild(mb);
+   if(open){var w=el('div','twhat');w.appendChild(el('b',null,'What it does: '));w.appendChild(document.createTextNode(sec.what));card.appendChild(w);
+    show.forEach(function(x){var m=M[x.id]||{};var row=el('div','tcase'+(m.s==='pass'?' pass':''));var mid=el('div');mid.appendChild(el('div','do',x.do));var ex=el('div','ex');ex.appendChild(el('b',null,'Should happen: '));ex.appendChild(document.createTextNode(x.expect));mid.appendChild(ex);
+     var bd=el('div','bd');if(x.v)bd.appendChild(el('span','tag b','Claude checked, '+x.v));if(x.care)bd.appendChild(el('span','tag o','Needs your eyes'));if(bd.children.length)mid.appendChild(bd);if(m.s==='fail'&&m.note)mid.appendChild(el('div','nt',m.note));
+     function mark(st){var note='';if(st==='fail'){note=prompt('What went wrong? A few words helps when it is fixed.',m.note||'');if(note===null)return}api('/admin/dash/checklist',{id:x.id,state:m.s===st?'':st,note:note}).then(draw).catch(function(e){toast(e.message)})}
+     var bp=el('button','p'+(m.s==='pass'?' on':''),'Pass');bp.onclick=function(){mark('pass')};var bf=el('button','f'+(m.s==='fail'?' on':''),'Fail');bf.onclick=function(){mark('fail')};
+     row.appendChild(el('div','num',String(sec.cases.indexOf(x)+1)));row.appendChild(mid);row.appendChild(el('div','tbtn',null,[bp,bf]));card.appendChild(row)})}
+   list.appendChild(card)});
+  if(!list.children.length)list.appendChild(el('div','empty','Nothing in this view.'))}
+ api('/admin/dash/checklist').then(draw).catch(function(e){list.appendChild(el('div','empty',e.message))})}
 function vApprove(p){
  var q=S.queue,s=S.settings;
  var g=el('div','grid g4');g.appendChild(kpi(q.waiting,'Waiting for your approval'));g.appendChild(kpi(q.approved,'Approved, going out'));g.appendChild(kpi(q.sent,'Already sent'));g.appendChild(kpi(q.held,'Held back for safety'));p.appendChild(g);
