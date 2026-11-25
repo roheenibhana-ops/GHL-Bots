@@ -462,7 +462,7 @@ function openFlow(name){var m=ALLMATES.filter(function(x){return x.name===name})
  var ov=el('div','wfm');var box=el('div','wfb');ov.appendChild(box);ov.onclick=function(e){if(e.target===ov)ov.remove()};
  var x=el('button','x','\u00d7');x.onclick=function(){ov.remove()};
  var live=m.state==='live',ext=m.state==='external';
- box.appendChild(el('div','wfh',null,[avatar(m,52),el('div',null,null,[el('div','nm',m.name+'\'s workflow'),el('div','sub2',m.role)]),el('span','tag '+(live?'g':ext?'b':'o'),live?'Live':ext?'Your Claude':'Planned'),x]));
+ box.appendChild(el('div','wfh',null,[avatar(m,52),el('div',null,null,[el('div','nm',m.name+'\'s workflow'),el('div','sub2',m.role)]),stag(m,'Planned'),x]));
  if(!live&&!ext)box.appendChild(el('div','banner wr','Not built yet. This is how '+m.name+' will work once built.'));
  var key=el('div','wfk');[['Starts when','var(--brand)'],['Does','var(--mute)'],['Decides','var(--warn)'],['Passes on','var(--blue)'],['Result','var(--vio)']].forEach(function(k){var sp=el('span',null,k[0]);sp.style.setProperty('--c',k[1]);key.appendChild(sp)});box.appendChild(key);
  var fl=el('div','wff');var LAB={start:'Starts when',step:'Step',check:'Decides',hand:'Passes on',end:'Result'},n=0;
@@ -473,11 +473,12 @@ function openFlow(name){var m=ALLMATES.filter(function(x){return x.name===name})
   if(st.k==='hand'&&st.to){nd.title='Open '+st.to+'\'s workflow';nd.onclick=function(){openFlow(st.to)};nd.appendChild(el('div','d','Click to see '+st.to+'\'s workflow.'))}
   fl.appendChild(nd)});box.appendChild(fl);document.body.appendChild(ov)}
 function flowBtn(m,cls){var b=el('button',cls||'btn','Workflow');b.onclick=function(e){e.stopPropagation();if(Object.keys(FLOWS).length)return openFlow(m.name);api('/admin/dash/agents').then(function(d){ALLMATES=d.mates;FLOWS=d.flows||{};openFlow(m.name)})};return b}
-function mateCard(m){var c=el('div','mcard'+(m.state==='live'?' live':''),null,[avatar(m),el('div','grow',null,[el('div','nm',m.name),el('div','sub2',m.role)]),el('span','tag '+(m.state==='live'?'g':m.state==='external'?'b':''),m.state==='live'?'Live':m.state==='external'?'Your Claude':'Soon')]);
+function stag(m,soon){if(m.label)return el('span','tag otag '+(m.tone||''),m.label);return el('span','tag otag '+(m.state==='live'?'g':m.state==='external'?'b':'o'),m.state==='live'?'Live':m.state==='external'?'Your Claude':(soon||'Soon'))}
+function mateCard(m){var c=el('div','mcard'+(m.state==='live'?' live':''),null,[avatar(m),el('div','grow',null,[el('div','nm',m.name),el('div','sub2',m.role)]),stag(m)]);
  c.title=m.does;c.onclick=function(){studioKey=m.agent||('profile:'+m.name);studioMeta=m;render()};return c}
 var AVIEW='org';try{AVIEW=localStorage.getItem('aview')||'org'}catch(e){}
 function onode(m,big){var st=m.state==='live'?'ok':m.state==='external'?'run':'plan';
- var n=el('div','onode'+(big?' big':''),null,[avatar(m,big?58:42),el('div','grow',null,[el('div','nm',m.name,[]),el('div','sub2',m.role),el('span','tag otag '+(m.state==='live'?'g':m.state==='external'?'b':'o'),m.state==='live'?'Live':m.state==='external'?'Your Claude':'Soon')])]);
+ var n=el('div','onode'+(big?' big':''),null,[avatar(m,big?58:42),el('div','grow',null,[el('div','nm',m.name,[]),el('div','sub2',m.role),stag(m)])]);
  n.title=(m.state==='live'?'Live. ':m.state==='external'?'Handled by your own Claude setup. ':'Planned. ')+m.does;n.onclick=function(){studioKey=m.agent||('profile:'+m.name);studioMeta=m;render()};return n}
 function orgTeam(title,list){var col=el('div','oc-col');col.appendChild(el('div','oc-pill',title+' · '+list.length));var ul=el('div','oc-list');list.forEach(function(m){var it=el('div','oc-item');it.appendChild(onode(m));ul.appendChild(it)});col.appendChild(ul);return col}
 function orgCompany(title,sub,list){var col=el('div','oc-col');col.appendChild(el('div','oc-co',null,[el('b',null,title),el('div','sub2',sub)]));
@@ -537,8 +538,8 @@ function diffView(a,b){var box=el('div','diff');var d=diffLines(a,b),same=0,chan
 function vStudio(p){
  var m=studioMeta;
  var back=el('button','btn sm','Back to the team');back.onclick=function(){studioKey=null;studioMeta=null;ST=null;render()};p.appendChild(back);
- if(!m.agent){var c=el('div','card');c.style.marginTop='14px';c.appendChild(el('div','prof',null,[avatar(m,88),el('div','grow',null,[el('div','nm',m.name),el('div','sub2',m.role),el('span','tag '+(m.state==='live'?'g':''),m.state==='live'?'Live':'Planned')]),flowBtn(m,'btn pri')]));
-  c.appendChild(el('p',null,m.does));c.appendChild(el('div','sub',m.state==='live'?'Works today, but its behaviour lives in the code for now. Gus and Maverick are the first agents with the full studio. The rest follow as they are built.':'Not built yet. When it is, it gets its own studio here, with the same chat builder, test pack and version history.'));p.appendChild(c);return}
+ if(!m.agent){var c=el('div','card');c.style.marginTop='14px';c.appendChild(el('div','prof',null,[avatar(m,88),el('div','grow',null,[el('div','nm',m.name),el('div','sub2',m.role),stag(m,'Planned')]),flowBtn(m,'btn pri')]));
+  c.appendChild(el('p',null,m.does));if(m.note)c.appendChild(el('div','banner wr',m.note));c.appendChild(el('div','sub',m.state==='live'?'Built into the system. It has no studio of its own yet, so there is nothing to set up or edit here: its rules live in the code, and its workflow shows exactly what it does.':'Not built yet. When it is, it gets its own studio here, with the same chat builder, test pack and version history.'));p.appendChild(c);return}
  var shell=el('div');p.appendChild(shell);shell.appendChild(el('div','empty','Loading '+m.name+'...'));
  api('/admin/dash/agent?agent='+m.agent).then(function(d){
   var live=d.published?d.published.instructions:d.defaultInstructions,liveDials=d.published?d.published.dials:{};

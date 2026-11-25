@@ -408,7 +408,20 @@ export async function handleDash(req: Request, env: Env, url: URL, rawEnv: Env =
     }
 
     if (p === "/admin/dash/agents") {
-      return json({ mates: MATES, flows: WORKFLOWS, safety: SAFETY_RULES, prompt: systemPrompt({ firstName: "Customer" } as BotFacts), knowledge: BUSINESS_KNOWLEDGE });
+      // Show what is really switched on right now, not just what has been built.
+      const eff = effectiveValues(env, (await loadSettings(env)).map);
+      const paused = eff.PAUSE_ALL === "true";
+      const by = (mode: string, what: string) => paused ? { label: "Paused", tone: "o", note: "Everything is paused." }
+        : mode === "live" || mode === "auto" ? { label: "Live", tone: "g", note: "" }
+        : mode === "approve" ? { label: "Live, you approve", tone: "g", note: "Writes follow ups that wait on your Approvals page." }
+        : mode === "test" ? { label: "Test only", tone: "o", note: `Built and working, but ${what} is set to Test in Settings, so it only acts on contacts tagged bot-test.` }
+        : { label: "Switched off", tone: "", note: `Built, but ${what} is switched off in Settings.` };
+      const mates = MATES.map((m) => {
+        if (m.state !== "live") return m;
+        const st = m.name === "Gus" || m.name === "Relay" ? by(eff.BOT_MODE, "the bot") : m.name === "Flash" ? by(eff.PHOTO_MODE, "photo handling") : m.name === "Dash" ? by(eff.DASH_MODE, "follow ups") : null;
+        return st ? { ...m, ...st } : m;
+      });
+      return json({ mates, flows: WORKFLOWS, safety: SAFETY_RULES, prompt: systemPrompt({ firstName: "Customer" } as BotFacts), knowledge: BUSINESS_KNOWLEDGE });
     }
 
     return json({ error: "not found" }, 404);
