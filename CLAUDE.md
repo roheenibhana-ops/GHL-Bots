@@ -49,6 +49,8 @@ Things that bite:
 
 # Setting up a copy for another client
 
+The rule for every client: the client owns their data (customers, conversations, calls, their library, their business details and their keys). They do not own the system. Their data never goes into another client's copy or into the base.
+
 1. Duplicate this repo into a new private repo for the client. Never share a Worker, a database or keys between clients.
 2. Create a Cloudflare Worker and a Supabase project for them. Run `supabase/schema.sql`, then the numbered files in order.
 3. Add the secrets in Cloudflare: GHL token and location id, `SUPABASE_URL`, `SUPABASE_SERVICE_KEY`, `ANTHROPIC_API_KEY` (the client's own key from their own Claude Console account, so AI costs bill to them, with a spending limit set there), a long random `ADMIN_TOKEN`, `WEBHOOK_SECRET`, and the Jobber app id and secret if they use Jobber.
