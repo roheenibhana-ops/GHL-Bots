@@ -28,12 +28,12 @@ async function jobberPlans(env: Env, a: Account, st: State): Promise<Plan[]> {
     jobs: { nodes: { id: string; jobNumber: number; jobStatus: string; createdAt: string; updatedAt: string; completedAt: string | null; startAt: string | null; total: number; client: JC; property: { address: Addr } | null }[] };
     clients: { nodes: (JC & { createdAt: string; updatedAt: string })[] };
   }>(env, a, `query($r: Iso8601DateTimeRangeInput!) {
-    quotes(filter: { updatedAt: $r }, first: 25) { nodes { id quoteNumber quoteStatus sentAt updatedAt title amounts { total } lineItems(first: 8) { nodes { name description totalPrice } } client { ${C} } property { address { street1 city province postalCode } } } }
+    quotes(filter: { updatedAt: $r }, first: 40) { nodes { id quoteNumber quoteStatus sentAt updatedAt title amounts { total } lineItems(first: 8) { nodes { name description totalPrice } } client { ${C} } property { address { street1 city province postalCode } } } }
     jobs(sort: [{ key: UPDATED_AT, direction: DESCENDING }], first: 30) { nodes { id jobNumber jobStatus createdAt updatedAt completedAt startAt total client { ${C} } property { address { street1 city province postalCode } } } }
-    clients(filter: { updatedAt: $r }, first: 25) { nodes { ${C} createdAt updatedAt billingAddress { street1 city province postalCode } } }
+    clients(filter: { updatedAt: $r }, first: 50) { nodes { ${C} createdAt updatedAt billingAddress { street1 city province postalCode } } }
   }`, { r: { after: since } });
   const plans: Plan[] = [];
-  for (const q of d.quotes.nodes) plans.push(...planQuote(a, { id: q.id, quoteNumber: q.quoteNumber, quoteStatus: q.quoteStatus, sentAt: q.sentAt, updatedAt: q.updatedAt, title: q.title, total: q.amounts?.total, items: q.lineItems.nodes, person: person(q.client, q.property?.address) } satisfies JQuote, since));
+  for (const q of d.quotes.nodes) plans.push(...planQuote(a, { id: q.id, quoteNumber: q.quoteNumber, quoteStatus: q.quoteStatus, sentAt: q.sentAt, updatedAt: q.updatedAt, title: q.title, total: q.amounts?.total || q.lineItems.nodes.reduce((n, i) => n + (i.totalPrice ?? 0), 0), items: q.lineItems.nodes, person: person(q.client, q.property?.address) } satisfies JQuote, since));
   for (const j of d.jobs.nodes) {
     const k = `${a}:${j.id}`;
     const ev: JJob = { id: j.id, jobNumber: j.jobNumber, jobStatus: j.jobStatus, createdAt: j.createdAt, updatedAt: j.updatedAt, completedAt: j.completedAt, startAt: j.startAt, total: j.total, person: person(j.client, j.property?.address) };
