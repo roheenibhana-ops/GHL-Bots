@@ -284,6 +284,21 @@ export async function handleDash(req: Request, env: Env, url: URL, rawEnv: Env =
       return json({ connections: list });
     }
 
+    // ---------- The library: what every agent learns from real conversations ----------
+    if (p.startsWith("/admin/dash/library")) {
+      const L = await import("./library");
+      const b = req.method === "POST" ? ((await req.json().catch(() => ({}))) as { fresh?: boolean; company?: string; on?: boolean; voice?: string }) : {};
+      const co = b.company === "lights" ? "lights" : "dunzo";
+      try {
+        if (p === "/admin/dash/library-start" && req.method === "POST") await L.libraryStart(env, b.fresh !== false);
+        if (p === "/admin/dash/library-step" && req.method === "POST") return json(await L.libraryStep(env));
+        if (p === "/admin/dash/library-build" && req.method === "POST") await L.libraryBuild(env, co);
+        if (p === "/admin/dash/library-publish" && req.method === "POST") await L.libraryPublish(env, co, b.on !== false, b.voice);
+        const { quoKey } = await import("./quo");
+        return json({ connected: !!quoKey(env), ...(await L.libraryStatus(env)) });
+      } catch (e) { return json({ error: (e as Error).message }, 502); }
+    }
+
     if (p === "/admin/dash/quo-key") {
       const S = await import("./settings");
       if (req.method === "POST") {

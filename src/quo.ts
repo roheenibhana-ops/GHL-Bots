@@ -54,6 +54,21 @@ async function pages<T>(env: Env, path: string, params: Record<string, string | 
   return out;
 }
 
+/** One chunk of a long read, with the cursor to carry on from. */
+export async function quoChunk<T>(env: Env, path: string, params: Record<string, string | number | undefined>, after: string | undefined, maxPages: number): Promise<{ items: T[]; next: string | null }> {
+  const items: T[] = [];
+  let cur = after;
+  for (let i = 0; i < maxPages; i++) {
+    const p = await quoGet<Page<T>>(env, path, { ...params, limit: 50, after: cur });
+    items.push(...p.data);
+    if (!p.nextCursor) return { items, next: null };
+    cur = p.nextCursor;
+  }
+  return { items, next: cur ?? null };
+}
+export interface QuoNumber { id: string; name?: string | null; phoneNumber?: string; formattedNumber?: string | null }
+export const quoNumbers = async (env: Env) => (await quoGet<Page<QuoNumber>>(env, "/phone-numbers", { limit: 50 })).data;
+
 export const quoMessages = (env: Env, o: { sinceIso?: string; maxPages: number }) => pages<QuoMessage>(env, "/messages", { "createdAt[gt]": o.sinceIso }, o.maxPages);
 export const quoCalls = (env: Env, o: { sinceIso?: string; participant?: string; maxPages: number }) => pages<QuoCall>(env, "/calls", { include: "summary,voicemail", "createdAt[gte]": o.sinceIso, participant: o.participant }, o.maxPages);
 export const quoTranscript = async (env: Env, callId: string) => (await quoGet<Page<QuoTranscript>>(env, `/calls/${encodeURIComponent(callId)}/transcripts`, { limit: 10 })).data;

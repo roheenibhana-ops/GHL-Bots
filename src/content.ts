@@ -1,3 +1,4 @@
+import { livePlaybook, marketingInsights } from "./library";
 import { runAgent } from "./agents";
 import { disallowedPrices } from "./bot";
 import { BUSINESS_KNOWLEDGE, SITE_LINKS } from "./knowledge";
@@ -58,6 +59,8 @@ export async function draftContent(env: Env, agentKey: string, override?: { inst
     live.instructions,
     dialsText(live.dials),
     reference ? "\nREFERENCE MATERIAL from Clark: examples of copy he likes. Learn the voice, rhythm and structure from them. Never copy sentences word for word, and never take any price, date or fact from them: facts come only from the business knowledge.\n" + reference.slice(0, 12000) : "",
+    "",
+    marketingInsights(await livePlaybook(env, def.company)),
     "",
     "WHAT IS HAPPENING NOW:",
     seasonNote(new Date(), def.company),

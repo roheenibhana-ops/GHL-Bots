@@ -33,6 +33,7 @@ This copy runs two Sacramento companies with one owner: Dunzo Gutters and Santa'
 - `src/convo.ts`, `src/bot.ts`, `src/playbook.ts`, `src/knowledge.ts`: the conversation agent, its rules, voice and business knowledge.
 - `src/quote.ts`, `src/jobber.ts`, `src/check.ts`: Jobber quotes and the customer history check.
 - `src/quo.ts`: read only client for Quo, the phone system. `src/voice.ts`: studies real calls and texts to learn the house voice, which the owner approves before agents use it.
+- `src/library.ts`: the library. Reads thousands of Quo texts and calls in batches, merges them into one playbook per company, and once the owner switches it on every agent learns from it (sales agents: voice and what customers ask; marketing writers: questions, customer wording and post ideas).
 - `src/chaser.ts`: Dash, the follow up writer. `src/coach.ts`: the Mentor. `src/director.ts`: the weekly report.
 - `src/deadline.ts`: the offer deadline. Each customer is held to the date printed in the text they received.
 - `src/plan.ts`: the day by day send plan shown on the Overview.

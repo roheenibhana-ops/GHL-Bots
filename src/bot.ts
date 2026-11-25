@@ -3,6 +3,7 @@ import { ALLOWED_PRICES, BUSINESS_KNOWLEDGE, SITE_LINKS } from "./knowledge";
 import { type Dials, HOUSE_VOICE, loadAgent, playbookText } from "./playbook";
 import { deadlinePassed, formatDeadline } from "./deadline";
 import { voiceBlock } from "./voice";
+import { livePlaybook, salesInsights } from "./library";
 import type { Env } from "./types";
 
 /** What the system knows about this customer. The system, not the model, owns these facts. */
@@ -20,6 +21,8 @@ export interface BotFacts {
   profile?: string;
   /** The approved house voice, learned from the owner's real calls and texts. */
   voice?: string;
+  /** What customers usually ask and worry about, from the library. */
+  insights?: string;
   /** Recent phone calls with this customer, from the phone system. */
   calls?: string;
   profileAt?: number;
@@ -84,6 +87,8 @@ export function systemPrompt(f: BotFacts, playbook?: string, dials?: Dials): str
     "THE GOAL: get these three things naturally in the conversation, in whatever order fits: home size, a confirmed address, and their best email for the quote. Then tell them you are getting their quote over, that approving it is quick, and that a 50% deposit locks it in. After approval the team will be in touch with scheduling. Do not include any link yourself.",
     `STILL NEEDED FROM THE CUSTOMER: ${stillNeeded(f)}`,
     done ? "The quote request has ALREADY been sent on. Do not ask for those details again. If a quote link was already texted to them (the conversation shows it), never say it is on its way or that you are sending it now: it is already in their messages. Answer any follow-up question helpfully." : "",
+    "",
+    f.insights ?? "",
     "",
     "WHAT WE KNOW ABOUT THIS CUSTOMER:",
     `First name: ${f.firstName ?? "unknown"}. Home size: ${f.stories ? `${f.stories} story` : "not yet known"}. Email: ${f.email ?? "not yet known"}.`,
@@ -251,7 +256,8 @@ export function applyOutput(f: BotFacts, o: BotOutput): BotFacts {
 export async function botTurn(env: Env, facts: BotFacts, history: { role: "user" | "assistant"; content: string }[], override?: { instructions?: string; dials?: Dials }): Promise<{ output: BotOutput; facts: BotFacts; debug?: Record<string, unknown> }> {
   if (!history.length || history[history.length - 1].role !== "user") throw new Error("history must end with a customer message");
   const live = override?.instructions !== undefined ? { instructions: override.instructions, dials: override.dials ?? {} } : await loadAgent(env, "gus");
-  const agent = { name: "sales", system: systemPrompt({ ...facts, voice: facts.voice ?? env.VOICE_PROFILE }, live.instructions, override?.dials ?? live.dials), maxTokens: 900, model: env.BOT_MODEL };
+  const pb = await livePlaybook(env, "dunzo");
+  const agent = { name: "sales", system: systemPrompt({ ...facts, voice: facts.voice ?? pb?.voice ?? env.VOICE_PROFILE, insights: facts.insights ?? (salesInsights(pb) || undefined) }, live.instructions, override?.dials ?? live.dials), maxTokens: 900, model: env.BOT_MODEL };
   const raw = await runAgent(env, agent, history);
   let output = tryParseBotOutput(raw);
   let problems = output ? replyProblems(output.reply) : ["the output was not valid JSON"];
