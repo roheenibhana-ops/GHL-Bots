@@ -41,7 +41,7 @@ export interface VoiceStudy { voice: string; notes: string; studiedAt: string; t
 
 export function parseStudy(raw: string): { voice: string; notes: string } {
   const [a, ...rest] = raw.split(/\n-{3,}\n/);
-  const clean = (s: string) => s.replace(/^\s*(VOICE|NOTES)[^\n]*\n/i, "").trim();
+  const clean = (s: string) => s.replace(/^\s*(PART\s*\d[^\n]*|VOICE[^\n]*|NOTES[^\n]*)\n/i, "").trim();
   return { voice: clean(a ?? ""), notes: clean(rest.join("\n---\n")) };
 }
 
@@ -59,9 +59,9 @@ export async function studyVoice(env: Env, o: { userId?: string; days?: number }
     "You study how a small home services business really talks to its customers, from its own text messages and phone calls, so that its AI text agents can sound like one of the team.",
     `Study the lines marked TEAM${o.userId ? ` (${who})` : ""}. Lines marked CUSTOMER are context. Ignore lines marked AUTOMATED.`,
     "Write two parts, separated by a line containing only ---",
-    "PART 1, the voice. At most 300 words of plain short paragraphs or simple dashes. Describe HABITS, never lines to copy: how they open and close, how long their messages are, how formal or loose, the kind of words and local flavour, how they use humour, how they show they listened, how they talk about price and handle pushback, how they ask for the job, what they never do. Do not quote any message. Do not include any customer's name, phone, address or personal details. Do not include prices, offers or promises: those are set elsewhere.",
+    "PART 1, the voice. At most 300 words of plain short paragraphs or simple dashes. Describe HABITS, never lines to copy: how they open and close, how long their messages are, how formal or loose, the kind of words and local flavour, how they use humour, how they show they listened, how they talk about price and handle pushback, how they ask for the job, what they never do. Do not quote any message and do not put any phrase in quotation marks: describe the habit in your own words instead. The business does more than one kind of work, so keep this about manner only and leave out anything tied to one service or product. Mistakes are not habits: do not describe typos, missing capitals, half finished messages or slips as things to do. Do not include any customer's name, phone, address or personal details. Do not include prices, offers or promises: those are set elsewhere.",
     "PART 2, notes for the owner. At most 200 words. The questions and objections customers raise most, what seems to win jobs, and anything the team says that an AI agent should NOT copy (for example promising dates). Again no customer details.",
-    "Use plain punctuation with no em dashes. Write nothing before part 1 and nothing after part 2.",
+    "Use plain punctuation with no em dashes. Do not write headings such as PART 1 or VOICE. Write nothing before part 1 and nothing after part 2.",
   ].join("\n");
   const content = [texts.text ? "TEXT CONVERSATIONS\n\n" + texts.text : "", scripts.length ? "PHONE CALLS\n\n" + scripts.join("\n\n---\n\n") : ""].filter(Boolean).join("\n\n=====\n\n");
   const raw = await runAgent(env, { name: "voice", system, maxTokens: 1400, model: env.BOT_MODEL }, [{ role: "user", content }]);
