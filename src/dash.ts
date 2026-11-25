@@ -314,7 +314,7 @@ export async function handleDash(req: Request, env: Env, url: URL, rawEnv: Env =
         }
         if (p === "/admin/dash/cc-photos") {
           const list = await CC.ccProjectPhotos(env, url.searchParams.get("project") ?? "", 60);
-          return json({ photos: list.map((x) => ({ id: x.id, thumb: CC.photoUrl(x, "thumb"), note: x.description?.plain_text_content ?? "", taken: x.captured_at ?? null })).filter((x) => x.thumb) });
+          return json({ photos: list.map((x) => ({ id: x.id, thumb: CC.photoUrl(x, "thumb"), sizes: (x.uris ?? []).map((u) => u.type), note: x.description?.plain_text_content ?? "", taken: x.captured_at ?? null })).filter((x) => x.thumb) });
         }
         if (p === "/admin/dash/reports") return json({ reports: await R.listReports(env) });
         if (p === "/admin/dash/report") { const r = await R.getReport(env, url.searchParams.get("id") ?? ""); return r ? json({ report: r, link: url.origin + "/r/" + r.id }) : json({ error: "Report not found" }, 404); }
