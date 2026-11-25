@@ -77,8 +77,8 @@ These transcripts come from the company's existing conversation history, before 
 Learn from the people: what Clark and the team do that moves a customer forward or wins the job, how they handle price, timing, worries and silence, and what customers most often ask. Also note where the old bot let customers down, so the new agent avoids it. Every suggestion must be a change for the NEW agent.`;
 
 /** One page of GHL history as transcripts. Names, numbers, emails and links are removed before anything is read. */
-export async function historyPage(env: Env, before?: number): Promise<{ transcripts: string[]; next?: number }> {
-  const creds = credsFor(env, "dunzo");
+export async function historyPage(env: Env, before?: number, account: "dunzo" | "lights" = "dunzo"): Promise<{ transcripts: string[]; next?: number; seen: number }> {
+  const creds = credsFor(env, account);
   const convs = await searchConversations(creds, 24, before);
   const out: string[] = [];
   for (const c of convs) {
@@ -95,7 +95,7 @@ export async function historyPage(env: Env, before?: number): Promise<{ transcri
     const won = msgs.some((m) => /thank you for approving/i.test(m.body ?? ""));
     out.push(`--- Conversation ${out.length + 1} (outcome: ${won ? "WON: quote approved" : "unknown"})\n${lines.join("\n")}`);
   }
-  return { transcripts: out, next: convs.length ? convs[convs.length - 1].lastMessageDate : undefined };
+  return { transcripts: out, next: convs.length ? convs[convs.length - 1].lastMessageDate : undefined, seen: convs.length };
 }
 
 export async function coachHistory(env: Env, before?: number): Promise<CoachReport & { next?: number }> {

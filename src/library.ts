@@ -2,6 +2,7 @@ import { runAgent } from "./agents";
 import { sb, sbAll } from "./db";
 import { quoChunk, quoNumbers, quoTranscript, quoUsers, type QuoCall, type QuoMessage, type QuoNumber } from "./quo";
 import { callSample } from "./voice";
+import { historyPage } from "./coach";
 import type { Account, Env } from "./types";
 
 /**
@@ -18,9 +19,9 @@ export interface Playbook {
   ideas: string[];
   avoid: string[];
   builtAt?: string;
-  from?: { batches: number; messages: number; calls: number };
+  from?: { batches: number; messages: number; calls: number; conversations?: number };
 }
-export interface LibState { since?: string; msgCursor?: string | null; msgDone?: boolean; msgSeen: number; teamSeen: number; callCursor?: string | null; callsDone?: boolean; callsSeen: number; callsRead: number; batches: number; startedAt: string; finishedAt?: string; numbers?: Record<string, Account | "both">; users?: Record<string, string> }
+export interface LibState { since?: string; msgCursor?: string | null; msgDone?: boolean; msgSeen: number; teamSeen: number; callCursor?: string | null; callsDone?: boolean; callsSeen: number; callsRead: number; ghl?: Partial<Record<Account, { before?: number; done?: boolean; seen: number; used: number }>>; batches: number; startedAt: string; finishedAt?: string; numbers?: Record<string, Account | "both">; users?: Record<string, string> }
 
 const COMPANIES: Account[] = ["dunzo", "lights"];
 const NAME = { dunzo: "Dunzo Gutters", lights: "Santa's Lights" } as const;
@@ -67,7 +68,7 @@ const isEmpty = (e: Extract) => Object.values(e).every((v) => !v.length);
 const EXTRACT_SYSTEM = [
   "You study the real text messages and phone calls of two sister home service companies in Sacramento: Dunzo Gutters (gutter cleaning, repairs, guards, installs) and Santa's Lights (Christmas and permanent lighting). Your notes will teach the companies' AI agents: the sales agents who text customers, and the marketing agents who write social posts, Google posts and newsletters.",
   "Each conversation is labelled with its company. If it says COMPANY UNKNOWN, work it out from what is discussed, and skip it if you cannot tell.",
-  "Lines marked TEAM are a real person on the team. CUSTOMER lines are customers. Ignore AUTOMATED lines.",
+  "Lines marked TEAM are a real person on the team. CUSTOMER lines are customers. Ignore AUTOMATED lines. Lines marked OLD BOT were written by an earlier automated assistant: never learn the voice from them, but do note in avoid where it let a customer down.",
   "Reply with ONLY a JSON object of this shape, with one entry per company:",
   '{"dunzo": {"voice": [], "questions": [], "objections": [], "wins": [], "phrases": [], "ideas": [], "avoid": []}, "lights": {...same keys...}}',
   "voice: habits in how the TEAM talks (openers, length, tone, how they handle price and pushback, how they ask for the job). Describe habits in your own words. Never quote a message.",
@@ -119,7 +120,7 @@ async function saveBatch(env: Env, st: LibState, source: string, raw: string, co
 }
 
 /** Reads the next chunk of Quo and boils it down. Call it again and again until done is true. */
-export async function libraryStep(env: Env, maxMessages = 20_000): Promise<{ done: boolean; state: LibState }> {
+export async function libraryStep(env: Env, maxMessages = 20_000, maxGhl = 1500): Promise<{ done: boolean; state: LibState }> {
   const row = await getState(env);
   if (!row) throw new Error("No study has been started.");
   const st = row.body;
@@ -141,7 +142,22 @@ export async function libraryStep(env: Env, maxMessages = 20_000): Promise<{ don
     st.callsSeen += chunk.items.length; st.callsRead += scripts.length; st.callCursor = chunk.next;
     if (!chunk.next || st.callsSeen >= 1500) st.callsDone = true;
   }
-  if (st.msgDone && st.callsDone) st.finishedAt = new Date().toISOString();
+  else {
+    // GoHighLevel: the whole text history of each company, one page of conversations at a time.
+    st.ghl = st.ghl ?? {};
+    const co = COMPANIES.find((c) => !st.ghl![c]?.done);
+    if (co) {
+      const g = st.ghl[co] ?? { seen: 0, used: 0 };
+      const page = await historyPage(env, g.before, co);
+      if (page.transcripts.length) await saveBatch(env, st, "ghl", await runAgent(env, { name: "library", system: EXTRACT_SYSTEM, maxTokens: 2600, model: env.BOT_MODEL }, [{ role: "user", content: `TEXT CONVERSATIONS FROM THE CRM. Every one of these is [${NAME[co].toUpperCase()}].\n\n` + page.transcripts.join("\n\n") }]), { conversations: page.transcripts.length });
+      g.seen += page.seen; g.used += page.transcripts.length;
+      const tooOld = !!st.since && !!page.next && page.next < Date.parse(st.since);
+      if (!page.seen || !page.next || page.next === g.before || tooOld || g.seen >= maxGhl) g.done = true;
+      g.before = page.next;
+      st.ghl[co] = g;
+    }
+  }
+  if (st.msgDone && st.callsDone && COMPANIES.every((c) => st.ghl?.[c]?.done)) st.finishedAt = new Date().toISOString();
   await putState(env, row.id, st);
   return { done: !!st.finishedAt, state: { ...st, numbers: undefined, users: undefined } };
 }
@@ -159,7 +175,7 @@ export function parsePlaybook(raw: string): Playbook | null {
 
 /** Merges every batch for one company into a single playbook, saved as a draft for the owner to read. */
 export async function libraryBuild(env: Env, company: Account): Promise<Playbook> {
-  const rows = await sbAll<{ n: number; body: Extract & { source: string; messages?: number; calls?: number } }>(env, `library?kind=eq.batch&company=eq.${enc(company)}&select=n,body&order=n.asc`);
+  const rows = await sbAll<{ n: number; body: Extract & { source: string; messages?: number; calls?: number; conversations?: number } }>(env, `library?kind=eq.batch&company=eq.${enc(company)}&select=n,body&order=n.asc`);
   if (!rows.length) throw new Error(`Nothing has been learned for ${NAME[company]} yet. Run the study first.`);
   const all = (k: keyof Extract) => rows.flatMap((r) => r.body[k] ?? []);
   const section = (title: string, items: string[], cap: number) => `${title} (${items.length} notes)\n` + items.map((x) => "- " + x).join("\n").slice(0, cap);
@@ -180,7 +196,7 @@ export async function libraryBuild(env: Env, company: Account): Promise<Playbook
   const pb = parsePlaybook(raw);
   if (!pb) throw new Error("The playbook could not be put together. Try again.");
   pb.builtAt = new Date().toISOString();
-  pb.from = { batches: rows.length, messages: rows.reduce((n, r) => n + (r.body.messages ?? 0), 0), calls: rows.reduce((n, r) => n + (r.body.calls ?? 0), 0) };
+  pb.from = { batches: rows.length, messages: rows.reduce((n, r) => n + (r.body.messages ?? 0), 0), calls: rows.reduce((n, r) => n + (r.body.calls ?? 0), 0), conversations: rows.reduce((n, r) => n + (r.body.conversations ?? 0), 0) };
   await sb(env, "DELETE", `library?kind=eq.playbook&company=eq.${enc(company)}`, undefined, "return=minimal");
   await sb(env, "POST", "library", { company, kind: "playbook", body: pb }, "return=minimal");
   return pb;
