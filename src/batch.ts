@@ -94,12 +94,12 @@ export async function runDailyBatch(env: Env): Promise<Record<string, unknown>> 
         result.skipped++;
         continue;
       }
-      // Always look in Jobber right before sending: no promo to someone with an open quote, an existing cleaning quote, or a recent or unfinished job.
+      // Always look in Jobber right before sending: no promo to someone with an open quote, an existing cleaning quote, a recent booking request, or a recent or unfinished job.
       const phone = normalizePhone(c.phone);
       if (m.account === "dunzo" && phone) {
         const found = await findClientsByPhones(env, "dunzo", [phone]);
         const a = assess(found.get(phone) ?? [], phone);
-        if (a.found && (a.openQuotes > 0 || a.cleaningQuotes > 0 || a.recentJobs > 0)) {
+        if (a.found && (a.openQuotes > 0 || a.cleaningQuotes > 0 || a.recentJobs > 0 || a.recentRequests > 0)) {
           await sb(env, "PATCH", `messages?id=eq.${m.id}`, { status: "held" }, "return=minimal");
           result.held++;
           continue;

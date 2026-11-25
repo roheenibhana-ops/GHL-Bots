@@ -6,6 +6,13 @@ export interface JClient {
   phones: { number: string; normalizedPhoneNumber?: string | null }[];
   quotes: { nodes: { quoteStatus: string; sentAt?: string | null; createdAt?: string | null; title?: string | null }[] };
   jobs: { totalCount: number; nodes?: { jobStatus: string; completedAt: string | null }[] };
+  /** Work requests, like a Book Now form. A recent one means they have already put their hand up. */
+  requests?: { nodes: { requestStatus: string; createdAt: string }[] };
+}
+
+/** A request made in the last 45 days that has not been closed off. */
+export function recentRequests(c: JClient, now = Date.now()): number {
+  return (c.requests?.nodes ?? []).filter((r) => r.requestStatus !== "archived" && now - new Date(r.createdAt).getTime() < 45 * 86_400_000).length;
 }
 
 /** A quote someone could still act on. archived and converted (already a job) are not "open". */
@@ -57,6 +64,7 @@ export function assess(clients: JClient[], targetE164: string, now = Date.now())
     quoteStatuses: statuses,
     jobs: matches.reduce((n, c) => n + c.jobs.totalCount, 0),
     recentJobs: matches.reduce((n, c) => n + recentOrActiveJobs(c, now), 0),
+    recentRequests: matches.reduce((n, c) => n + recentRequests(c, now), 0),
     name: matches[0]?.name,
   };
 }
