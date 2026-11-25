@@ -30,11 +30,19 @@ type ClaudeReply = { content: { type: string; text?: string }[]; stop_reason?: s
 /** One turn. Content is plain text, or a list of text and picture blocks when the agent needs to look at photos. */
 export type Turn = { role: "user" | "assistant"; content: string | ({ type: "text"; text: string } | { type: "image"; source: { type: "url"; url: string } })[] };
 
+/**
+ * JSON for the API. Cutting a message short can slice an emoji in half, which leaves a broken character the API refuses.
+ * Those halves are dropped here, so one odd message can never stop an agent.
+ */
+export function safeJson(v: unknown): string {
+  return JSON.stringify(v).replace(/(^|[^\\])((?:\\\\)*)\\ud[89a-f][0-9a-f]{2}/gi, "$1$2");
+}
+
 async function callClaude(env: Env, agent: AgentConfig, history: Turn[], maxTokens: number, noThinking: boolean): Promise<Response> {
   return fetch("https://api.anthropic.com/v1/messages", {
     method: "POST",
     headers: { "x-api-key": env.ANTHROPIC_API_KEY, "anthropic-version": "2023-06-01", "content-type": "application/json" },
-    body: JSON.stringify({ model: agent.model ?? env.CLAUDE_MODEL, max_tokens: maxTokens, system: agent.system, messages: history, ...(noThinking ? { thinking: { type: "disabled" } } : {}) }),
+    body: safeJson({ model: agent.model ?? env.CLAUDE_MODEL, max_tokens: maxTokens, system: agent.system, messages: history, ...(noThinking ? { thinking: { type: "disabled" } } : {}) }),
   });
 }
 
