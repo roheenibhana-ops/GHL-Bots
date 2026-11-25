@@ -1,5 +1,5 @@
 import { expect, it } from "vitest";
-import { callNotes } from "../src/quo";
+import { callNotes, pauseReason } from "../src/quo";
 import { callSample, parseStudy, textSamples, voiceBlock } from "../src/voice";
 import { systemPrompt } from "../src/bot";
 
@@ -47,4 +47,15 @@ it("describes recent calls plainly", () => {
   expect(n).toContain("today: they called and nobody picked up");
   expect(n).toContain("2 days ago: call summary");
   expect(callNotes([], now)).toBe("");
+});
+
+it("steps back after a real phone conversation or a voicemail, and not for a missed call", () => {
+  const now = new Date("2026-11-25T18:00:00Z").getTime();
+  const c = (o: object) => ({ id: "1", direction: "outgoing" as const, status: "completed", duration: 200, createdAt: "2026-11-25T15:00:00Z", ...o });
+  expect(pauseReason([c({})], now)).toBe("spoke with the team by phone about 3 hours ago");
+  expect(pauseReason([c({ direction: "incoming", status: "missed", duration: 0 })], now)).toBeNull();
+  expect(pauseReason([c({ direction: "incoming", status: "missed", duration: 0, voicemail: { status: "completed", transcript: "call me back" } })], now)).toBe("left a voicemail about 3 hours ago");
+  expect(pauseReason([c({ createdAt: "2026-11-23T15:00:00Z" })], now)).toBeNull();
+  expect(pauseReason([c({ aiHandled: true })], now)).toBeNull();
+  expect(pauseReason([c({ duration: 8 })], now)).toBeNull();
 });

@@ -47,6 +47,7 @@ export const WORKFLOWS: Record<string, FlowStep[]> = {
     s("Sends the promo text", "With the price deadline on the end. Tags the contact winter promo and makes Clark the owner.", ["GHL"]),
     start("The customer replies", "Any time, any day. Replies outside 8am to 8pm are answered at 8am.", ["GHL"]),
     check("Did they say stop?", [["Stop, unsubscribe, take me off", "Opted out in both companies. The conversation closes"]], undefined, ["GHL"]),
+    check("Has someone just been on the phone with them?", [["A real call in the last 24 hours, or they left a voicemail", "Gus steps back and alerts the team, so he never talks over a person"]], "Checked in the phone system every time they text.", ["Quo"]),
     s("Gets to know who he is talking to", "Their history, notes, past quotes and jobs, and everything already said.", ["GHL", "Jobber"]),
     s("Has the conversation", "Answers questions, works through objections, and talks like a mate. Finds out one or two stories, confirms the address, gets the email.", ["Claude"]),
     check("Is it something he should not decide?", [

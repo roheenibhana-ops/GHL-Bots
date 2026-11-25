@@ -4,7 +4,7 @@ import { addNote, addTags, credsFor, getContact, getPipelines, listOpportunities
 import { isLightsReferral, propagateOptOut, referToLights } from "./lights";
 import { setStage } from "./stages";
 import { deadlineFor } from "./deadline";
-import { customerCallNotes } from "./quo";
+import { customerCallNotes, pauseReason, quoCalls, quoKey } from "./quo";
 import { photoThanks, planPhotoMove } from "./photo";
 import { blockingNote, formatProfile, ghlNotes, ghlOpportunities, jobberHistory, OUR_NOTE_PREFIX } from "./profile";
 import { createGutterQuote, linkMessage } from "./quote";
@@ -171,6 +171,19 @@ export async function handleInbound(env: Env, p: InboundPayload, dryRun = false)
   if (facts.blocked) {
     if (!dryRun) await alert(`${who} replied but a note says not to contact them automatically ("${facts.blocked.slice(0, 80)}"). Not replying, please check.`);
     return { skipped: "a note says do not contact automatically", blockedBy: facts.blocked };
+  }
+  // A person has just been on the phone with this customer, or they left a voicemail: the team has it, so the bot steps back.
+  const e164 = normalizePhone(contact.phone ?? p.phone);
+  if (e164 && quoKey(env) && env.QUO_CALL_PAUSE !== "off") {
+    const calls = await quoCalls(env, { participant: e164, sinceIso: new Date(Date.now() - 86_400_000).toISOString(), maxPages: 1 }).catch(() => []);
+    const why = pauseReason(calls);
+    if (why) {
+      if (!dryRun) {
+        await sb(env, "POST", "conversations?on_conflict=contact_id", { contact_id: p.contactId, account, status: "handed_off", facts: { ...facts, lastAlertAt: Date.now() }, updated_at: new Date().toISOString() }, "resolution=merge-duplicates,return=minimal");
+        await alert(`${who} texted, and they ${why}. The bot has stepped back so it does not talk over you. Their message: ${body.slice(0, 120)}`);
+      }
+      return { skipped: "paused: the customer " + why };
+    }
   }
 
   // 4. Ask the bot.

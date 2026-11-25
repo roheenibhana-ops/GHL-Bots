@@ -27,6 +27,8 @@ export interface Env {
   PROMO_DEADLINE?: string;
   /** Quo (phone system) API key. Read only use. Set in Cloudflare or saved from the dashboard. */
   QUO_API_KEY?: string;
+  /** "off" stops the bot stepping back when someone has just phoned the customer. */
+  QUO_CALL_PAUSE?: string;
   /** The approved house voice, learned from the owner's real calls and texts. */
   VOICE_PROFILE?: string;
   /** Special daily limits for single dates, like "2026-11-27:100,2026-12-01:50". */

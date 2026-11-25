@@ -88,6 +88,18 @@ export function callNotes(calls: QuoCall[], now = Date.now()): string {
   return lines.join("\n");
 }
 
+/** Why the bot should step back: a person has just spoken to this customer, or the customer left a voicemail. Null when it should carry on. Pure. */
+export function pauseReason(calls: QuoCall[], now = Date.now(), hours = 24): string | null {
+  const recent = calls.filter((c) => now - new Date(c.createdAt).getTime() < hours * 3_600_000).sort((a, b) => b.createdAt.localeCompare(a.createdAt));
+  for (const c of recent) {
+    const h = Math.max(0, Math.round((now - new Date(c.createdAt).getTime()) / 3_600_000));
+    const when = h < 1 ? "in the last hour" : h === 1 ? "about an hour ago" : `about ${h} hours ago`;
+    if (c.direction === "incoming" && c.voicemail && c.voicemail.status === "completed") return `left a voicemail ${when}`;
+    if (!c.aiHandled && c.duration >= 30 && !["missed", "no-answer", "abandoned", "busy", "failed", "canceled"].includes(c.status)) return `spoke with the team by phone ${when}`;
+  }
+  return null;
+}
+
 export async function customerCallNotes(env: Env, e164: string): Promise<string> {
   if (!quoKey(env)) return "";
   const since = new Date(Date.now() - 60 * 86_400_000).toISOString();
