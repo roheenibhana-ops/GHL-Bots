@@ -27,7 +27,10 @@ export const AGENTS: Record<string, AgentConfig> = {
 
 type ClaudeReply = { content: { type: string; text?: string }[]; stop_reason?: string };
 
-async function callClaude(env: Env, agent: AgentConfig, history: { role: "user" | "assistant"; content: string }[], maxTokens: number, noThinking: boolean): Promise<Response> {
+/** One turn. Content is plain text, or a list of text and picture blocks when the agent needs to look at photos. */
+export type Turn = { role: "user" | "assistant"; content: string | ({ type: "text"; text: string } | { type: "image"; source: { type: "url"; url: string } })[] };
+
+async function callClaude(env: Env, agent: AgentConfig, history: Turn[], maxTokens: number, noThinking: boolean): Promise<Response> {
   return fetch("https://api.anthropic.com/v1/messages", {
     method: "POST",
     headers: { "x-api-key": env.ANTHROPIC_API_KEY, "anthropic-version": "2023-06-01", "content-type": "application/json" },
@@ -43,7 +46,7 @@ async function callClaude(env: Env, agent: AgentConfig, history: { role: "user" 
 export async function runAgent(
   env: Env,
   agent: AgentConfig,
-  history: { role: "user" | "assistant"; content: string }[],
+  history: Turn[],
 ): Promise<string> {
   const textOf = (d: ClaudeReply) => d.content.filter((b) => b.type === "text").map((b) => b.text ?? "").join("").trim();
   let res = await callClaude(env, agent, history, agent.maxTokens, true);

@@ -10,10 +10,10 @@ import { runAgent } from "./agents";
 import { systemPrompt, type BotFacts } from "./bot";
 import { sb, sbAll } from "./db";
 import { WORKFLOWS } from "./workflows";
-import { addTags, credsFor, getContact, getPipelines, removeTags, sendSms } from "./ghl";
+import { addTags, credsFor, getContact, getPipelines, removeTags, sendSms, upsertByPhone } from "./ghl";
 import { gql } from "./jobber";
 import { BUSINESS_KNOWLEDGE } from "./knowledge";
-import { isSmsDnd } from "./safety";
+import { isSmsDnd, normalizePhone } from "./safety";
 import { effectiveValues, loadSettings, SETTINGS, saveSetting, validSetting } from "./settings";
 import type { Account, Env } from "./types";
 
@@ -269,6 +269,9 @@ export async function handleDash(req: Request, env: Env, url: URL, rawEnv: Env =
             } else if (c.id === "quo") {
               const t = await (await import("./quo")).quoCheckKey(next.QUO_API_KEY);
               if (!t.ok) problem = t.status === 401 || t.status === 403 ? "Quo did not accept that key." : "Could not check the key with Quo (" + (t.status || "no answer") + ").";
+            } else if (c.id === "companycam") {
+              const t = await (await import("./companycam")).ccCheckToken(next.COMPANYCAM_TOKEN);
+              if (!t.ok) problem = t.status === 401 || t.status === 403 ? "CompanyCam did not accept that token." : "Could not check the token with CompanyCam (" + (t.status || "no answer") + ").";
             } else if (c.id === "ghl-dunzo" || c.id === "ghl-lights") {
               const acct = c.id === "ghl-dunzo" ? "dunzo" : "lights";
               const up = acct.toUpperCase();
@@ -296,6 +299,55 @@ export async function handleDash(req: Request, env: Env, url: URL, rawEnv: Env =
         if (p === "/admin/dash/library-publish" && req.method === "POST") await L.libraryPublish(env, co, b.on !== false, b.voice);
         const { quoKey } = await import("./quo");
         return json({ connected: !!quoKey(env), ...(await L.libraryStatus(env)) });
+      } catch (e) { return json({ error: (e as Error).message }, 502); }
+    }
+
+    // ---------- Photo reports, from CompanyCam ----------
+    if (p.startsWith("/admin/dash/cc-") || p.startsWith("/admin/dash/report")) {
+      const CC = await import("./companycam");
+      const R = await import("./report");
+      try {
+        if (p === "/admin/dash/cc-projects") {
+          if (!CC.ccToken(env)) return json({ connected: false, projects: [] });
+          const list = await CC.ccSearchProjects(env, url.searchParams.get("q") ?? "");
+          return json({ connected: true, projects: list.map((x) => ({ id: x.id, name: x.name, address: CC.addressLine(x), photos: x.photo_count ?? 0, last: x.last_activity_at ?? x.created_at ?? null })) });
+        }
+        if (p === "/admin/dash/cc-photos") {
+          const list = await CC.ccProjectPhotos(env, url.searchParams.get("project") ?? "", 60);
+          return json({ photos: list.map((x) => ({ id: x.id, thumb: CC.photoUrl(x, "thumb"), note: x.description?.plain_text_content ?? "", taken: x.captured_at ?? null })).filter((x) => x.thumb) });
+        }
+        if (p === "/admin/dash/reports") return json({ reports: await R.listReports(env) });
+        if (p === "/admin/dash/report") { const r = await R.getReport(env, url.searchParams.get("id") ?? ""); return r ? json({ report: r, link: url.origin + "/r/" + r.id }) : json({ error: "Report not found" }, 404); }
+        if (p === "/admin/dash/report-preview") { const r = await R.getReport(env, url.searchParams.get("id") ?? ""); return r ? json({ html: R.reportHtml(r) }) : json({ error: "Report not found" }, 404); }
+        if (req.method === "POST") {
+          const b = (await req.json()) as { kind?: string; projectId?: string; photoIds?: string[]; id?: string; body?: unknown; approve?: boolean; phone?: string };
+          if (p === "/admin/dash/report-create") {
+            const r = await R.createReport(env, { kind: b.kind === "lights" ? "lights" : "gutter", projectId: String(b.projectId ?? ""), photoIds: Array.isArray(b.photoIds) ? b.photoIds.map(String).slice(0, 20) : undefined });
+            return json({ report: r, link: url.origin + "/r/" + r.id });
+          }
+          if (p === "/admin/dash/report-save") {
+            const r = await R.saveReport(env, String(b.id ?? ""), b.body, b.approve === true ? "approved" : b.approve === false ? "draft" : undefined);
+            return r ? json({ report: r, link: url.origin + "/r/" + r.id }) : json({ error: "Report not found" }, 404);
+          }
+          if (p === "/admin/dash/report-send") {
+            const r = await R.getReport(env, String(b.id ?? ""));
+            if (!r) return json({ error: "Report not found" }, 404);
+            if (r.status === "draft") return json({ error: "Approve the report before sending it." }, 400);
+            const phone = normalizePhone(b.phone ?? r.contact?.phone ?? "");
+            if (!phone) return json({ error: "That phone number does not look right." }, 400);
+            const creds = credsFor(env, r.account);
+            const { contact } = await upsertByPhone(creds, phone);
+            const full = await getContact(creds, contact.id);
+            if (isSmsDnd(full) || (full.tags ?? []).map((t) => t.toLowerCase()).includes("bot-opted-out")) return json({ error: "This customer has opted out of texts, so it was not sent. You can still copy the link and share it another way." }, 400);
+            const first = (full.firstName || r.contact?.name || "").split(" ")[0];
+            const co = r.account === "lights" ? "Santa's Lights" : "Dunzo Gutters";
+            const text = `Hi${first ? " " + first : ""}, it's the team at ${co}. ${r.kind === "lights" ? "Here is your lighting design preview" : "Here is your Gutter Health Report with photos"}: ${url.origin}/r/${r.id}`;
+            await sendSms(creds, contact.id, text);
+            await sb(env, "PATCH", `reports?id=eq.${enc(r.id)}`, { status: "sent", sent_at: new Date().toISOString() }, "return=minimal");
+            await sb(env, "POST", "messages", { account: r.account, contact_id: contact.id, direction: "outbound", body: text, status: "sent", sent_at: new Date().toISOString(), campaign: "report", contact_name: full.firstName ?? null, phone_e164: phone }, "return=minimal").catch(() => undefined);
+            return json({ sent: true, text });
+          }
+        }
       } catch (e) { return json({ error: (e as Error).message }, 502); }
     }
 
@@ -465,7 +517,9 @@ export async function handleDash(req: Request, env: Env, url: URL, rawEnv: Env =
       ]);
       const { quoKey, quoUsers } = await import("./quo");
       const quo = quoKey(env) ? await check(() => quoUsers(env)) : undefined;
-      return json({ checks: { ghlDunzo, ghlLights, jobberDunzo, jobberLights, database, quo } });
+      const { ccToken, ccGet } = await import("./companycam");
+      const companycam = ccToken(env) ? await check(() => ccGet(env, "/companies/current")) : undefined;
+      return json({ checks: { ghlDunzo, ghlLights, jobberDunzo, jobberLights, database, quo, companycam } });
     }
 
     if (p === "/admin/dash/agent-coach") return json(await coachReview(env));

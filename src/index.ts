@@ -465,6 +465,13 @@ export default {
     }
 
     // Approval page (static HTML; the admin token is typed into it).
+    // A report shared with a customer. Only approved reports are shown, and the address cannot be guessed.
+    if (url.pathname.startsWith("/r/")) {
+      const { getReport, reportHtml } = await import("./report");
+      const r = /^[a-z0-9]{12,40}$/.test(url.pathname.slice(3)) ? await getReport(env, url.pathname.slice(3)).catch(() => null) : null;
+      if (!r || r.status === "draft") return new Response("This report is not available.", { status: 404, headers: { "content-type": "text/plain; charset=utf-8" } });
+      return new Response(reportHtml(r), { headers: { "content-type": "text/html; charset=utf-8", "cache-control": "no-store", "x-robots-tag": "noindex", "content-security-policy": "default-src 'none'; img-src https:; style-src 'unsafe-inline'" } });
+    }
     if (url.pathname === "/app") return new Response(APP_HTML, { headers: { "content-type": "text/html; charset=utf-8" } });
 
     // Create a pilot campaign: queues drafts for approval, sends nothing.

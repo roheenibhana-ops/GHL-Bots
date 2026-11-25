@@ -96,6 +96,8 @@ export const CONNECTORS: Connector[] = [
     fields: [{ env: "GHL_TOKEN_LIGHTS", label: "Private integration token", ph: "pit-...", secret: true }, { env: "GHL_LOCATION_LIGHTS", label: "Location ID", ph: "Location ID", secret: false }] },
   { id: "jobber", title: "Jobber", name: "Jobber", need: true, help: "From your app in the Jobber Developer Center. After saving, press Connect for each company and approve it in Jobber.",
     fields: [{ env: "JOBBER_CLIENT_ID", label: "App client ID", ph: "Client ID", secret: false }, { env: "JOBBER_CLIENT_SECRET", label: "App client secret", ph: "Client secret", secret: true }] },
+  { id: "companycam", title: "Job photos (CompanyCam)", name: "CompanyCam", need: false, help: "In CompanyCam, create a Personal Access Token (your account settings, Access Tokens). The agents only read projects and photos.",
+    fields: [{ env: "COMPANYCAM_TOKEN", label: "Access token", ph: "CompanyCam access token", secret: true }] },
   { id: "quo", title: "Phone system (Quo)", name: "Quo", need: false, help: "In Quo go to Workspace Settings, then API, and generate a key (owner or admin only). The agents only read from Quo.",
     fields: [{ env: "QUO_API_KEY", label: "Quo API key", ph: "Quo API key", secret: true }] },
 ];

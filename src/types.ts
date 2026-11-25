@@ -25,6 +25,8 @@ export interface Env {
   START_ON?: string;
   /** The promo deadline for texts sent from now on (YYYY-MM-DD). Change it for each batch. */
   PROMO_DEADLINE?: string;
+  /** CompanyCam access token. Read only use. */
+  COMPANYCAM_TOKEN?: string;
   /** Quo (phone system) API key. Read only use. Set in Cloudflare or saved from the dashboard. */
   QUO_API_KEY?: string;
   /** "off" stops the bot stepping back when someone has just phoned the customer. */
