@@ -41,6 +41,8 @@ This copy runs two Sacramento companies with one owner: Dunzo Gutters and Santa'
 - `src/settings.ts`: everything that can be changed from the dashboard. These override `wrangler.toml`.
 - `src/dash.ts`: the dashboard's data endpoints. `src/dashboard.ts`: the dashboard page itself.
 
+The existing Zaps are being retired one at a time. `docs/zap-map.md` has every Zap step by step. The rule: build the replacement, run it in watch only mode beside the Zap, compare, and only then does the owner switch that Zap off. Never change, pause or delete a live Zap.
+
 Things that bite:
 
 - The dashboard page script sits inside a `String.raw` template in `src/dashboard.ts`. It must not contain backticks or `${`. Check visual changes with a Playwright screenshot.
