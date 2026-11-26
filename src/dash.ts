@@ -400,7 +400,8 @@ export async function handleDash(req: Request, env: Env, url: URL, rawEnv: Env =
       const by: Record<string, { calls: number; cost: number; today: number }> = {};
       for (const r of rows) { const x = (by[r.task] = by[r.task] ?? { calls: 0, cost: 0, today: 0 }); const c = cost(r); x.calls++; x.cost += c; if (r.at >= day) x.today += c; }
       const tasks = Object.entries(TASKS).map(([k, t]) => ({ key: k, label: t.label, calls: by[k]?.calls ?? 0, cost: by[k]?.cost ?? 0, today: by[k]?.today ?? 0 }));
-      return json({ since: rows[0]?.at ?? null, total: tasks.reduce((n, t) => n + t.cost, 0), today: tasks.reduce((n, t) => n + t.today, 0), tasks });
+      const last = rows.slice(-6).map((r) => ({ task: r.task, model: r.model, input: r.input_tokens, cached: r.cache_read, written: r.cache_write, output: r.output_tokens, cost: Number(cost(r).toFixed(4)) }));
+      return json({ since: rows[0]?.at ?? null, total: tasks.reduce((n, t) => n + t.cost, 0), today: tasks.reduce((n, t) => n + t.today, 0), tasks, last });
     }
 
     if (p === "/admin/dash/zaps") {

@@ -7,6 +7,8 @@ export interface AgentConfig {
   maxTokens: number;
   /** Overrides CLAUDE_MODEL for this agent. */
   model?: string;
+  /** The start of `system` that is the same on every call. It is cached, so repeat calls pay far less for it. */
+  cachePrefix?: string;
 }
 
 export const AGENTS: Record<string, AgentConfig> = {
@@ -75,12 +77,20 @@ export function thinkingPlan(model: string, maxTokens: number): { thinking?: { t
   return { max_tokens: maxTokens + 6000 };
 }
 
+/** The system prompt, with the part that never changes marked so the API can cache it. */
+export function systemBlocks(agent: Pick<AgentConfig, "system" | "cachePrefix">): string | { type: "text"; text: string; cache_control?: { type: "ephemeral" } }[] {
+  const pre = agent.cachePrefix;
+  if (!pre || pre.length < 4000 || !agent.system.startsWith(pre)) return agent.system;
+  const rest = agent.system.slice(pre.length);
+  return [{ type: "text", text: pre, cache_control: { type: "ephemeral" } }, ...(rest ? [{ type: "text" as const, text: rest }] : [])];
+}
+
 type Usage = { input_tokens?: number; output_tokens?: number; cache_read_input_tokens?: number; cache_creation_input_tokens?: number };
 async function callClaude(env: Env, agent: AgentConfig, history: Turn[], model: string, plan: { thinking?: { type: string }; max_tokens: number }): Promise<Response> {
   return fetch("https://api.anthropic.com/v1/messages", {
     method: "POST",
     headers: { "x-api-key": env.ANTHROPIC_API_KEY, "anthropic-version": "2023-06-01", "content-type": "application/json" },
-    body: safeJson({ model, max_tokens: plan.max_tokens, system: agent.system, messages: history, ...(plan.thinking ? { thinking: plan.thinking } : {}) }),
+    body: safeJson({ model, max_tokens: plan.max_tokens, system: systemBlocks(agent), messages: history, ...(plan.thinking ? { thinking: plan.thinking } : {}) }),
   });
 }
 

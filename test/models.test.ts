@@ -1,5 +1,6 @@
 import { expect, it } from "vitest";
-import { MODELS, modelFor, taskOf, thinkingPlan } from "../src/agents";
+import { MODELS, modelFor, systemBlocks, taskOf, thinkingPlan } from "../src/agents";
+import { systemParts, systemPrompt } from "../src/bot";
 import { SETTINGS, effectiveValues, mergeSettings, validSetting } from "../src/settings";
 
 it("uses the model the owner picked for each job, and a sensible default otherwise", () => {
@@ -28,4 +29,20 @@ it("offers the model choice in Settings", () => {
   expect(validSetting("MODEL_READING", "gpt")).not.toBeNull();
   expect(effectiveValues({} as never, {}).MODEL_READING).toBe("haiku");
   expect(effectiveValues({} as never, { MODEL_READING: "opus" }).MODEL_READING).toBe("opus");
+});
+
+it("keeps everything about one customer out of the cached part of the instructions", () => {
+  const a = systemParts({ firstName: "Zebediah", stories: 1, email: "al@example.com", opening: "Hi Zebediah, price good through December 15.", deadline: "2026-12-15", profile: "Quoted guards in September", calls: "- yesterday: we called them" } as never);
+  const b = systemParts({ firstName: "Zoe", stories: 2, deadline: "2027-01-10" } as never);
+  expect(a.stable).toBe(b.stable); // identical for two different customers, so it can be shared
+  for (const word of ["Zebediah", "al@example.com", "December 15", "Quoted guards", "yesterday", "TODAY IS"]) expect(a.stable).not.toContain(word);
+  expect(a.tail).toContain("al@example.com");
+  expect(a.tail).toContain("good through December 15");
+  expect(a.tail).toContain("TODAY IS");
+  expect(a.tail.trim().split("\n").pop()).toContain("reply_only"); // the output format is still the last thing he reads
+  const full = systemPrompt({ firstName: "Al" } as never);
+  const blocks = systemBlocks({ system: full, cachePrefix: systemParts({ firstName: "Al" } as never).stable });
+  expect(Array.isArray(blocks) && blocks[0].cache_control).toEqual({ type: "ephemeral" });
+  expect(Array.isArray(blocks) && blocks.map((x) => x.text).join("")).toBe(full);
+  expect(systemBlocks({ system: "short" })).toBe("short");
 });
