@@ -345,6 +345,15 @@ export default {
 
     // Self-test of Jobber phone search: takes a real client's number from the account and checks the search finds them. Returns a boolean only.
     // Read only: one customer as GoHighLevel and Jobber each see them.
+    // Read only: one GET against the GoHighLevel API, to find out what it can show us.
+    if (url.pathname === "/admin/ghl/get") {
+      if (!isAdmin(req, env)) return json({ error: "unauthorized" }, 401);
+      const { ghlRaw } = await import("./ghl");
+      const path = url.searchParams.get("path") ?? "";
+      if (!path.startsWith("/") || path.includes("..")) return json({ error: "path must start with /" }, 400);
+      const creds = credsFor(env, url.searchParams.get("account") === "lights" ? "lights" : "dunzo");
+      try { return json({ ok: true, data: await ghlRaw(creds, "GET", path.replace("{loc}", creds.locationId)) }); } catch (e) { return json({ ok: false, error: (e as Error).message.slice(0, 400) }); }
+    }
     if (url.pathname === "/admin/lookup") {
       if (!isAdmin(req, env)) return json({ error: "unauthorized" }, 401);
       const { lookupCustomer } = await import("./lookup");
