@@ -378,6 +378,31 @@ export async function handleDash(req: Request, env: Env, url: URL, rawEnv: Env =
       try { const r = await F.watchFlows(env); const checked = await F.checkFlows(env).catch(() => 0); return json({ ...r, checked }); } catch (e) { return json({ error: (e as Error).message }, 502); }
     }
 
+    // ---------- What the AI is costing, by job ----------
+    // A tiny test call, to see which thinking settings a model accepts and what a short reply uses.
+    if (p === "/admin/dash/ai-probe") {
+      const { MODELS } = await import("./agents");
+      const m = MODELS[url.searchParams.get("model") ?? "sonnet"] ?? MODELS.sonnet;
+      const mode = url.searchParams.get("thinking") ?? "";
+      const res = await fetch("https://api.anthropic.com/v1/messages", { method: "POST", headers: { "x-api-key": env.ANTHROPIC_API_KEY, "anthropic-version": "2023-06-01", "content-type": "application/json" },
+        body: JSON.stringify({ model: m.id, max_tokens: 3000, messages: [{ role: "user", content: "A customer texts: can you do my gutters before it rains? Reply in one short friendly sentence." }], ...(mode ? { thinking: { type: mode } } : {}) }) });
+      const j = (await res.json()) as { usage?: unknown; content?: { type: string }[]; error?: { message?: string } };
+      return json({ model: m.id, thinking: mode || "(not set)", status: res.status, blocks: j.content?.map((b) => b.type), usage: j.usage, error: j.error?.message?.slice(0, 200) });
+    }
+
+    if (p === "/admin/dash/ai-costs") {
+      const { MODELS, TASKS } = await import("./agents");
+      const since = new Date(Date.now() - 30 * 86_400_000).toISOString();
+      const rows = await sbAll<{ at: string; task: string; model: string; input_tokens: number; output_tokens: number; cache_read: number; cache_write: number }>(env, `ai_usage?at=gte.${since}&select=at,task,model,input_tokens,output_tokens,cache_read,cache_write&order=id.asc`).catch(() => []);
+      const price = (model: string) => Object.values(MODELS).find((m) => m.id === model) ?? MODELS.sonnet;
+      const cost = (r: (typeof rows)[number]) => { const m = price(r.model); return (r.input_tokens * m.inPerM + r.cache_write * m.inPerM * 1.25 + r.cache_read * m.inPerM * 0.1 + r.output_tokens * m.outPerM) / 1_000_000; };
+      const day = new Date(Date.now() - pacificMsSinceMidnight(new Date())).toISOString();
+      const by: Record<string, { calls: number; cost: number; today: number }> = {};
+      for (const r of rows) { const x = (by[r.task] = by[r.task] ?? { calls: 0, cost: 0, today: 0 }); const c = cost(r); x.calls++; x.cost += c; if (r.at >= day) x.today += c; }
+      const tasks = Object.entries(TASKS).map(([k, t]) => ({ key: k, label: t.label, calls: by[k]?.calls ?? 0, cost: by[k]?.cost ?? 0, today: by[k]?.today ?? 0 }));
+      return json({ since: rows[0]?.at ?? null, total: tasks.reduce((n, t) => n + t.cost, 0), today: tasks.reduce((n, t) => n + t.today, 0), tasks });
+    }
+
     if (p === "/admin/dash/zaps") {
       const rows = await sb<{ id: number; body: unknown }[]>(env, "GET", "library?kind=eq.zaps&select=id,body&order=id.desc&limit=1").catch(() => []);
       if (req.method === "POST") {

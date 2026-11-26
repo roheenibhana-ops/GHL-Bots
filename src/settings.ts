@@ -7,10 +7,16 @@ export interface SettingDef {
   help: string;
   type: "toggle" | "select" | "number" | "text";
   options?: string[];
+  /** Friendlier names for the options of a select. */
+  labels?: Record<string, string>;
   group: string;
 }
 
 /** Everything that can be changed from the dashboard. The config file holds the defaults; these override it. */
+import { MODELS, TASKS, settingKey, type Task } from "./agents";
+
+const MODEL_SETTINGS: SettingDef[] = (Object.keys(TASKS) as Task[]).map((t) => ({ key: settingKey(t), group: "AI models", label: TASKS[t].label, help: TASKS[t].why + " Recommended: " + MODELS[TASKS[t].def].label + ".", type: "select" as const, options: Object.keys(MODELS), labels: Object.fromEntries(Object.entries(MODELS).map(([k, m]) => [k, m.label])) }));
+
 export const SETTINGS: SettingDef[] = [
   { key: "PAUSE_ALL", group: "Safety", label: "Pause everything", help: "Emergency stop. The bot stops replying and no promo texts go out until you switch it off.", type: "toggle" },
   { key: "BOT_MODE", group: "Bot", label: "Who the bot talks to", help: "Off: only records replies. Test: only contacts tagged bot-test. Live: every customer who got the promo.", type: "select", options: ["off", "test", "live"] },
@@ -30,6 +36,7 @@ export const SETTINGS: SettingDef[] = [
   { key: "DASH_PROMO_DAYS", group: "Follow ups (Dash)", label: "Days before following up a promo with no reply", help: "How many days after the promo text Dash waits before one follow up.", type: "number" },
   { key: "WINDOW_START", group: "Hours", label: "Start texting at (hour, 0 to 23)", help: "Pacific time. 8 means 8am.", type: "number" },
   { key: "WINDOW_END", group: "Hours", label: "Stop texting at (hour, 0 to 23)", help: "Pacific time. 20 means 8pm.", type: "number" },
+  ...MODEL_SETTINGS,
 ];
 
 type Row = { key: string; value: string };
@@ -55,6 +62,7 @@ export function mergeSettings(env: Env, map: Record<string, string>): Env {
   set("PHOTO_MODE", map.PHOTO_MODE);
   set("QUO_CALL_PAUSE", map.QUO_CALL_PAUSE);
   set("FLOWS_WATCH", map.FLOWS_WATCH);
+  for (const t of Object.keys(TASKS) as Task[]) set(settingKey(t), map[settingKey(t)]);
   set("SENDING_ENABLED", map.SENDING_ENABLED);
   set("DAILY_CAP", map.DAILY_CAP);
   set("BATCH_CAMPAIGN", map.BATCH_CAMPAIGN);
@@ -185,6 +193,7 @@ export function effectiveValues(env: Env, map: Record<string, string>): Record<s
     PHOTO_MODE: map.PHOTO_MODE ?? e.PHOTO_MODE ?? "test",
     QUO_CALL_PAUSE: map.QUO_CALL_PAUSE ?? e.QUO_CALL_PAUSE ?? "on",
     FLOWS_WATCH: map.FLOWS_WATCH ?? e.FLOWS_WATCH ?? "on",
+    ...Object.fromEntries((Object.keys(TASKS) as Task[]).map((t) => [settingKey(t), map[settingKey(t)] ?? e[settingKey(t)] ?? TASKS[t].def])),
     SENDING_ENABLED: map.SENDING_ENABLED ?? e.SENDING_ENABLED ?? "false",
     DAILY_CAP: map.DAILY_CAP ?? e.DAILY_CAP ?? "0",
     BATCH_CAMPAIGN: map.BATCH_CAMPAIGN ?? e.BATCH_CAMPAIGN ?? "pilot-2",

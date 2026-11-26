@@ -38,18 +38,65 @@ export function safeJson(v: unknown): string {
   return JSON.stringify(v).replace(/(^|[^\\])((?:\\\\)*)\\ud[89a-f][0-9a-f]{2}/gi, "$1$2");
 }
 
-async function callClaude(env: Env, agent: AgentConfig, history: Turn[], maxTokens: number, noThinking: boolean): Promise<Response> {
-  return fetch("https://api.anthropic.com/v1/messages", {
-    method: "POST",
-    headers: { "x-api-key": env.ANTHROPIC_API_KEY, "anthropic-version": "2023-06-01", "content-type": "application/json" },
-    body: safeJson({ model: agent.model ?? env.CLAUDE_MODEL, max_tokens: maxTokens, system: agent.system, messages: history, ...(noThinking ? { thinking: { type: "disabled" } } : {}) }),
-  });
+// ---------- Which model does which job ----------
+/** The jobs the AI does. The owner picks a model for each one in Settings. */
+export const TASKS = {
+  conversations: { label: "Sales conversations (Gus)", def: "sonnet", why: "Talks to customers. Worth the better model." },
+  followups: { label: "Follow ups (Dash)", def: "sonnet", why: "Short texts to customers who went quiet." },
+  writers: { label: "Marketing writers", def: "sonnet", why: "Social and Google posts for you to review." },
+  reports: { label: "Photo reports", def: "sonnet", why: "Looks at job photos and writes the report or lighting design." },
+  reading: { label: "Library: reading in bulk", def: "haiku", why: "Sorts and summarises thousands of messages. The cheap model does this well." },
+  playbook: { label: "Library: writing the playbooks", def: "sonnet", why: "Turns all the notes into one playbook. Runs rarely." },
+  advice: { label: "Advice: Director, Mentor and the builder", def: "sonnet", why: "Weekly report, reviews, and changes you ask for in the studio." },
+} as const;
+export type Task = keyof typeof TASKS;
+export const MODELS: Record<string, { id: string; label: string; inPerM: number; outPerM: number }> = {
+  haiku: { id: "claude-haiku-5-5", label: "Fast and cheapest (Haiku)", inPerM: 0.1, outPerM: 0.5 },
+  sonnet: { id: "claude-sonnet-5-5", label: "Balanced (Sonnet)", inPerM: 2, outPerM: 10 },
+  opus: { id: "claude-opus-5-5", label: "Smartest (Opus)", inPerM: 4, outPerM: 20 },
+};
+const TASK_OF: Record<string, Task> = { sales: "conversations", dash: "followups", report: "reports", library: "reading", voice: "reading", playbook: "playbook", coach: "advice", director: "advice", studio: "advice" };
+export const taskOf = (agentName: string): Task => TASK_OF[agentName] ?? "writers";
+export const settingKey = (t: Task) => "MODEL_" + t.toUpperCase();
+
+/** The model for an agent: the owner's choice for that job, else the job's default. */
+export function modelFor(env: Env, agentName: string): string {
+  const t = taskOf(agentName);
+  const pick = (env as unknown as Record<string, string | undefined>)[settingKey(t)];
+  return (MODELS[pick ?? ""] ?? MODELS[TASKS[t].def]).id;
 }
 
 /**
- * One call to Claude. The model may think before it writes, and that thinking counts against the word budget, so:
- * first try with thinking switched off; if the API refuses that setting, or the answer still comes back empty,
- * try once more with a much larger budget so the thinking cannot crowd out the answer.
+ * How to ask each model not to spend the reply budget on thinking. They differ:
+ * Haiku can switch thinking off. Sonnet and Opus cannot, so they get room to think on top of the reply budget.
+ */
+export function thinkingPlan(model: string, maxTokens: number): { thinking?: { type: string }; max_tokens: number } {
+  if (model.includes("haiku")) return { thinking: { type: "disabled" }, max_tokens: maxTokens };
+  return { max_tokens: maxTokens + 6000 };
+}
+
+type Usage = { input_tokens?: number; output_tokens?: number; cache_read_input_tokens?: number; cache_creation_input_tokens?: number };
+async function callClaude(env: Env, agent: AgentConfig, history: Turn[], model: string, plan: { thinking?: { type: string }; max_tokens: number }): Promise<Response> {
+  return fetch("https://api.anthropic.com/v1/messages", {
+    method: "POST",
+    headers: { "x-api-key": env.ANTHROPIC_API_KEY, "anthropic-version": "2023-06-01", "content-type": "application/json" },
+    body: safeJson({ model, max_tokens: plan.max_tokens, system: agent.system, messages: history, ...(plan.thinking ? { thinking: plan.thinking } : {}) }),
+  });
+}
+
+/** Writes down what one call used, so the dashboard can show what each job costs. Never holds up or breaks a reply. */
+async function logUsage(env: Env, task: Task, model: string, u: Usage | undefined): Promise<void> {
+  if (!u || !env.SUPABASE_URL) return;
+  await fetch(`${env.SUPABASE_URL}/rest/v1/ai_usage`, {
+    method: "POST",
+    headers: { apikey: env.SUPABASE_SERVICE_KEY, Authorization: `Bearer ${env.SUPABASE_SERVICE_KEY}`, "Content-Type": "application/json", Prefer: "return=minimal" },
+    body: JSON.stringify({ task, model, input_tokens: u.input_tokens ?? 0, output_tokens: u.output_tokens ?? 0, cache_read: u.cache_read_input_tokens ?? 0, cache_write: u.cache_creation_input_tokens ?? 0 }),
+  }).catch(() => undefined);
+}
+
+/**
+ * One call to Claude, on the model chosen for that job. The model may think before it writes, and that thinking counts
+ * against the reply budget. If a reply comes back empty or the request is refused, it is tried once more with plenty of room.
  */
 export async function runAgent(
   env: Env,
@@ -57,12 +104,16 @@ export async function runAgent(
   history: Turn[],
 ): Promise<string> {
   const textOf = (d: ClaudeReply) => d.content.filter((b) => b.type === "text").map((b) => b.text ?? "").join("").trim();
-  let res = await callClaude(env, agent, history, agent.maxTokens, true);
-  let data: ClaudeReply | null = res.ok ? ((await res.json()) as ClaudeReply) : null;
+  const model = modelFor(env, agent.name);
+  const task = taskOf(agent.name);
+  let res = await callClaude(env, agent, history, model, thinkingPlan(model, agent.maxTokens));
+  let data: (ClaudeReply & { usage?: Usage }) | null = res.ok ? ((await res.json()) as ClaudeReply & { usage?: Usage }) : null;
+  if (data) await logUsage(env, task, model, data.usage);
   if (!data || !textOf(data)) {
-    res = await callClaude(env, agent, history, agent.maxTokens + 6000, false);
+    res = await callClaude(env, agent, history, model, { max_tokens: agent.maxTokens + 8000 });
     if (!res.ok) throw new Error(`Claude API ${res.status}: ${(await res.text()).slice(0, 300)}`);
-    data = (await res.json()) as ClaudeReply;
+    data = (await res.json()) as ClaudeReply & { usage?: Usage };
+    await logUsage(env, task, model, data.usage);
   }
   const text = textOf(data);
   if (!text) throw new Error(`Claude returned no text (stop reason: ${data.stop_reason ?? "unknown"}, blocks: ${data.content.map((b) => b.type).join(",") || "none"})`);

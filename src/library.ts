@@ -192,7 +192,7 @@ export async function libraryBuild(env: Env, company: Account): Promise<Playbook
     "avoid: the 10 to 14 most important things an agent must not copy from the team.",
     "Rules: no customer names or personal details. No prices, discounts, dates or guarantees anywhere. Plain punctuation with no em dashes.",
   ].join("\n");
-  const raw = await runAgent(env, { name: "library", system, maxTokens: 5200, model: env.BOT_MODEL }, [{ role: "user", content }]);
+  const raw = await runAgent(env, { name: "playbook", system, maxTokens: 5200, model: env.BOT_MODEL }, [{ role: "user", content }]);
   const pb = parsePlaybook(raw);
   if (!pb) throw new Error("The playbook could not be put together. Try again.");
   pb.builtAt = new Date().toISOString();
