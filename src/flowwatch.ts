@@ -1,5 +1,5 @@
 import { sb } from "./db";
-import { FLOWS, STAGES, planClient, planJob, planNewLead, planQuoCall, planQuoMessage, planQuote, type JClientEvent, type JJob, type JQuote, type Person, type Plan } from "./flows";
+import { ALL_FLOWS, STAGES, planClient, planJob, planNewLead, planPhotos, planQuoCall, planQuoMessage, planQuote, type JClientEvent, type JJob, type JQuote, type Person, type Plan } from "./flows";
 import { credsFor, ghlRaw } from "./ghl";
 import { gql } from "./jobber";
 import { ghlOpportunities } from "./profile";
@@ -49,7 +49,7 @@ async function ghlPlans(env: Env, a: Account, since: string): Promise<Plan[]> {
   const stageId = await newLeadStage(env, a);
   if (!stageId) return [];
   const d = await ghlRaw<{ opportunities?: { id: string; lastStageChangeAt?: string; updatedAt?: string; contact?: { name?: string; email?: string; phone?: string; tags?: string[] } }[] }>(creds, "GET", `/opportunities/search?location_id=${creds.locationId}&pipeline_id=${STAGES[a].pipeline}&pipeline_stage_id=${stageId}&limit=20`);
-  return (d.opportunities ?? []).filter((o) => (o.lastStageChangeAt ?? o.updatedAt ?? "") > since).map((o) => planNewLead(a, { id: o.id, changedAt: o.lastStageChangeAt ?? o.updatedAt ?? since, person: { name: o.contact?.name ?? "", phone: o.contact?.phone, email: o.contact?.email }, tags: o.contact?.tags ?? [] }));
+  return (d.opportunities ?? []).filter((o) => (o.lastStageChangeAt ?? o.updatedAt ?? "") > since).flatMap((o) => { const ev = { id: o.id, changedAt: o.lastStageChangeAt ?? o.updatedAt ?? since, person: { name: o.contact?.name ?? "", phone: o.contact?.phone, email: o.contact?.email }, tags: o.contact?.tags ?? [] }; return [planNewLead(a, ev), planPhotos(a, ev)]; });
 }
 
 const stageCache = new Map<string, Record<string, string>>();
@@ -159,7 +159,7 @@ export async function flowsOverview(env: Env) {
     x.seen++; if (r.verdict === "match") x.match++; if (r.verdict === "match" || r.verdict === "moved") x.checked++; x.last = x.last ?? r.created_at;
     by.set(k, x);
   }
-  return { watching: env.FLOWS_WATCH !== "off", lastLook: st?.id ? st.body.since : null, flows: FLOWS.map((f) => ({ ...f, stats: by.get(`${f.key}:${f.account}`) ?? { seen: 0, match: 0, checked: 0, last: null } })) };
+  return { watching: env.FLOWS_WATCH !== "off", lastLook: st?.id ? st.body.since : null, flows: ALL_FLOWS().map((f) => ({ ...f, stats: by.get(`${f.key}:${f.account}`) ?? { seen: 0, match: 0, checked: 0, last: null } })) };
 }
 
 export const flowRuns = (env: Env, flow: string, account: string) => sb<{ id: number; subject: string; summary: string; plan: { steps: string[]; stage?: string | null; at?: string }; verdict: string | null; verdict_note: string | null; created_at: string }[]>(env, "GET", `flow_runs?flow=eq.${encodeURIComponent(flow)}&account=eq.${encodeURIComponent(account)}&select=id,subject,summary,plan,verdict,verdict_note,created_at&order=created_at.desc&limit=40`);

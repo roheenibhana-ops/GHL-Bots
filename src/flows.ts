@@ -5,9 +5,9 @@ import type { Account } from "./types";
  * Each flow is described here step by step so the dashboard can draw it, and has a planner that turns one real event
  * into the list of things the flow would do. In watch mode that plan is only written down. Nothing is changed anywhere.
  */
-export type AppName = "GoHighLevel" | "Jobber" | "Quo" | "CompanyCam" | "Scoreboard" | "AI" | "Filter";
+export type AppName = "GoHighLevel" | "Jobber" | "Quo" | "CompanyCam" | "Scoreboard" | "AI" | "Filter" | "Clock" | "You";
 export interface FlowStep { app: AppName; title: string; detail?: string; paths?: { label: string; steps: FlowStep[] }[] }
-export interface FlowDef { key: string; account: Account; title: string; zap: string; what: string; trigger: FlowStep; steps: FlowStep[] }
+export interface FlowDef { key: string; account: Account; title: string; zap: string; what: string; trigger: FlowStep; steps: FlowStep[]; kind?: "zap" | "agent"; ours?: string }
 
 const NAME = { dunzo: "Dunzo Gutters", lights: "Santa's Lights" } as const;
 const PIPELINE = { dunzo: "Lead Nurture Pipeline 2027", lights: "the Santa's Lights pipeline" } as const;
@@ -91,10 +91,72 @@ export const FLOWS: FlowDef[] = [
   sb("sb_installed", "Scoreboard: job closed", "scoreboard - job closed", "A job is completed", "installed", true),
 ];
 
+// ---------- The GoHighLevel Agent Studio agents, rebuilt (see docs/ghl-agents/SUMMARY.md) ----------
+/** The fixed wording the GHL agents send today, kept word for word where it is fixed. */
+export const AGENT_TEXT = {
+  dunzo: {
+    photoRequest: "Thanks for requesting a quote. Could you please send through a few pictures so we can give you an accurate price?",
+    photoThanks: "Awesome, thank you so much for sending those photos over! We got them, and our team will take a look so we can get your quote sorted. We really appreciate it!",
+    outOfArea: "Thanks for reaching out. We only serve in and around Sacramento, so unfortunately we would not be able to help with this address.",
+    approved: (first: string) => `Hi${first ? " " + first : ""}, thank you for approving your quote! We're already working on getting your job scheduled and will be in touch soon with the next steps.`,
+  },
+  lights: {
+    photoRequest: "Thanks for requesting a quote. Could you please send through a few pictures so we can prepare it accurately? Photos of the front, left side, right side and back of the house are helpful. If you only need work on a specific part of the house, just send clear photos of that area.",
+    photoThanks: "Awesome, thank you so much for sending those photos over! We got them, and our team will take a look so we can move your lighting project to the next step. We really appreciate it!",
+    outOfArea: "Thanks for reaching out. We only serve in and around Sacramento, so unfortunately we would not be able to help with this address.",
+    approved: (first: string) => `Hi${first ? " " + first : ""}, this is the Santa's Lights team. Thank you for approving your lighting quote! We're already working on getting your job scheduled and will be in touch soon with the next steps.`,
+  },
+} as const;
+
+const SAFE: FlowStep = { app: "Filter", title: "Is it safe to text this person right now?", detail: "Not opted out, not on do not disturb, between 8am and 8pm, nobody on the team has just phoned them, and they have not had this message already. The GoHighLevel agents skip most of these checks." };
+
+function agentsFor(a: Account): FlowDef[] {
+  const dz = a === "dunzo";
+  const T = AGENT_TEXT[a];
+  const f = (key: string, title: string, ours: string, zap: string, what: string, trigger: FlowStep, steps: FlowStep[]): FlowDef => ({ key, account: a, title, zap, what, trigger, steps, kind: "agent", ours });
+  const list: FlowDef[] = [
+    f("ag_photos", "Photos: ask, remind, thank", dz ? "Flash" : "Rudolph", dz ? "01. Take Off and 02. Dunzo KB Photo Assistant" : "01. Take Off and 02. Mr Photos Received",
+      "Asks a new lead for photos so the team can quote, reminds them, and thanks them when the photos arrive. Two GoHighLevel agents do this today and can both thank the same customer. Here it is one agent.",
+      { app: "GoHighLevel", title: "A new lead arrives in New Lead" },
+      [{ app: "Filter", title: "Should this lead be left alone?", detail: "Stops if they used the AI visualizer on the website, if photos are already there, or if they are part of a promo.", paths: [
+          { label: "Address is clearly outside the area", steps: [{ app: "GoHighLevel", title: "Text a polite no", detail: `"${T.outOfArea}"` }, { app: "GoHighLevel", title: "Tag ghost and move to Lost" }] },
+          { label: "Photos are already there", steps: [{ app: "GoHighLevel", title: "Tag photos received, move to Photos Received", detail: "No message." }] },
+          { label: "No photos yet", steps: [SAFE, { app: "GoHighLevel", title: "Text the photo request", detail: `"${T.photoRequest}" plus what to photograph for that service.` }, { app: "Clock", title: "Remind at 9am", detail: "Next morning, then daily for 2 days, every second day for the rest of week 1, twice in week 2, once in week 3, then stop and tell the team. The GoHighLevel version has no end." }] }] },
+       { app: "GoHighLevel", title: "When photos arrive: thank them once", detail: `"${T.photoThanks}" Then tag photos received and move to Photos Received.` }]),
+    f("ag_followup", "Follow up after a quote", dz ? "Dash" : "Dasher", dz ? "03.Lead Follow-Up" : "03. Post Quote Lead Follow-Up",
+      "Checks the quote arrived, answers questions, and follows up while the quote is open. Written fresh each time, as the team." + (dz ? " The GoHighLevel version writes as Clark by name." : ""),
+      { app: "Jobber", title: "A quote is sent" },
+      [{ app: "Clock", title: "Wait 10 minutes" }, SAFE,
+       { app: "AI", title: "Text a short check that the quote came through", detail: "Once per quote and household. Skipped if anyone has already confirmed it with them." },
+       { app: "AI", title: "Answer questions from what is approved", detail: "Free quotes, firm price before work, licensed and insured, the guarantee. Anything about exact price, availability, refunds or a complaint goes to the team." },
+       { app: "Clock", title: "Follow up while the quote is open", detail: "No more than one message in 3 hours and never the same purpose twice in a day. Holds off for a week if they ask for time." }]),
+    f("ag_approved", "Thank you when a quote is approved", dz ? "Cal" : "Prancer", "04. Quote Approval SMS",
+      "One thank you text when a customer approves their quote. The wording is fixed, so it needs no AI.",
+      { app: "Jobber", title: "A quote is approved" },
+      [SAFE, { app: "GoHighLevel", title: "Text the thank you, once", detail: `"${T.approved("{first name}")}"` }]),
+    f("ag_rehash", "Monthly review of old leads", "Maverick", dz ? "05.Rehash Reviewer (not published in GoHighLevel)" : "06. Rehash Follow-Up Reviewer (not published in GoHighLevel)",
+      "On the 1st of each month, reads the leads sitting in Rehash and writes a follow up plan for the team. It never texts a customer.",
+      { app: "Clock", title: "The 1st of the month, 9am" },
+      [{ app: "GoHighLevel", title: "Read every lead in Rehash", detail: "Notes, conversation and quote history." }, { app: "AI", title: "Write a follow up plan", detail: "Who is worth another try, why, and a suggested message for a person to send." }, { app: "You", title: "Shown on the Director page for you to act on" }]),
+    f("ag_audit", "Daily lead report", "Maverick", dz ? "06.Daily Sales Auditor (not published in GoHighLevel)" : "05. Daily Audit Police (not published in GoHighLevel)",
+      "Each evening, checks every open lead and reports what moved, what is stuck, and what the agents and flows did that day.",
+      { app: "Clock", title: `Every day, ${dz ? "8pm" : "9pm"}` },
+      [{ app: "GoHighLevel", title: "Read today's leads, stages and messages" }, { app: "AI", title: "Write the bottom line", detail: "What moved, what is stuck, what needs a person tomorrow." }, { app: "You", title: "Shown on the Director page" }]),
+  ];
+  if (!dz) list.push(f("ag_review_post", "Install and review post", "Snap", "Install Review Publisher",
+    "After a job is won, drafts a social post from the install photos and the customer's Google review, for you to approve. The GoHighLevel version asks for approval but has nobody to ask.",
+    { app: "GoHighLevel", title: "The tag lights won is added" },
+    [{ app: "Clock", title: "Wait until the install is finished", detail: "The GoHighLevel version waits a flat 2 days, which can be before the install." }, { app: "CompanyCam", title: "Pick the best install photos" }, { app: "AI", title: "Draft the post", detail: "Only quotes a real review. Never invents one." }, { app: "You", title: "Waits on your Approvals page", detail: "Nothing is published unless you approve it." }]));
+  return list;
+}
+export const AGENT_FLOWS: FlowDef[] = [...agentsFor("dunzo"), ...agentsFor("lights")];
+export const ALL_FLOWS = (): FlowDef[] => [...FLOWS.map((x) => ({ ...x, kind: "zap" as const })), ...AGENT_FLOWS];
+
 // ---------- Planners: one real event in, the list of things the flow would do out. All pure. ----------
 export interface Person { name: string; phone?: string | null; email?: string | null; address?: string | null }
 export interface Plan { flow: string; account: Account; key: string; subject: string; summary: string; steps: string[]; stage?: string; at: string }
 const who = (p: Person) => p.name || p.phone || p.email || "Unknown";
+const first = (p: Person) => (p.name || "").trim().split(/\s+/)[0] || "";
 const money = (n: number | null | undefined) => (typeof n === "number" ? "$" + n.toLocaleString("en-US", { maximumFractionDigits: 2 }) : "");
 
 export interface JQuote { id: string; quoteNumber: string; quoteStatus: string; sentAt?: string | null; updatedAt: string; title?: string | null; total?: number | null; items: { name: string; description?: string | null; totalPrice?: number | null }[]; person: Person }
@@ -108,11 +170,13 @@ export function planQuote(a: Account, q: JQuote, since: string): Plan[] {
     const note = `Quote Number${q.quoteNumber} | Item: ${q.items.map((i) => i.name).join(",")} | Price: ${q.items.map((i) => i.totalPrice ?? "").join(",")}`;
     out.push({ ...base, flow: "quote_sent", key: `quote_sent:${a}:${q.id}`, stage: "Quote Sent", summary: `Quote ${q.quoteNumber} sent, ${money(q.total)}`,
       steps: [`Update the contact for ${who(q.person)} and add the tag quote sent`, "Move the lead to Quote Sent", `Add the note: ${note.slice(0, 220)}`] });
+    out.push({ ...base, flow: "ag_followup", key: `ag_followup:${a}:${q.id}`, summary: `Quote ${q.quoteNumber} sent`, steps: ["Wait 10 minutes", "Check it is safe to text them", `Text ${first(q.person)} a short check that the quote came through, written fresh, as the team`, "Then follow up while the quote stays open"] });
     if (a === "lights") out.push({ ...base, flow: "sb_quote", key: `sb_quote:${q.id}`, summary: `Quote ${q.quoteNumber}, ${money(q.total)}`, steps: [`Send to the scoreboard as "quote" with ${money(q.total)}`] });
   }
   if (q.quoteStatus === "approved" || q.quoteStatus === "converted") {
     out.push({ ...base, flow: "quote_approved", key: `quote_approved:${a}:${q.id}`, stage: "Quote Approved", summary: `Quote ${q.quoteNumber} approved, ${money(q.total)}`,
       steps: [`Update the contact for ${who(q.person)} and add the tag quote approved`, "Move the lead to Quote Approved", `Note the quote number ${q.quoteNumber}`] });
+    out.push({ ...base, flow: "ag_approved", key: `ag_approved:${a}:${q.id}`, summary: `Quote ${q.quoteNumber} approved`, steps: ["Check it is safe to text them", `Text: ${AGENT_TEXT[a].approved(first(q.person))}`] });
     if (a === "lights") out.push({ ...base, flow: "sb_sold", key: `sb_sold:${q.id}`, summary: `Quote ${q.quoteNumber}, ${money(q.total)}`, steps: [`Send to the scoreboard as "sold" with ${money(q.total)}`] });
   }
   return out;
@@ -153,6 +217,16 @@ export function planClient(a: Account, c: JClientEvent, since: string): Plan[] {
 export function planNewLead(a: Account, o: { id: string; changedAt: string; person: Person; tags: string[] }): Plan {
   return { flow: "new_lead", account: a, key: `new_lead:${a}:${o.id}:${o.changedAt}`, subject: who(o.person), at: o.changedAt, summary: "Moved to New Lead",
     steps: [`Find ${who(o.person)} in Jobber by phone or email, or create them`, o.tags.length ? `Add the tags: ${o.tags.join(", ")}` : "No tags to add", "Add the quote request summary as a note, unless it is already there"] };
+}
+
+/** What the photo agent would do for a brand new lead. */
+export function planPhotos(a: Account, o: { id: string; changedAt: string; person: Person; tags: string[] }): Plan {
+  const tags = o.tags.map((t) => t.toLowerCase());
+  const base = { flow: "ag_photos", account: a, key: `ag_photos:${a}:${o.id}`, subject: who(o.person), at: o.changedAt };
+  if (tags.some((t) => t.replace(/-/g, " ") === "ai visualizer")) return { ...base, summary: "New lead who used the AI visualizer", steps: ["STOP: they used the AI visualizer, so no photo request is sent"] };
+  if (tags.includes("photos received")) return { ...base, summary: "New lead with photos already", steps: ["Photos are already there", "Move the lead to Photos Received. No message."] };
+  if (tags.includes("winter promo")) return { ...base, summary: "New lead from the promo", steps: ["STOP: this lead is part of the promo, so Gus has it"] };
+  return { ...base, summary: "New lead, no photos yet", steps: ["Check the address is real and in the area", "Check it is safe to text them", `Text: ${AGENT_TEXT[a].photoRequest}`, "Remind at 9am on the set days until photos arrive, then stop after week 3"] };
 }
 
 export function planQuoMessage(a: Account, m: { id: string; direction: string; text: string; other: string; createdAt: string }): Plan {
