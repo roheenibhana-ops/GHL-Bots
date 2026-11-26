@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { pickTargets } from "../src/chaser";
+import { dashMode, pickTargets } from "../src/chaser";
 
 const now = new Date("2026-11-28T17:00:00Z").getTime();
 const promo = (id: string, sent: string) => ({ contact_id: id, account: "dunzo" as const, contact_name: "Dave", phone_e164: "+19165550100", timezone: null, sent_at: sent });
@@ -35,5 +35,15 @@ describe("customers who asked for time", () => {
   it("leaves them alone during the hold and comes back when it ends", () => {
     expect(pick({ convs: [conv("w", { quoteId: "Q1", dashHoldUntil: now + 86_400_000 })], msgs: old })).toEqual([]);
     expect(pick({ convs: [conv("w", { quoteId: "Q1", dashHoldUntil: now - 3_600_000 })], msgs: old }).map((t) => t.contactId)).toEqual(["w"]);
+  });
+});
+
+describe("when Dash sends by himself", () => {
+  it("waits for approval until his start date, then sends", () => {
+    expect(dashMode("auto", "2026-11-30", "2026-11-29")).toBe("approve");
+    expect(dashMode("auto", "2026-11-30", "2026-11-30")).toBe("auto");
+    expect(dashMode("auto", "", "2026-11-26")).toBe("auto");
+    expect(dashMode("approve", "2026-11-30", "2026-12-05")).toBe("approve");
+    expect(dashMode("off", "2026-11-30", "2026-12-05")).toBe("off");
   });
 });

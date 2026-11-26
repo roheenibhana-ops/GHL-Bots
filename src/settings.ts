@@ -33,6 +33,7 @@ export const SETTINGS: SettingDef[] = [
   { key: "PROMO_DEADLINE", group: "Promo texts", label: "Offer deadline for the next texts", help: "A date like 2026-12-15. Each promo text sent from now on says the price is good through this date, and each customer is held to the date in their own text. Change it before each new batch.", type: "text" },
   { key: "BATCH_CAMPAIGN", group: "Promo texts", label: "Campaign name", help: "Which campaign the daily sender releases. Leave as it is unless you made a new one.", type: "text" },
   { key: "DASH_MODE", group: "Follow ups (Dash)", label: "Follow ups", help: "Off: Dash does nothing. Approve: Dash writes follow ups and they wait on the Approvals page for you. Auto: they send by themselves.", type: "select", options: ["off", "approve", "auto"] },
+  { key: "DASH_AUTO_FROM", group: "Follow ups (Dash)", label: "Start sending by himself on (date)", help: "Only matters when Follow ups is set to Auto. Until this date, like 2026-11-30, his follow ups still wait on the Approvals page. Leave empty to start straight away.", type: "text" },
   { key: "DASH_PROMO_DAYS", group: "Follow ups (Dash)", label: "Days before following up a promo with no reply", help: "How many days after the promo text Dash waits before one follow up.", type: "number" },
   { key: "WINDOW_START", group: "Hours", label: "Start texting at (hour, 0 to 23)", help: "Pacific time. 8 means 8am.", type: "number" },
   { key: "WINDOW_END", group: "Hours", label: "Stop texting at (hour, 0 to 23)", help: "Pacific time. 20 means 8pm.", type: "number" },
@@ -71,6 +72,7 @@ export function mergeSettings(env: Env, map: Record<string, string>): Env {
   if (map.DAILY_CAP_DATES !== undefined) o.DAILY_CAP_DATES = map.DAILY_CAP_DATES;
   set("DASH_MODE", map.DASH_MODE);
   set("DASH_PROMO_DAYS", map.DASH_PROMO_DAYS);
+  if (map.DASH_AUTO_FROM !== undefined) o.DASH_AUTO_FROM = map.DASH_AUTO_FROM;
   if (map.BLACKOUT_DATES !== undefined) o.BLACKOUT_DATES = map.BLACKOUT_DATES;
   set("PROMO_OWNER_ID", map.PROMO_OWNER_ID);
   if (map.WINDOW_START !== undefined && map.WINDOW_START !== "") { o.QUIET_END_HOUR = map.WINDOW_START; o.BOT_START_HOUR = map.WINDOW_START; }
@@ -202,6 +204,7 @@ export function effectiveValues(env: Env, map: Record<string, string>): Record<s
     PROMO_DEADLINE: map.PROMO_DEADLINE ?? e.PROMO_DEADLINE ?? "",
     DASH_MODE: map.DASH_MODE ?? e.DASH_MODE ?? "off",
     DASH_PROMO_DAYS: map.DASH_PROMO_DAYS ?? e.DASH_PROMO_DAYS ?? "3",
+    DASH_AUTO_FROM: map.DASH_AUTO_FROM ?? e.DASH_AUTO_FROM ?? "",
     BLACKOUT_DATES: map.BLACKOUT_DATES ?? e.BLACKOUT_DATES ?? "",
     PROMO_OWNER_ID: map.PROMO_OWNER_ID ?? e.PROMO_OWNER_ID ?? "",
     WINDOW_START: map.WINDOW_START ?? e.BOT_START_HOUR ?? "8",
@@ -219,6 +222,7 @@ export function validSetting(key: string, value: string): string | null {
     const n = Number(value);
     if (!Number.isInteger(n) || n < 0 || n > (key.startsWith("WINDOW") ? 23 : 5000)) return "Out of range";
   }
+  if (key === "DASH_AUTO_FROM") return value === "" || /^\d{4}-\d{2}-\d{2}$/.test(value) ? null : "Use a date like 2026-11-30";
   if (key === "PROMO_DEADLINE") return value === "" || /^\d{4}-\d{2}-\d{2}$/.test(value) ? null : "Use a date like 2026-12-15";
   if (key === "DAILY_CAP_DATES") return value === "" || /^\d{4}-\d{2}-\d{2}:\d{1,4}(,\s*\d{4}-\d{2}-\d{2}:\d{1,4}){0,20}$/.test(value) ? null : "Use a date and a number like 2026-11-27:100";
   if (key === "BLACKOUT_DATES") return value === "" || /^\d{4}-\d{2}-\d{2}(,\s*\d{4}-\d{2}-\d{2}){0,30}$/.test(value) ? null : "Use dates like 2026-11-26, separated by commas";

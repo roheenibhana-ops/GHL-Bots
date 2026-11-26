@@ -90,7 +90,15 @@ export async function writeFollowUp(env: Env, t: { kind: "promo" | "quote"; firs
   return { text, problems };
 }
 
-const mode = (env: Env) => (env.DASH_MODE === "approve" || env.DASH_MODE === "auto" ? env.DASH_MODE : "off");
+/**
+ * How Dash is running today. "auto" can be given a start date: until that day (Sacramento time) his follow ups still wait for approval. Pure.
+ */
+export function dashMode(dash: string | undefined, autoFrom: string | undefined, today: string): "off" | "approve" | "auto" {
+  if (dash !== "approve" && dash !== "auto") return "off";
+  if (dash === "auto" && autoFrom && /^\d{4}-\d{2}-\d{2}$/.test(autoFrom) && today < autoFrom) return "approve";
+  return dash;
+}
+const mode = (env: Env, today = new Intl.DateTimeFormat("en-CA", { timeZone: "America/Los_Angeles" }).format(new Date())) => dashMode(env.DASH_MODE, env.DASH_AUTO_FROM, today);
 
 /** Runs from the cron: writes a few new follow ups, and sends the approved ones. Does nothing unless Dash is switched on. */
 export async function runDash(env: Env): Promise<Record<string, unknown>> {

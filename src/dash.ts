@@ -647,9 +647,10 @@ export async function handleDash(req: Request, env: Env, url: URL, rawEnv: Env =
         : mode === "approve" ? { label: "Live, you approve", tone: "g", note: "Writes follow ups that wait on your Approvals page." }
         : mode === "test" ? { label: "Test only", tone: "o", note: `Built and working, but ${what} is set to Test in Settings, so it only acts on contacts tagged bot-test.` }
         : { label: "Switched off", tone: "", note: `Built, but ${what} is switched off in Settings.` };
+      const { dashMode: dashModeNow } = await import("./chaser");
       const mates = MATES.map((m) => {
         if (m.state !== "live") return m;
-        const st = m.name === "Gus" || m.name === "Relay" ? by(eff.BOT_MODE, "the bot") : m.name === "Flash" ? by(eff.PHOTO_MODE, "photo handling") : m.name === "Dash" ? by(eff.DASH_MODE, "follow ups") : null;
+        const st = m.name === "Gus" || m.name === "Relay" ? by(eff.BOT_MODE, "the bot") : m.name === "Flash" ? by(eff.PHOTO_MODE, "photo handling") : m.name === "Dash" ? by(dashModeNow(eff.DASH_MODE, eff.DASH_AUTO_FROM, new Intl.DateTimeFormat("en-CA", { timeZone: "America/Los_Angeles" }).format(new Date())), "follow ups") : null;
         return st ? { ...m, ...st } : m;
       });
       return json({ mates, flows: WORKFLOWS, safety: SAFETY_RULES, prompt: systemPrompt({ firstName: "Customer" } as BotFacts), knowledge: BUSINESS_KNOWLEDGE });

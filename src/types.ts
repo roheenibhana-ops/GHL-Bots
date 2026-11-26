@@ -40,6 +40,8 @@ export interface Env {
   /** Dash, the follow up agent: off | approve (drafts wait for you) | auto. */
   DASH_MODE?: string;
   DASH_PROMO_DAYS?: string;
+  /** When DASH_MODE is auto, follow ups still wait for approval until this date (YYYY-MM-DD, Sacramento). */
+  DASH_AUTO_FROM?: string;
   /** Dates (Pacific, YYYY-MM-DD, comma separated) when no promo or follow up texts are sent. */
   BLACKOUT_DATES?: string;
   /** GHL user id to make the owner of each contact a promo is sent to, when they have no owner yet. */
