@@ -44,6 +44,8 @@ This copy runs two Sacramento companies with one owner: Dunzo Gutters and Santa'
 
 The existing Zaps are being retired one at a time. `docs/zap-map.md` has every Zap step by step. The rule: build the replacement, run it in watch only mode beside the Zap, compare, and only then does the owner switch that Zap off. Never change, pause or delete a live Zap.
 
+The GoHighLevel Agent Studio agents are coming across too. `docs/ghl-agents/` holds all 13 as read from GoHighLevel (instructions, triggers, settings) and `SUMMARY.md` says what each does. These files, and `docs/zap-map.md`, are this client's own data: leave them out of the base and out of any other client's copy. Some of the exported instructions contain real customer names.
+
 Things that bite:
 
 - The dashboard page script sits inside a `String.raw` template in `src/dashboard.ts`. It must not contain backticks or `${`. Check visual changes with a Playwright screenshot.
